@@ -1,0 +1,25 @@
+{
+    "name": "thenfail",
+    "version": "0.1.0",
+    "description": "Just another Promise/A+ implementation",
+    "main": "thenfail.js",
+    "scripts": {
+        "test": "promises-aplus-tests ../tests/aplus-adapter"
+    },
+    "devDependencies": {
+        "promises-aplus-tests": "*"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/vilic/thenfail"
+    },
+    "keywords": [
+        "promise"
+    ],
+    "author": "VILIC VANE",
+    "license": "MIT",
+    "bugs": {
+        "url": "https://github.com/vilic/thenfail/issues"
+    },
+    "homepage": "https://github.com/vilic/thenfail"
+}
