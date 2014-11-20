@@ -959,6 +959,4 @@ module ThenFail {
 
 ThenFail.Utils.captureBoundaries();
 
-//#if args.module
 export = ThenFail;
-//#end if
