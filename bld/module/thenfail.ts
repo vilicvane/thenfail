@@ -328,10 +328,16 @@ class ThenFail<T> implements ThenFail.IPromise<T> {
     /**
      * log
      */
-    log(errorOnly = true) {
+    log(object?: any) {
         this
-            .then(errorOnly ? null : value => {
-                ThenFail.Options.Log.valueLogger(value);
+            .then(value => {
+                if (object === undefined) {
+                    object = value;
+                }
+
+                if (value !== undefined) {
+                    ThenFail.Options.Log.valueLogger(value);
+                }
             }, reason => {
                 if (ThenFail.throwUnhandledRejection) {
                     throw reason;
@@ -660,15 +666,15 @@ module ThenFail {
 
         then<T>(handler: () => IPromise<T>): ThenFail<T>;
         then<T>(handler: () => T): ThenFail<T>;
-        then<T>(handler: () => T): ThenFail<T> {
+        then<T>(handler: () => any): ThenFail<T> {
             var promise = this._promise.then(handler);
-            this._promise = promise.void;
+            this._promise = promise.fail(reason => null).void;
             return promise;
         }
 
         ready<T>(handler: () => IPromise<T>): ThenFail<T>;
         ready<T>(handler: () => T): ThenFail<T>;
-        ready<T>(handler: () => T): ThenFail<T> {
+        ready<T>(handler: () => any): ThenFail<T> {
             return this._promise.then(handler);
         }
     }
