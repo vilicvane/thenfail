@@ -33,6 +33,7 @@ class ThenFail<T> implements ThenFail.IPromise<T> {
     private _onfulfilled: (value: T) => any;
     private _onrejected: (reason) => any;
 
+    private _hasNexts = false;
     private _nexts: ThenFail<any>[] = [];
     private _baton: ThenFail.IBaton<T> = {
         status: ThenFail.Status.pending
@@ -213,6 +214,20 @@ class ThenFail<T> implements ThenFail.IPromise<T> {
             this._nexts.forEach(next => {
                 next._grab(baton, previous || this);
             });
+
+            if (
+                ThenFail.logRejectionsNotRelayed &&
+                baton.status == ThenFail.Status.rejected &&
+                !this._hasNexts
+                ) {
+                ThenFail.Utils.nextTick(() => {
+                    if (!this._hasNexts) {
+                        ThenFail.Options.Log.errorLogger('A rejection has not been relayed occurs, you may want to add .done() or .log() to the end of every promise.\n');
+                        ThenFail.Options.Log.errorLogger(baton.reason);
+                        ThenFail.Options.Log.errorLogger('Turn off this message by setting ThenFail.logRejectionsNotRelayed to false.');
+                    }
+                });
+            }
         } else if (baton.status == ThenFail.Status.rejected) {
             ThenFail.Utils.nextTick(() => {
                 throw baton.reason;
@@ -235,9 +250,9 @@ class ThenFail<T> implements ThenFail.IPromise<T> {
      * resolve this promise.
      * @param value the value to resolve this promise with, could be a promise.
      */
-    resolve(value: ThenFail.IPromise<T>);
-    resolve(value?: T);
-    resolve(value?: any) {
+    resolve(value: ThenFail.IPromise<T>): void;
+    resolve(value?: T): void;
+    resolve(value?: any): void {
         ThenFail._unpack(this, value, (baton, previous) => {
             this._grab(baton, previous);
         });
@@ -311,6 +326,10 @@ class ThenFail<T> implements ThenFail.IPromise<T> {
             promise._grab(this._baton, this);
         }
 
+        if (!this._hasNexts) {
+            this._hasNexts = true;
+        }
+
         return promise;
     }
 
@@ -328,24 +347,27 @@ class ThenFail<T> implements ThenFail.IPromise<T> {
     /**
      * log
      */
-    log(object?: any) {
-        this
+    log(object?: any): ThenFail<void> {
+        var promise = this
             .then(value => {
-                if (object === undefined) {
-                    object = value;
+                if (object !== undefined) {
+                    value = object;
                 }
 
                 if (value !== undefined) {
                     ThenFail.Options.Log.valueLogger(value);
                 }
             }, reason => {
-                if (ThenFail.throwUnhandledRejection) {
+                if (ThenFail.Options.Log.throwUnhandledRejection) {
                     throw reason;
                 } else {
                     ThenFail.Options.Log.errorLogger(reason);
                 }
-            })
-            .done();
+            });
+
+        promise.done();
+
+        return promise;
     }
 
     /**
@@ -359,9 +381,9 @@ class ThenFail<T> implements ThenFail.IPromise<T> {
 
     /**
      * a helper that delays the relaying of fulfilled value from previous promise.
-     * @param interval delay interval (milliseconds).
+     * @param interval delay interval (milliseconds, default to 0).
      */
-    delay(interval: number): ThenFail<T> {
+    delay(interval = 0): ThenFail<T> {
         return this.then(value => {
             var promise = new ThenFail<T>();
 
@@ -437,9 +459,23 @@ class ThenFail<T> implements ThenFail.IPromise<T> {
         return this.then(() => { });
     }
 
+    get true(): ThenFail<boolean> {
+        return this.then(() => true);
+    }
+
+    get false(): ThenFail<boolean> {
+        return this.then(() => false);
+    }
+
+    return<T>(value: T): ThenFail<T> {
+        return this.then(() => value);
+    }
+
     // STATIC
 
-    private static _void = new ThenFail<void>(null);
+    private static _void = new ThenFail<void>(undefined);
+    private static _true = new ThenFail<boolean>(true);
+    private static _false = new ThenFail<boolean>(false);
 
     /**
      * a promise that is already fulfilled with value null.
@@ -447,6 +483,15 @@ class ThenFail<T> implements ThenFail.IPromise<T> {
     static get void(): ThenFail<void> {
         return ThenFail._void;
     }
+
+    static get true(): ThenFail<boolean> {
+        return ThenFail._true;
+    }
+
+    static get false(): ThenFail<boolean> {
+        return ThenFail._false;
+    }
+
 
     /**
      * a static then shortcut for a promise already fulfilled with value null.
@@ -528,11 +573,11 @@ class ThenFail<T> implements ThenFail.IPromise<T> {
     /**
      * 
      */
-    static each<R>(items: R[], handler: (item: R, index: number) => ThenFail.IPromise<boolean>): ThenFail<boolean>;
-    static each<R>(items: R[], handler: (item: R, index: number) => ThenFail.IPromise<void>): ThenFail<boolean>;
-    static each<R>(items: R[], handler: (item: R, index: number) => boolean): ThenFail<boolean>;
-    static each<R>(items: R[], handler: (item: R, index: number) => void): ThenFail<boolean>;
-    static each<R>(items: R[], handler: (item: R, index: number) => any): ThenFail<boolean> {
+    static each<T>(items: T[], handler: (item: T, index: number) => ThenFail.IPromise<boolean>): ThenFail<boolean>;
+    static each<T>(items: T[], handler: (item: T, index: number) => ThenFail.IPromise<void>): ThenFail<boolean>;
+    static each<T>(items: T[], handler: (item: T, index: number) => boolean): ThenFail<boolean>;
+    static each<T>(items: T[], handler: (item: T, index: number) => void): ThenFail<boolean>;
+    static each<T>(items: T[], handler: (item: T, index: number) => any): ThenFail<boolean> {
         if (!items) {
             return new ThenFail(true);
         }
@@ -569,6 +614,46 @@ class ThenFail<T> implements ThenFail.IPromise<T> {
     }
 
     /**
+     * 
+     */
+    static map<T, R>(items: T[], handler: (item: T, index: number) => ThenFail.IPromise<R>): ThenFail<R[]>;
+    static map<T, R>(items: T[], handler: (item: T, index: number) => R): ThenFail<R[]>;
+    static map<T, R>(items: T[], handler: (item: T, index: number) => any): ThenFail<R[]> {
+        var mapped: R[] = [];
+
+        if (!items) {
+            return new ThenFail(mapped);
+        }
+
+        var ret = new ThenFail<R[]>();
+
+        next(0);
+
+        function next(index: number) {
+            if (index >= items.length) {
+                ret.resolve(mapped);
+                return;
+            }
+
+            var item = items[index];
+
+            ThenFail
+                .then<R>(() => {
+                    return handler(item, index);
+                })
+                .then(result => {
+                    mapped.push(result);
+                    next(index + 1);
+                })
+                .fail(reason => {
+                    ret.reject(reason);
+                });
+        }
+
+        return ret;
+    }
+
+    /**
      * rejected
      */
     static rejected<T>(reason: any): ThenFail<T> {
@@ -577,6 +662,9 @@ class ThenFail<T> implements ThenFail.IPromise<T> {
         return thenfail;
     }
     
+
+    // NODE HELPER
+
     /**
      * invoke
      */
@@ -597,6 +685,10 @@ class ThenFail<T> implements ThenFail.IPromise<T> {
 
         return promise;
     }
+
+    /**
+     * 
+     */
 
     // OTHERS
 
@@ -627,8 +719,8 @@ class ThenFail<T> implements ThenFail.IPromise<T> {
 
 module ThenFail {
 
+    export var logRejectionsNotRelayed = true;
     export var longStackSupport = false;
-    export var throwUnhandledRejection = false;
 
     /**
      * promise statuses.
@@ -661,20 +753,32 @@ module ThenFail {
         then<R>(onfulfilled: (value: T) => R, onrejected?: (reason) => any): IPromise<R>;
     }
 
+    /**
+     * A small helper class to queue async operations.
+     */
     export class PromiseLock {
         private _promise = ThenFail.void;
 
-        then<T>(handler: () => IPromise<T>): ThenFail<T>;
-        then<T>(handler: () => T): ThenFail<T>;
-        then<T>(handler: () => any): ThenFail<T> {
+        lock<T>(handler: () => IPromise<T>): ThenFail<T>;
+        lock<T>(handler: () => T): ThenFail<T>;
+        lock<T>(handler: () => any): ThenFail<T> {
             var promise = this._promise.then(handler);
-            this._promise = promise.fail(reason => null).void;
+            this._promise = promise.fail(reason => {
+                if (ThenFail.Options.Log.throwUnhandledRejection) {
+                    ThenFail.Utils.nextTick(() => {
+                        throw reason;
+                    });
+                } else {
+                    ThenFail.Options.Log.errorLogger(reason);
+                }
+            }).void;
             return promise;
         }
 
+        ready(): ThenFail<void>;
         ready<T>(handler: () => IPromise<T>): ThenFail<T>;
         ready<T>(handler: () => T): ThenFail<T>;
-        ready<T>(handler: () => any): ThenFail<T> {
+        ready<T>(handler?: () => any): ThenFail<T> {
             return this._promise.then(handler);
         }
     }
@@ -700,14 +804,21 @@ module ThenFail {
         }
 
         export module Log {
+            export var throwUnhandledRejection = false;
             export var valueLogger = value => {
-                console.log(JSON.stringify(value, null, '    '));
+                if (value instanceof Object) {
+                    console.log(JSON.stringify(value, null, '    '));
+                } else {
+                    console.log(value);
+                }
             };
             export var errorLogger = reason => {
                 if (reason instanceof Error) {
-                    console.log(reason.stack || reason);
+                    console.warn(reason.stack || reason);
+                } else if (reason instanceof Object) {
+                    console.warn(JSON.stringify(reason, null, '    '));
                 } else {
-                    console.log(JSON.stringify(reason, null, '    '));
+                    console.warn(reason);
                 }
             };
         }
@@ -755,8 +866,6 @@ module ThenFail {
             domain?: any;
             next?: INextTickTask;
         }
-
-        
 
         /**
          * from Q.
@@ -966,5 +1075,5 @@ module ThenFail {
 ThenFail.Utils.captureBoundaries();
 
 //#if args.module
-export = ThenFail;
+//export = ThenFail;
 //#end if
