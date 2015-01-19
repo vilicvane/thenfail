@@ -341,6 +341,17 @@ class ThenFail<T> implements ThenFail.IPromise<T> {
         donePromise._nexts = null;
     }
 
+    get pending(): boolean {
+        return this._baton.status == ThenFail.Status.pending;
+    }
+
+    get fulfilled(): boolean {
+        return this._baton.status == ThenFail.Status.fulfilled;
+    }
+
+    get rejected(): boolean {
+        return this._baton.status == ThenFail.Status.rejected;
+    }
 
     // HELPERS
 
