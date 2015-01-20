@@ -24,7 +24,7 @@ promise.resolve('test');
 // promise.reject(new Error());
 
 // another style
-var promise = new ThenFail<string>((resove, reject) => {
+var promise = new ThenFail<string>((resolve, reject) => {
     resolve('test');
 
     // or reject
