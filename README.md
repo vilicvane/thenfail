@@ -2,7 +2,7 @@
     <img src="http://promises-aplus.github.com/promises-spec/assets/logo-small.png" alt="Promises/A+ logo" align="right" />
 </a>
 
-# ThenFail
+# ThenFail [![Build Status](https://travis-ci.org/vilic/thenfail.svg)](https://travis-ci.org/vilic/thenfail)
 Written in TypeScript
 
 Just another Promises/A+ implementation.
