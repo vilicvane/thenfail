@@ -3,7 +3,10 @@
  * Just another Promises/A+ implementation
  * https://github.com/vilic/thenfail
  * 
- * By VILIC VANE <https://github.com/vilic>
+ * By VILIC VANE
+ * https://github.com/vilic
+ * 
+ * MIT License
  */
 
 'use strict';
@@ -222,9 +225,11 @@ class ThenFail<T> implements ThenFail.IPromise<T> {
                 ) {
                 ThenFail.Utils.nextTick(() => {
                     if (!this._hasNexts) {
-                        ThenFail.Options.Log.errorLogger('A rejection has not been relayed occurs, you may want to add .done() or .log() to the end of every promise.\n');
-                        ThenFail.Options.Log.errorLogger(baton.reason);
-                        ThenFail.Options.Log.errorLogger('Turn off this message by setting ThenFail.logRejectionsNotRelayed to false.');
+                        ThenFail.Options.Log.errorLogger(
+                            'A rejection has not been relayed occurs, you may want to add .done() or .log() to the end of every promise.',
+                            baton.reason,
+                            'Turn off this message by setting ThenFail.logRejectionsNotRelayed to false.'
+                        );
                     }
                 });
             }
@@ -485,8 +490,8 @@ class ThenFail<T> implements ThenFail.IPromise<T> {
     // STATIC
 
     private static _void = new ThenFail<void>(undefined);
-    private static _true = new ThenFail<boolean>(true);
-    private static _false = new ThenFail<boolean>(false);
+    private static _true = new ThenFail(true);
+    private static _false = new ThenFail(false);
 
     /**
      * a promise that is already fulfilled with value null.
@@ -606,7 +611,7 @@ class ThenFail<T> implements ThenFail.IPromise<T> {
             var item = items[index];
 
             ThenFail
-                .then<boolean>(() => {
+                .then(() => {
                     return handler(item, index);
                 })
                 .then(result => {
@@ -816,21 +821,25 @@ module ThenFail {
 
         export module Log {
             export var throwUnhandledRejection = false;
-            export var valueLogger = value => {
-                if (value instanceof Object) {
-                    console.log(JSON.stringify(value, null, '    '));
-                } else {
-                    console.log(value);
-                }
+            export var valueLogger = (...values: any[]) => {
+                values.forEach(value => {
+                    if (value instanceof Object) {
+                        console.log(JSON.stringify(value, null, '    '));
+                    } else {
+                        console.log(value);
+                    }
+                });
             };
-            export var errorLogger = reason => {
-                if (reason instanceof Error) {
-                    console.warn(reason.stack || reason);
-                } else if (reason instanceof Object) {
-                    console.warn(JSON.stringify(reason, null, '    '));
-                } else {
-                    console.warn(reason);
-                }
+            export var errorLogger = (...reasons: any[]) => {
+                reasons.forEach(reason => {
+                    if (reason instanceof Error) {
+                        console.warn(reason.stack || reason);
+                    } else if (reason instanceof Object) {
+                        console.warn(JSON.stringify(reason, null, '    '));
+                    } else {
+                        console.warn(reason);
+                    }
+                });
             };
         }
     }
@@ -1086,5 +1095,5 @@ module ThenFail {
 ThenFail.Utils.captureBoundaries();
 
 //#if args.module
-//export = ThenFail;
+export = ThenFail;
 //#end if
