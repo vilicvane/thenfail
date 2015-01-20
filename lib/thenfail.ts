@@ -1,6 +1,6 @@
 ﻿/*
  * ThenFail v0.1
- * Just another Promise/A+ implementation
+ * Just another Promises/A+ implementation
  * https://github.com/vilic/thenfail
  * 
  * By VILIC VANE <https://github.com/vilic>
@@ -304,7 +304,7 @@ class ThenFail<T> implements ThenFail.IPromise<T> {
     }
     
     /**
-     * then method following Promise/A+ specification.
+     * then method following Promises/A+ specification.
      */
     then<R>(onfulfilled?: void, onrejected?: void): ThenFail<T>;
     then<R>(onfulfilled: void, onrejected: (reason) => any): ThenFail<T>;
