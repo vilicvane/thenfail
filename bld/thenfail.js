@@ -346,7 +346,7 @@ var ThenFail = (function () {
         var _this = this;
         options = ThenFail.Utils.defaults(options, ThenFail.Options.Retry);
         return this.then(function (value) {
-            var fulfilled = new ThenFail(value);
+            var fulfilled = ThenFail.resolved(value);
             var retryPromise = new ThenFail();
             var retry = function (retriesLeft, lastReason) {
                 if (arguments.length > 1 && options.onretry) {
@@ -490,7 +490,7 @@ var ThenFail = (function () {
     };
     ThenFail.each = function (items, handler) {
         if (!items) {
-            return new ThenFail(true);
+            return ThenFail.true;
         }
         var ret = new ThenFail();
         next(0);
@@ -518,7 +518,7 @@ var ThenFail = (function () {
     ThenFail.map = function (items, handler) {
         var mapped = [];
         if (!items) {
-            return new ThenFail(mapped);
+            return ThenFail.resolved(mapped);
         }
         var ret = new ThenFail();
         next(0);
@@ -540,12 +540,20 @@ var ThenFail = (function () {
         return ret;
     };
     /**
+     * resolved
+     */
+    ThenFail.resolved = function (value) {
+        var promise = new ThenFail();
+        promise.resolve(value);
+        return promise;
+    };
+    /**
      * rejected
      */
     ThenFail.rejected = function (reason) {
-        var thenfail = new ThenFail();
-        thenfail.reject(reason);
-        return thenfail;
+        var promise = new ThenFail();
+        promise.reject(reason);
+        return promise;
     };
     // NODE HELPER
     /**
@@ -593,9 +601,9 @@ var ThenFail = (function () {
         }
     };
     // STATIC
-    ThenFail._void = new ThenFail(undefined);
-    ThenFail._true = new ThenFail(true);
-    ThenFail._false = new ThenFail(false);
+    ThenFail._void = ThenFail.resolved(undefined);
+    ThenFail._true = ThenFail.resolved(true);
+    ThenFail._false = ThenFail.resolved(false);
     return ThenFail;
 })();
 var ThenFail;

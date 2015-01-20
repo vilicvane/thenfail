@@ -423,7 +423,7 @@ class ThenFail<T> implements ThenFail.IPromise<T> {
         options = ThenFail.Utils.defaults(options, ThenFail.Options.Retry);
 
         return this.then(value => {
-            var fulfilled = new ThenFail<T>(value);
+            var fulfilled = ThenFail.resolved(value);
             var retryPromise = new ThenFail<R>();
 
             var retry = (retriesLeft: number, lastReason?) => {
@@ -489,9 +489,9 @@ class ThenFail<T> implements ThenFail.IPromise<T> {
 
     // STATIC
 
-    private static _void = new ThenFail<void>(undefined);
-    private static _true = new ThenFail(true);
-    private static _false = new ThenFail(false);
+    private static _void = ThenFail.resolved<void>(undefined);
+    private static _true = ThenFail.resolved(true);
+    private static _false = ThenFail.resolved(false);
 
     /**
      * a promise that is already fulfilled with value null.
@@ -595,7 +595,7 @@ class ThenFail<T> implements ThenFail.IPromise<T> {
     static each<T>(items: T[], handler: (item: T, index: number) => void): ThenFail<boolean>;
     static each<T>(items: T[], handler: (item: T, index: number) => any): ThenFail<boolean> {
         if (!items) {
-            return new ThenFail(true);
+            return ThenFail.true;
         }
 
         var ret = new ThenFail<boolean>();
@@ -638,7 +638,7 @@ class ThenFail<T> implements ThenFail.IPromise<T> {
         var mapped: R[] = [];
 
         if (!items) {
-            return new ThenFail(mapped);
+            return ThenFail.resolved(mapped);
         }
 
         var ret = new ThenFail<R[]>();
@@ -670,12 +670,21 @@ class ThenFail<T> implements ThenFail.IPromise<T> {
     }
 
     /**
+     * resolved
+     */
+    static resolved<T>(value: T): ThenFail<T> {
+        var promise = new ThenFail<T>();
+        promise.resolve(value);
+        return promise;
+    }
+
+    /**
      * rejected
      */
     static rejected<T>(reason: any): ThenFail<T> {
-        var thenfail = new ThenFail<T>();
-        thenfail.reject(reason);
-        return thenfail;
+        var promise = new ThenFail<T>();
+        promise.reject(reason);
+        return promise;
     }
     
 
