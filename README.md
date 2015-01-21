@@ -37,7 +37,7 @@ var promise = ThenFail.resolved('test');
 var promise = ThenFail.rejected(new Error());
 ```
 
-Wrap other Promise implementation and `then`...
+Wrap other promise implementation and `then`...
 
 ```typescript
 ThenFail
@@ -53,14 +53,40 @@ ThenFail
     .fail(reason => console.log(reason));
 ```
 
-And you get an `all`.
+Want to log something following a promise?
+
+```typescript
+// log some preset text
+ThenFail
+    .delay(5000)
+    .log('tick tick tick');
+
+// or value/rejection
+ThenFail
+    .then(() => {
+        if (Math.random() > 0.5) {
+            throw new Error();
+        } else {
+            return 'success'
+        }
+    })
+    .log();
+
+// you may change ThenFail.Options.Log.valueLogger(...values: any[])
+// or/and ThenFail.Options.Log.errorLogger(...reasons: any[])
+// to your with your own logic, e.g., upload to a log server.
+
+// by default, ThenFail will log rejections not been relayed,
+// set ThenFail.logRejectionsNotRelayed to false if you want to disable that.
+```
+
+And you get `all` and `spread`.
 
 ```typescript
 ThenFail
     .all([promiseA, promiseB])
-    .then(args => {
-        var resultA = args[0];
-        var resultB = args[1];
+    .spread((valueA: any, valueB: any) => {
+        // do something...
     });
 ```
 
@@ -81,7 +107,22 @@ ThenFail
     .fail(reason => console.log('oops'));
 ```
 
-Handy "consts": `true`, `false` and `void` and short cut for `return`.
+Also `each`, `map` and shortcut `return`.
+
+```typescript
+var arr = [1, 2, 3];
+
+ThenFail
+    .each(arr, n => ThenFail.delay(1000).log(n));
+
+ThenFail
+    .map(arr, n => ThenFail.delay(1000).return(n + 1))
+    .then(arr => console.log(arr));
+
+// .return(value) is the shortcut for .then(() => value)
+```
+
+Handy "consts": `true`, `false` and `void`.
 
 ```typescript
 function testA(): ThenFail<boolean> {
@@ -96,13 +137,6 @@ function testA(): ThenFail<boolean> {
 
 function testB(): ThenFail<void> {
     return testA().void;
-}
-
-function testC() {
-    var value = 'test';
-
-    return testB()
-        .return(value);
 }
 ```
 

@@ -41,7 +41,7 @@ var ThenFail = (function () {
                 });
             }
         }
-        if (ThenFail.longStackSupport) {
+        if (ThenFail.longStackTrace) {
             try {
                 throw new Error();
             }
@@ -57,7 +57,7 @@ var ThenFail = (function () {
         if (this._baton.status != 0 /* pending */) {
             return;
         }
-        if (ThenFail.longStackSupport) {
+        if (ThenFail.longStackTrace) {
             this._previous = previous;
         }
         var handler;
@@ -89,7 +89,7 @@ var ThenFail = (function () {
                 }
             }
             catch (e) {
-                if (ThenFail.longStackSupport) {
+                if (ThenFail.longStackTrace) {
                     ThenFail._makeStackTraceLong(e, _this);
                 }
                 _this._relay({
@@ -115,7 +115,7 @@ var ThenFail = (function () {
             }, null);
         }
         else if (value instanceof ThenFail) {
-            if (ThenFail.longStackSupport && thisArg instanceof ThenFail) {
+            if (ThenFail.longStackTrace && thisArg instanceof ThenFail) {
                 thisArg._previous = value;
             }
             if (value._baton.status == 0 /* pending */) {
@@ -270,14 +270,22 @@ var ThenFail = (function () {
         }
         return promise;
     };
+    ThenFail.prototype.spread = function (onfulfilled) {
+        return this.then(function (args) {
+            return onfulfilled.apply(null, args);
+        });
+    };
     /**
-     * done
+     * add an invisible promise with no nexts to the chain, error will be thrown if it's relayed to this promise (i.e. not handled by parent promises).
      */
     ThenFail.prototype.done = function () {
         var donePromise = this.then();
         donePromise._nexts = null;
     };
     Object.defineProperty(ThenFail.prototype, "pending", {
+        /**
+         * get a boolean indicates whether the status of this promise is `pending`.
+         */
         get: function () {
             return this._baton.status == 0 /* pending */;
         },
@@ -285,6 +293,9 @@ var ThenFail = (function () {
         configurable: true
     });
     Object.defineProperty(ThenFail.prototype, "fulfilled", {
+        /**
+         * get a boolean indicates whether the status of this promise is `fulfilled`.
+         */
         get: function () {
             return this._baton.status == 1 /* fulfilled */;
         },
@@ -292,22 +303,22 @@ var ThenFail = (function () {
         configurable: true
     });
     Object.defineProperty(ThenFail.prototype, "rejected", {
+        /**
+         * get a boolean indicates whether the status of this promise is `rejected`.
+         */
         get: function () {
             return this._baton.status == 2 /* rejected */;
         },
         enumerable: true,
         configurable: true
     });
-    // HELPERS
-    /**
-     * log
-     */
     ThenFail.prototype.log = function (object) {
+        var hasObjectToLog = !!arguments.length;
         var promise = this.then(function (value) {
-            if (object !== undefined) {
-                value = object;
+            if (hasObjectToLog) {
+                ThenFail.Options.Log.valueLogger(object);
             }
-            if (value !== undefined) {
+            else if (value !== undefined) {
                 ThenFail.Options.Log.valueLogger(value);
             }
         }, function (reason) {
@@ -373,7 +384,8 @@ var ThenFail = (function () {
         });
     };
     /**
-     * timeout
+     * resolve current promise in given time (milliseconds) with optional value,
+     * the timer starts immediately when this method is called.
      */
     ThenFail.prototype.timeout = function (time, value) {
         var _this = this;
@@ -384,8 +396,7 @@ var ThenFail = (function () {
     };
     Object.defineProperty(ThenFail.prototype, "void", {
         /**
-         *
-         *
+         * get a promise that will be fulfilled with value `undefined` when its previous promise gets fulfilled.
          */
         get: function () {
             return this.then(function () {
@@ -395,6 +406,9 @@ var ThenFail = (function () {
         configurable: true
     });
     Object.defineProperty(ThenFail.prototype, "true", {
+        /**
+         * get a promise that will be fulfilled with value `true` when its previous promise gets fulfilled.
+         */
         get: function () {
             return this.then(function () { return true; });
         },
@@ -402,18 +416,24 @@ var ThenFail = (function () {
         configurable: true
     });
     Object.defineProperty(ThenFail.prototype, "false", {
+        /**
+         * get a promise that will be fulfilled with value `false` when its previous promise gets fulfilled.
+         */
         get: function () {
             return this.then(function () { return false; });
         },
         enumerable: true,
         configurable: true
     });
+    /**
+     * get a promise that will be fulfilled with the value given when its previous promise gets fulfilled.
+     */
     ThenFail.prototype.return = function (value) {
         return this.then(function () { return value; });
     };
     Object.defineProperty(ThenFail, "void", {
         /**
-         * a promise that is already fulfilled with value null.
+         * get a promise already fulfilled with value `undefined`.
          */
         get: function () {
             return ThenFail._void;
@@ -422,6 +442,9 @@ var ThenFail = (function () {
         configurable: true
     });
     Object.defineProperty(ThenFail, "true", {
+        /**
+         * get a promise already fulfilled with value `true`.
+         */
         get: function () {
             return ThenFail._true;
         },
@@ -429,6 +452,9 @@ var ThenFail = (function () {
         configurable: true
     });
     Object.defineProperty(ThenFail, "false", {
+        /**
+         * get a promise already fulfilled with value `false`.
+         */
         get: function () {
             return ThenFail._false;
         },
@@ -439,7 +465,7 @@ var ThenFail = (function () {
         return ThenFail._void.then(onfulfilled);
     };
     /**
-     * a static delay shortcut for a promise already fulfilled with value null.
+     * a static delay shortcut of a promise already fulfilled with value `undefined`.
      */
     ThenFail.delay = function (interval) {
         return ThenFail._void.delay(interval);
@@ -490,7 +516,7 @@ var ThenFail = (function () {
     };
     ThenFail.each = function (items, handler) {
         if (!items) {
-            return ThenFail.true;
+            return ThenFail._true;
         }
         var ret = new ThenFail();
         next(0);
@@ -540,7 +566,7 @@ var ThenFail = (function () {
         return ret;
     };
     /**
-     * resolved
+     * create a promise resolved by given value.
      */
     ThenFail.resolved = function (value) {
         var promise = new ThenFail();
@@ -548,7 +574,7 @@ var ThenFail = (function () {
         return promise;
     };
     /**
-     * rejected
+     * create a promise already rejected by given reason.
      */
     ThenFail.rejected = function (reason) {
         var promise = new ThenFail();
@@ -557,7 +583,7 @@ var ThenFail = (function () {
     };
     // NODE HELPER
     /**
-     * invoke
+     * invoke a node style async method.
      */
     ThenFail.invoke = function (object, method) {
         var args = [];
@@ -580,13 +606,7 @@ var ThenFail = (function () {
         }
         return promise;
     };
-    /**
-     *
-     */
     // OTHERS
-    /**
-     *
-     */
     ThenFail._makeStackTraceLong = function (error, promise) {
         var STACK_JUMP_SEPARATOR = 'From previous event:';
         if (promise._stack && error && error.stack && error.stack.indexOf(STACK_JUMP_SEPARATOR) < 0) {
@@ -608,8 +628,15 @@ var ThenFail = (function () {
 })();
 var ThenFail;
 (function (ThenFail) {
+    /**
+     * log rejections not been relayed.
+     */
     ThenFail.logRejectionsNotRelayed = true;
-    ThenFail.longStackSupport = false;
+    /**
+     * chain the stack trace for debugging reason.
+     * this has serious performance impact, never use in production.
+     */
+    ThenFail.longStackTrace = false;
     /**
      * promise statuses.
      */
@@ -632,16 +659,7 @@ var ThenFail;
         }
         PromiseLock.prototype.lock = function (handler) {
             var promise = this._promise.then(handler);
-            this._promise = promise.fail(function (reason) {
-                if (ThenFail.Options.Log.throwUnhandledRejection) {
-                    ThenFail.Utils.nextTick(function () {
-                        throw reason;
-                    });
-                }
-                else {
-                    ThenFail.Options.Log.errorLogger(reason);
-                }
-            }).void;
+            this._promise = promise.void.log();
             return promise;
         };
         PromiseLock.prototype.ready = function (handler) {
@@ -671,9 +689,18 @@ var ThenFail;
             // a handler that will be triggered when retries happens.
             Retry.onretry = null;
         })(Retry = Options.Retry || (Options.Retry = {}));
+        /**
+         * `log()` settings
+         */
         var Log;
         (function (Log) {
+            /**
+             * whether to throw unhandled rejection when using `log()`.
+             */
             Log.throwUnhandledRejection = false;
+            /**
+             * value logger for `log()`.
+             */
             Log.valueLogger = function () {
                 var values = [];
                 for (var _i = 0; _i < arguments.length; _i++) {
@@ -688,6 +715,9 @@ var ThenFail;
                     }
                 });
             };
+            /**
+             * error logger for `log()`.
+             */
             Log.errorLogger = function () {
                 var reasons = [];
                 for (var _i = 0; _i < arguments.length; _i++) {
