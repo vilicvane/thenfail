@@ -721,8 +721,10 @@ class ThenFail<T> implements ThenFail.IPromise<T> {
     /**
      * create a promise already rejected by given reason.
      */
-    static rejected<T>(reason: any): ThenFail<T> {
-        var promise = new ThenFail<T>();
+    static rejected(reason: any): ThenFail<any>;
+    static rejected<T>(reason: any): ThenFail<T>;
+    static rejected(reason: any): ThenFail<any> {
+        var promise = new ThenFail<any>();
         promise.reject(reason);
         return promise;
     }

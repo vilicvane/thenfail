@@ -1,4 +1,4 @@
-﻿<a href="http://promises-aplus.github.com/promises-spec">
+<a href="http://promises-aplus.github.com/promises-spec">
     <img src="http://promises-aplus.github.com/promises-spec/assets/logo-small.png" alt="Promises/A+ logo" align="right" />
 </a>
 
@@ -49,7 +49,9 @@ As the library name suggests you get a `fail(onrejected)` shortcut for `then(nul
 
 ```typescript
 ThenFail
-    .then(() => throw new Error())
+    .then(() => {
+        throw new Error();
+    })
     .fail(reason => console.log(reason));
 ```
 

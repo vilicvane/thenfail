@@ -573,9 +573,6 @@ var ThenFail = (function () {
         promise.resolve(value);
         return promise;
     };
-    /**
-     * create a promise already rejected by given reason.
-     */
     ThenFail.rejected = function (reason) {
         var promise = new ThenFail();
         promise.reject(reason);
