@@ -39,240 +39,11 @@ class ThenFail<T> implements ThenFail.IPromise<T> {
     private _hasNexts = false;
     private _nexts: ThenFail<any>[] = [];
     private _baton: ThenFail.IBaton<T> = {
-        status: ThenFail.Status.pending
+        state: ThenFail.State.pending
     };
 
     private _stack: string;
     private _previous: ThenFail<any>;
-
-    /**
-     * grab
-     */
-    private _grab(baton: ThenFail.IBaton<T>, previous: ThenFail<any>) {
-        if (this._baton.status != ThenFail.Status.pending) {
-            return;
-        }
-
-        if (ThenFail.longStackTrace) {
-            this._previous = previous;
-        }
-
-        var handler;
-
-        switch (baton.status) {
-            case ThenFail.Status.fulfilled:
-                handler = this._onfulfilled;
-                break;
-            case ThenFail.Status.rejected:
-                handler = this._onrejected;
-                break;
-        }
-
-        if (handler) {
-            this._run(handler, baton);
-        } else {
-            this._relay(baton);
-        }
-    }
-
-    /**
-     * run
-     */
-    private _run(handler: (value: ThenFail.IPromise<T>) => any, baton: ThenFail.IBaton<T>);
-    private _run(handler: (value: T) => any, baton: ThenFail.IBaton<T>);
-    private _run(handler: (reason: any) => any, baton: ThenFail.IBaton<T>);
-    private _run(handler: (valueOrReason: any) => any, baton?: ThenFail.IBaton<T>) {
-        ThenFail.Utils.nextTick(() => {
-            var ret;
-
-            try {
-                if (baton.status == ThenFail.Status.fulfilled) {
-                    ret = handler(baton.value);
-                } else {
-                    ret = handler(baton.reason);
-                }
-            } catch (e) {
-                if (ThenFail.longStackTrace) {
-                    ThenFail._makeStackTraceLong(e, this);
-                }
-                this._relay({
-                    status: ThenFail.Status.rejected,
-                    reason: e
-                });
-                return;
-            }
-
-            ThenFail._unpack(this, ret, (baton, previous) => {
-                this._relay(baton, previous);
-            });
-        });
-    }
-
-    /**
-     * unpack (resolve)
-     */
-    private static _unpack(thisArg, value, callback: (baton: ThenFail.IBaton<any>, previous: ThenFail<any>) => void) {
-        if (value == thisArg) {
-            callback({
-                status: ThenFail.Status.rejected,
-                reason: new TypeError('the promise should not return itself')
-            }, null);
-        } else if (value instanceof ThenFail) {
-            if (ThenFail.longStackTrace && thisArg instanceof ThenFail) {
-                thisArg._previous = value;
-            }
-
-            if (value._baton.status == ThenFail.Status.pending) {
-                value
-                    .then(fulfilledValue => {
-                        callback({
-                            status: ThenFail.Status.fulfilled,
-                            value: fulfilledValue
-                        }, null);
-                    }, reason => {
-                        callback({
-                            status: ThenFail.Status.rejected,
-                            reason: reason
-                        }, null);
-                    });
-            } else {
-                callback(value._baton, value);
-            }
-        } else if (value) { // in case of null
-            switch (typeof value) {
-                case 'object':
-                case 'function':
-                    // ret is thenable
-
-                    var then;
-                    try {
-                        then = value.then;
-                    } catch (e) {
-                        callback({
-                            status: ThenFail.Status.rejected,
-                            reason: e
-                        }, null);
-                        break;
-                    }
-
-                    if (typeof then == 'function') {
-                        var called = false;
-                        try {
-                            then
-                                .call(value, value => {
-                                    if (!called) {
-                                        called = true;
-                                        ThenFail._unpack(this, value, callback);
-                                    }
-                                }, reason => {
-                                    if (!called) {
-                                        called = true;
-                                        callback({
-                                            status: ThenFail.Status.rejected,
-                                            reason: reason
-                                        }, null);
-                                    }
-                                });
-                        } catch (e) {
-                            if (!called) {
-                                called = true;
-                                callback({
-                                    status: ThenFail.Status.rejected,
-                                    reason: e
-                                }, null);
-                            }
-                        }
-                        break;
-                    }
-                default:
-                    callback({
-                        status: ThenFail.Status.fulfilled,
-                        value: value
-                    }, null);
-                    break;
-            }
-        } else {
-            callback({
-                status: ThenFail.Status.fulfilled,
-                value: value
-            }, null);
-        }
-    }
-
-    /**
-     * relay
-     */
-    private _relay(baton: ThenFail.IBaton<T>, previous?: ThenFail<any>) {
-        if (this._baton.status != ThenFail.Status.pending) {
-            return;
-        }
-
-        this._baton = {
-            status: baton.status,
-            value: baton.value,
-            reason: baton.reason
-        };
-
-        if (this._nexts) {
-            this._nexts.forEach(next => {
-                next._grab(baton, previous || this);
-            });
-
-            if (
-                ThenFail.logRejectionsNotRelayed &&
-                baton.status == ThenFail.Status.rejected &&
-                !this._hasNexts
-                ) {
-                ThenFail.Utils.nextTick(() => {
-                    if (!this._hasNexts) {
-                        ThenFail.Options.Log.errorLogger(
-                            'A rejection has not been relayed occurs, you may want to add .done() or .log() to the end of every promise.',
-                            baton.reason,
-                            'Turn off this message by setting ThenFail.logRejectionsNotRelayed to false.'
-                        );
-                    }
-                });
-            }
-        } else if (baton.status == ThenFail.Status.rejected) {
-            ThenFail.Utils.nextTick(() => {
-                throw baton.reason;
-            });
-        }
-
-        this._relax();
-    }
-
-    /**
-     * relax
-     */
-    private _relax() {
-        this._onfulfilled = null;
-        this._onrejected = null;
-        this._nexts = null;
-    }
-
-    /**
-     * resolve this promise.
-     * @param value the value to resolve this promise with, could be a promise.
-     */
-    resolve(value: ThenFail.IPromise<T>): void;
-    resolve(value?: T): void;
-    resolve(value?: any): void {
-        ThenFail._unpack(this, value, (baton, previous) => {
-            this._grab(baton, previous);
-        });
-    }
-
-    /**
-     * reject this promise.
-     * @param reason the reason to reject this promise with.
-     */
-    reject(reason: any) {
-        this._grab({
-            status: ThenFail.Status.rejected,
-            reason: reason
-        }, null);
-    }
 
     /**
      * create a ThenFail promise instance.
@@ -310,6 +81,235 @@ class ThenFail<T> implements ThenFail.IPromise<T> {
             }
         }
     }
+
+    /**
+     * grab
+     */
+    private _grab(baton: ThenFail.IBaton<T>, previous: ThenFail<any>) {
+        if (this._baton.state != ThenFail.State.pending) {
+            return;
+        }
+
+        if (ThenFail.longStackTrace) {
+            this._previous = previous;
+        }
+
+        var handler;
+
+        switch (baton.state) {
+            case ThenFail.State.fulfilled:
+                handler = this._onfulfilled;
+                break;
+            case ThenFail.State.rejected:
+                handler = this._onrejected;
+                break;
+        }
+
+        if (handler) {
+            this._run(handler, baton);
+        } else {
+            this._relay(baton);
+        }
+    }
+
+    /**
+     * run
+     */
+    private _run(handler: (value: ThenFail.IPromise<T>) => any, baton: ThenFail.IBaton<T>);
+    private _run(handler: (value: T) => any, baton: ThenFail.IBaton<T>);
+    private _run(handler: (reason: any) => any, baton: ThenFail.IBaton<T>);
+    private _run(handler: (valueOrReason: any) => any, baton?: ThenFail.IBaton<T>) {
+        ThenFail.Utils.nextTick(() => {
+            var ret;
+
+            try {
+                if (baton.state == ThenFail.State.fulfilled) {
+                    ret = handler(baton.value);
+                } else {
+                    ret = handler(baton.reason);
+                }
+            } catch (e) {
+                if (ThenFail.longStackTrace) {
+                    ThenFail._makeStackTraceLong(e, this);
+                }
+                this._relay({
+                    state: ThenFail.State.rejected,
+                    reason: e
+                });
+                return;
+            }
+
+            ThenFail._unpack(this, ret, (baton, previous) => {
+                this._relay(baton, previous);
+            });
+        });
+    }
+
+    /**
+     * unpack (resolve)
+     */
+    private static _unpack(thisArg, value, callback: (baton: ThenFail.IBaton<any>, previous: ThenFail<any>) => void) {
+        if (value == thisArg) {
+            callback({
+                state: ThenFail.State.rejected,
+                reason: new TypeError('the promise should not return itself')
+            }, null);
+        } else if (value instanceof ThenFail) {
+            if (ThenFail.longStackTrace && thisArg instanceof ThenFail) {
+                thisArg._previous = value;
+            }
+
+            if ((<ThenFail<any>>value)._baton.state == ThenFail.State.pending) {
+                value
+                    .then(fulfilledValue => {
+                        callback({
+                            state: ThenFail.State.fulfilled,
+                            value: fulfilledValue
+                        }, null);
+                    }, reason => {
+                        callback({
+                            state: ThenFail.State.rejected,
+                            reason: reason
+                        }, null);
+                    });
+            } else {
+                callback((<ThenFail<any>>value)._baton, <ThenFail<any>>value);
+            }
+        } else if (value) { // in case of null
+            switch (typeof value) {
+                case 'object':
+                case 'function':
+                    // ret is thenable
+
+                    var then;
+                    try {
+                        then = value.then;
+                    } catch (e) {
+                        callback({
+                            state: ThenFail.State.rejected,
+                            reason: e
+                        }, null);
+                        break;
+                    }
+
+                    if (typeof then == 'function') {
+                        var called = false;
+                        try {
+                            then
+                                .call(value, value => {
+                                    if (!called) {
+                                        called = true;
+                                        ThenFail._unpack(this, value, callback);
+                                    }
+                                }, reason => {
+                                    if (!called) {
+                                        called = true;
+                                        callback({
+                                            state: ThenFail.State.rejected,
+                                            reason: reason
+                                        }, null);
+                                    }
+                                });
+                        } catch (e) {
+                            if (!called) {
+                                called = true;
+                                callback({
+                                    state: ThenFail.State.rejected,
+                                    reason: e
+                                }, null);
+                            }
+                        }
+                        break;
+                    }
+                default:
+                    callback({
+                        state: ThenFail.State.fulfilled,
+                        value: value
+                    }, null);
+                    break;
+            }
+        } else {
+            callback({
+                state: ThenFail.State.fulfilled,
+                value: value
+            }, null);
+        }
+    }
+
+    /**
+     * relay
+     */
+    private _relay(baton: ThenFail.IBaton<T>, previous?: ThenFail<any>) {
+        if (this._baton.state != ThenFail.State.pending) {
+            return;
+        }
+
+        this._baton = {
+            state: baton.state,
+            value: baton.value,
+            reason: baton.reason
+        };
+
+        if (this._nexts) {
+            this._nexts.forEach(next => {
+                next._grab(baton, previous || this);
+            });
+
+            if (
+                ThenFail.logRejectionsNotRelayed &&
+                baton.state == ThenFail.State.rejected &&
+                !this._hasNexts
+                ) {
+                ThenFail.Utils.nextTick(() => {
+                    if (!this._hasNexts) {
+                        ThenFail.Options.Log.errorLogger(
+                            'A rejection has not been relayed occurs, you may want to add .done() or .log() to the end of every promise.',
+                            baton.reason,
+                            'Turn off this message by setting ThenFail.logRejectionsNotRelayed to false.'
+                        );
+                    }
+                });
+            }
+        } else if (baton.state == ThenFail.State.rejected) {
+            ThenFail.Utils.nextTick(() => {
+                throw baton.reason;
+            });
+        }
+
+        this._relax();
+    }
+
+    /**
+     * relax
+     */
+    private _relax() {
+        this._onfulfilled = null;
+        this._onrejected = null;
+        this._nexts = null;
+    }
+
+    /**
+     * resolve this promise.
+     * @param value the value to resolve this promise with, could be a promise.
+     */
+    resolve(value: ThenFail.IPromise<T>): void;
+    resolve(value?: T): void;
+    resolve(value?: any): void {
+        ThenFail._unpack(this, value, (baton, previous) => {
+            this._grab(baton, previous);
+        });
+    }
+
+    /**
+     * reject this promise.
+     * @param reason the reason to reject this promise with.
+     */
+    reject(reason: any) {
+        this._grab({
+            state: ThenFail.State.rejected,
+            reason: reason
+        }, null);
+    }
     
     /**
      * then method following Promises/A+ specification.
@@ -328,7 +328,7 @@ class ThenFail<T> implements ThenFail.IPromise<T> {
             promise._onrejected = onrejected;
         }
 
-        if (this._baton.status == ThenFail.Status.pending) {
+        if (this._baton.state == ThenFail.State.pending) {
             this._nexts.push(promise);
         } else {
             promise._grab(this._baton, this);
@@ -342,17 +342,6 @@ class ThenFail<T> implements ThenFail.IPromise<T> {
     }
 
     /**
-     * spread an array argument to arguments directly via `onfulfilled.apply(null, value)`.
-     */
-    spread<R>(onfulfilled: (...args: any[]) => ThenFail.IPromise<R>): ThenFail<R>;
-    spread<R>(onfulfilled: (...args: any[]) => R): ThenFail<R>;
-    spread<R>(onfulfilled: (...args: any[]) => any): ThenFail<R> {
-        return this.then((args: any) => {
-            return onfulfilled.apply(null, args);
-        });
-    }
-
-    /**
      * add an invisible promise with no nexts to the chain, error will be thrown if it's relayed to this promise (i.e. not handled by parent promises).
      */
     done() {
@@ -361,24 +350,24 @@ class ThenFail<T> implements ThenFail.IPromise<T> {
     }
 
     /**
-     * get a boolean indicates whether the status of this promise is `pending`.
+     * get a boolean indicates whether the state of this promise is `pending`.
      */
     get pending(): boolean {
-        return this._baton.status == ThenFail.Status.pending;
+        return this._baton.state == ThenFail.State.pending;
     }
     
     /**
-     * get a boolean indicates whether the status of this promise is `fulfilled`.
+     * get a boolean indicates whether the state of this promise is `fulfilled`.
      */
     get fulfilled(): boolean {
-        return this._baton.status == ThenFail.Status.fulfilled;
+        return this._baton.state == ThenFail.State.fulfilled;
     }
     
     /**
-     * get a boolean indicates whether the status of this promise is `rejected`.
+     * get a boolean indicates whether the state of this promise is `rejected`.
      */
     get rejected(): boolean {
-        return this._baton.status == ThenFail.Status.rejected;
+        return this._baton.state == ThenFail.State.rejected;
     }
 
     // HELPERS
@@ -412,6 +401,17 @@ class ThenFail<T> implements ThenFail.IPromise<T> {
     }
 
     /**
+     * spread an array argument to arguments directly via `onfulfilled.apply(null, value)`.
+     */
+    spread<R>(onfulfilled: (...args: any[]) => ThenFail.IPromise<R>): ThenFail<R>;
+    spread<R>(onfulfilled: (...args: any[]) => R): ThenFail<R>;
+    spread<R>(onfulfilled: (...args: any[]) => any): ThenFail<R> {
+        return this.then((args: any) => {
+            return onfulfilled.apply(null, args);
+        });
+    }
+
+    /**
      * a shortcut for `promise.then(null, onrejected)`.
      */
     fail(onrejected: (reason) => ThenFail.IPromise<T>): ThenFail<T>;
@@ -419,6 +419,20 @@ class ThenFail<T> implements ThenFail.IPromise<T> {
     fail(onrejected: (reason) => any) {
         return this.then(null, onrejected);
     }
+
+    /**
+     * call `onalways` handler when its previous promise get fulfilled or rejected.
+     */
+    always<R>(onalways: (value: T, reason: any) => ThenFail.IPromise<R>): ThenFail<R>;
+    always<R>(onalways: (value: T, reason: any) => R): ThenFail<R>;
+    always<R>(onalways: (value: T, reason: any) => any): ThenFail<R> {
+        return this
+            .then(value => {
+                return onalways(value, undefined);
+            }, reason => {
+                onalways(undefined, reason);
+            });
+    } 
 
     /**
      * a helper that delays the relaying of fulfilled value from previous promise.
@@ -430,7 +444,7 @@ class ThenFail<T> implements ThenFail.IPromise<T> {
 
             setTimeout(() => {
                 promise._grab({
-                    status: ThenFail.Status.fulfilled,
+                    state: ThenFail.State.fulfilled,
                     value: value
                 }, this);
             }, Math.floor(interval) || 0);
@@ -463,7 +477,7 @@ class ThenFail<T> implements ThenFail.IPromise<T> {
                     })
                     .then(value => {
                         retryPromise._grab({
-                            status: ThenFail.Status.fulfilled,
+                            state: ThenFail.State.fulfilled,
                             value: value
                         }, this);
                     })
@@ -490,6 +504,20 @@ class ThenFail<T> implements ThenFail.IPromise<T> {
         setTimeout(() => {
             this.resolve(value);
         }, Math.floor(time));
+
+        return this;
+    }
+
+    /**
+     * relay the state of current promise to the promise given, and return current promise itself.
+     */
+    handle(promise: ThenFail<T>): ThenFail<T> {
+        this
+            .then(value => {
+                promise._grab(this._baton, this._previous);
+            }, reason => {
+                promise._grab(this._baton, this._previous);
+            });
 
         return this;
     }
@@ -583,7 +611,7 @@ class ThenFail<T> implements ThenFail.IPromise<T> {
         if (remain) {
             promises.forEach((promise, i) => {
                 ThenFail._unpack({}, promise, baton => {
-                    if (baton.status == ThenFail.Status.fulfilled) {
+                    if (baton.state == ThenFail.State.fulfilled) {
                         values[i] = baton.value;
                     } else if (!rejected) {
                         rejected = true;
@@ -601,12 +629,12 @@ class ThenFail<T> implements ThenFail.IPromise<T> {
             if (--remain <= 0) {
                 if (rejected) {
                     allPromise._grab({
-                        status: ThenFail.Status.rejected,
+                        state: ThenFail.State.rejected,
                         reason: rejectedReason
                     }, null);
                 } else {
                     allPromise._grab({
-                        status: ThenFail.Status.fulfilled,
+                        state: ThenFail.State.fulfilled,
                         value: values
                     }, null);
                 }
@@ -790,9 +818,9 @@ module ThenFail {
     export var longStackTrace = false;
 
     /**
-     * promise statuses.
+     * promise states.
      */
-    export enum Status {
+    export enum State {
         pending,
         fulfilled,
         rejected
@@ -802,7 +830,7 @@ module ThenFail {
      * baton used to be relayed among promises.
      */
     export interface IBaton<T> {
-        status: Status;
+        state: State;
         value?: T;
         reason?: any;
     }
@@ -832,11 +860,18 @@ module ThenFail {
         /**
          * handler will be called once this promise lock is unlocked, and it will be locked again until the promise returned by handler get fulfilled.
          */
-        lock<T>(handler: () => IPromise<T>): ThenFail<T>;
-        lock<T>(handler: () => T): ThenFail<T>;
-        lock<T>(handler: () => any): ThenFail<T> {
+        lock<T>(handler: () => IPromise<T>, unlockOnRejection?: boolean): ThenFail<T>;
+        lock<T>(handler: () => T, unlockOnRejection?: boolean): ThenFail<T>;
+        lock<T>(handler: () => any, unlockOnRejection = true): ThenFail<T> {
             var promise = this._promise.then(handler);
-            this._promise = promise.void.log();
+            this._promise = promise
+                .fail(reason => {
+                    if (!unlockOnRejection) {
+                        throw reason;
+                    } else {
+                        promise.log();
+                    }
+                });
             return promise;
         }
 

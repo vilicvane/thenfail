@@ -22,7 +22,7 @@ var ThenFail = (function () {
         this._hasNexts = false;
         this._nexts = [];
         this._baton = {
-            status: 0 /* pending */
+            state: 0 /* pending */
         };
         if (arguments.length) {
             if (value instanceof ThenFail) {
@@ -54,14 +54,14 @@ var ThenFail = (function () {
      * grab
      */
     ThenFail.prototype._grab = function (baton, previous) {
-        if (this._baton.status != 0 /* pending */) {
+        if (this._baton.state != 0 /* pending */) {
             return;
         }
         if (ThenFail.longStackTrace) {
             this._previous = previous;
         }
         var handler;
-        switch (baton.status) {
+        switch (baton.state) {
             case 1 /* fulfilled */:
                 handler = this._onfulfilled;
                 break;
@@ -81,7 +81,7 @@ var ThenFail = (function () {
         ThenFail.Utils.nextTick(function () {
             var ret;
             try {
-                if (baton.status == 1 /* fulfilled */) {
+                if (baton.state == 1 /* fulfilled */) {
                     ret = handler(baton.value);
                 }
                 else {
@@ -93,7 +93,7 @@ var ThenFail = (function () {
                     ThenFail._makeStackTraceLong(e, _this);
                 }
                 _this._relay({
-                    status: 2 /* rejected */,
+                    state: 2 /* rejected */,
                     reason: e
                 });
                 return;
@@ -110,7 +110,7 @@ var ThenFail = (function () {
         var _this = this;
         if (value == thisArg) {
             callback({
-                status: 2 /* rejected */,
+                state: 2 /* rejected */,
                 reason: new TypeError('the promise should not return itself')
             }, null);
         }
@@ -118,15 +118,15 @@ var ThenFail = (function () {
             if (ThenFail.longStackTrace && thisArg instanceof ThenFail) {
                 thisArg._previous = value;
             }
-            if (value._baton.status == 0 /* pending */) {
+            if (value._baton.state == 0 /* pending */) {
                 value.then(function (fulfilledValue) {
                     callback({
-                        status: 1 /* fulfilled */,
+                        state: 1 /* fulfilled */,
                         value: fulfilledValue
                     }, null);
                 }, function (reason) {
                     callback({
-                        status: 2 /* rejected */,
+                        state: 2 /* rejected */,
                         reason: reason
                     }, null);
                 });
@@ -146,7 +146,7 @@ var ThenFail = (function () {
                     }
                     catch (e) {
                         callback({
-                            status: 2 /* rejected */,
+                            state: 2 /* rejected */,
                             reason: e
                         }, null);
                         break;
@@ -163,7 +163,7 @@ var ThenFail = (function () {
                                 if (!called) {
                                     called = true;
                                     callback({
-                                        status: 2 /* rejected */,
+                                        state: 2 /* rejected */,
                                         reason: reason
                                     }, null);
                                 }
@@ -173,7 +173,7 @@ var ThenFail = (function () {
                             if (!called) {
                                 called = true;
                                 callback({
-                                    status: 2 /* rejected */,
+                                    state: 2 /* rejected */,
                                     reason: e
                                 }, null);
                             }
@@ -182,7 +182,7 @@ var ThenFail = (function () {
                     }
                 default:
                     callback({
-                        status: 1 /* fulfilled */,
+                        state: 1 /* fulfilled */,
                         value: value
                     }, null);
                     break;
@@ -190,7 +190,7 @@ var ThenFail = (function () {
         }
         else {
             callback({
-                status: 1 /* fulfilled */,
+                state: 1 /* fulfilled */,
                 value: value
             }, null);
         }
@@ -200,11 +200,11 @@ var ThenFail = (function () {
      */
     ThenFail.prototype._relay = function (baton, previous) {
         var _this = this;
-        if (this._baton.status != 0 /* pending */) {
+        if (this._baton.state != 0 /* pending */) {
             return;
         }
         this._baton = {
-            status: baton.status,
+            state: baton.state,
             value: baton.value,
             reason: baton.reason
         };
@@ -212,7 +212,7 @@ var ThenFail = (function () {
             this._nexts.forEach(function (next) {
                 next._grab(baton, previous || _this);
             });
-            if (ThenFail.logRejectionsNotRelayed && baton.status == 2 /* rejected */ && !this._hasNexts) {
+            if (ThenFail.logRejectionsNotRelayed && baton.state == 2 /* rejected */ && !this._hasNexts) {
                 ThenFail.Utils.nextTick(function () {
                     if (!_this._hasNexts) {
                         ThenFail.Options.Log.errorLogger('A rejection has not been relayed occurs, you may want to add .done() or .log() to the end of every promise.', baton.reason, 'Turn off this message by setting ThenFail.logRejectionsNotRelayed to false.');
@@ -220,7 +220,7 @@ var ThenFail = (function () {
                 });
             }
         }
-        else if (baton.status == 2 /* rejected */) {
+        else if (baton.state == 2 /* rejected */) {
             ThenFail.Utils.nextTick(function () {
                 throw baton.reason;
             });
@@ -247,7 +247,7 @@ var ThenFail = (function () {
      */
     ThenFail.prototype.reject = function (reason) {
         this._grab({
-            status: 2 /* rejected */,
+            state: 2 /* rejected */,
             reason: reason
         }, null);
     };
@@ -259,7 +259,7 @@ var ThenFail = (function () {
         if (typeof onrejected == 'function') {
             promise._onrejected = onrejected;
         }
-        if (this._baton.status == 0 /* pending */) {
+        if (this._baton.state == 0 /* pending */) {
             this._nexts.push(promise);
         }
         else {
@@ -270,11 +270,6 @@ var ThenFail = (function () {
         }
         return promise;
     };
-    ThenFail.prototype.spread = function (onfulfilled) {
-        return this.then(function (args) {
-            return onfulfilled.apply(null, args);
-        });
-    };
     /**
      * add an invisible promise with no nexts to the chain, error will be thrown if it's relayed to this promise (i.e. not handled by parent promises).
      */
@@ -284,30 +279,30 @@ var ThenFail = (function () {
     };
     Object.defineProperty(ThenFail.prototype, "pending", {
         /**
-         * get a boolean indicates whether the status of this promise is `pending`.
+         * get a boolean indicates whether the state of this promise is `pending`.
          */
         get: function () {
-            return this._baton.status == 0 /* pending */;
+            return this._baton.state == 0 /* pending */;
         },
         enumerable: true,
         configurable: true
     });
     Object.defineProperty(ThenFail.prototype, "fulfilled", {
         /**
-         * get a boolean indicates whether the status of this promise is `fulfilled`.
+         * get a boolean indicates whether the state of this promise is `fulfilled`.
          */
         get: function () {
-            return this._baton.status == 1 /* fulfilled */;
+            return this._baton.state == 1 /* fulfilled */;
         },
         enumerable: true,
         configurable: true
     });
     Object.defineProperty(ThenFail.prototype, "rejected", {
         /**
-         * get a boolean indicates whether the status of this promise is `rejected`.
+         * get a boolean indicates whether the state of this promise is `rejected`.
          */
         get: function () {
-            return this._baton.status == 2 /* rejected */;
+            return this._baton.state == 2 /* rejected */;
         },
         enumerable: true,
         configurable: true
@@ -332,8 +327,20 @@ var ThenFail = (function () {
         promise.done();
         return promise;
     };
+    ThenFail.prototype.spread = function (onfulfilled) {
+        return this.then(function (args) {
+            return onfulfilled.apply(null, args);
+        });
+    };
     ThenFail.prototype.fail = function (onrejected) {
         return this.then(null, onrejected);
+    };
+    ThenFail.prototype.always = function (onalways) {
+        return this.then(function (value) {
+            return onalways(value, undefined);
+        }, function (reason) {
+            onalways(undefined, reason);
+        });
     };
     /**
      * a helper that delays the relaying of fulfilled value from previous promise.
@@ -346,7 +353,7 @@ var ThenFail = (function () {
             var promise = new ThenFail();
             setTimeout(function () {
                 promise._grab({
-                    status: 1 /* fulfilled */,
+                    state: 1 /* fulfilled */,
                     value: value
                 }, _this);
             }, Math.floor(interval) || 0);
@@ -367,7 +374,7 @@ var ThenFail = (function () {
                     return onfulfilled(value);
                 }).then(function (value) {
                     retryPromise._grab({
-                        status: 1 /* fulfilled */,
+                        state: 1 /* fulfilled */,
                         value: value
                     }, _this);
                 }).fail(function (reason) {
@@ -392,6 +399,18 @@ var ThenFail = (function () {
         setTimeout(function () {
             _this.resolve(value);
         }, Math.floor(time));
+        return this;
+    };
+    /**
+     * relay the state of current promise to the promise given, and return current promise itself.
+     */
+    ThenFail.prototype.handle = function (promise) {
+        var _this = this;
+        this.then(function (value) {
+            promise._grab(_this._baton, _this._previous);
+        }, function (reason) {
+            promise._grab(_this._baton, _this._previous);
+        });
         return this;
     };
     Object.defineProperty(ThenFail.prototype, "void", {
@@ -479,7 +498,7 @@ var ThenFail = (function () {
         if (remain) {
             promises.forEach(function (promise, i) {
                 ThenFail._unpack({}, promise, function (baton) {
-                    if (baton.status == 1 /* fulfilled */) {
+                    if (baton.state == 1 /* fulfilled */) {
                         values[i] = baton.value;
                     }
                     else if (!rejected) {
@@ -497,13 +516,13 @@ var ThenFail = (function () {
             if (--remain <= 0) {
                 if (rejected) {
                     allPromise._grab({
-                        status: 2 /* rejected */,
+                        state: 2 /* rejected */,
                         reason: rejectedReason
                     }, null);
                 }
                 else {
                     allPromise._grab({
-                        status: 1 /* fulfilled */,
+                        state: 1 /* fulfilled */,
                         value: values
                     }, null);
                 }
@@ -635,14 +654,14 @@ var ThenFail;
      */
     ThenFail.longStackTrace = false;
     /**
-     * promise statuses.
+     * promise states.
      */
-    (function (Status) {
-        Status[Status["pending"] = 0] = "pending";
-        Status[Status["fulfilled"] = 1] = "fulfilled";
-        Status[Status["rejected"] = 2] = "rejected";
-    })(ThenFail.Status || (ThenFail.Status = {}));
-    var Status = ThenFail.Status;
+    (function (State) {
+        State[State["pending"] = 0] = "pending";
+        State[State["fulfilled"] = 1] = "fulfilled";
+        State[State["rejected"] = 2] = "rejected";
+    })(ThenFail.State || (ThenFail.State = {}));
+    var State = ThenFail.State;
     /**
      * alias for ThenFail.
      */
@@ -654,9 +673,17 @@ var ThenFail;
         function PromiseLock() {
             this._promise = ThenFail.void;
         }
-        PromiseLock.prototype.lock = function (handler) {
+        PromiseLock.prototype.lock = function (handler, unlockOnRejection) {
+            if (unlockOnRejection === void 0) { unlockOnRejection = true; }
             var promise = this._promise.then(handler);
-            this._promise = promise.void.log();
+            this._promise = promise.fail(function (reason) {
+                if (!unlockOnRejection) {
+                    throw reason;
+                }
+                else {
+                    promise.log();
+                }
+            });
             return promise;
         };
         PromiseLock.prototype.ready = function (handler) {

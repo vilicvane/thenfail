@@ -55,6 +55,22 @@ ThenFail
     .fail(reason => console.log(reason));
 ```
 
+And also an `always`.
+
+```typescript
+ThenFail
+    .then(() => {
+        if (Math.random() > 0.5) {
+            throw new Error();
+        } else {
+            return 'success'
+        }
+    })
+    .always((value, reason) => {
+        // do something...
+    });
+```
+
 Want to log something following a promise?
 
 ```typescript
@@ -90,6 +106,19 @@ ThenFail
     .spread((valueA: any, valueB: any) => {
         // do something...
     });
+```
+
+And `handle` for passing the state of current promise to another.
+
+```typescript
+var promise = new ThenFail<void>();
+
+promise
+    .then(() => console.log('done'));
+
+ThenFail
+    .delay(1000)
+    .handle(promise);
 ```
 
 And `retry`, `delay` (also available on ThenFail instance).
