@@ -1,6 +1,6 @@
 {
   "name": "thenfail",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "Just another Promises/A+ implementation written in TypeScript",
   "main": "bld/thenfail.js",
   "directories": {
