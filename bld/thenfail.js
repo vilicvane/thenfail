@@ -9,7 +9,7 @@
  * MIT License
  */
 'use strict';
-if (typeof self == 'undefined') {
+if (typeof self === 'undefined') {
     global.self = global;
 }
 self._thenfailCaptureStartLine = function () { return ThenFail.Utils.captureLine(); };
@@ -19,6 +19,7 @@ self._thenfailCaptureStartLine = function () { return ThenFail.Utils.captureLine
 var ThenFail = (function () {
     function ThenFail(value) {
         var _this = this;
+        this._markTime = false;
         this._hasNexts = false;
         this._nexts = [];
         this._baton = {
@@ -28,7 +29,7 @@ var ThenFail = (function () {
             if (value instanceof ThenFail) {
                 return value;
             }
-            if (typeof value == 'function') {
+            if (typeof value === 'function') {
                 value(function (value) {
                     _this.resolve(value);
                 }, function (reason) {
@@ -60,6 +61,9 @@ var ThenFail = (function () {
         if (ThenFail.longStackTrace) {
             this._previous = previous;
         }
+        if (this._markTime) {
+            baton.time = Date.now();
+        }
         var handler;
         switch (baton.state) {
             case 1 /* fulfilled */:
@@ -73,13 +77,23 @@ var ThenFail = (function () {
             this._run(handler, baton);
         }
         else {
+            if (typeof this._onavailassertion === 'function' && !this._onavailassertion.call(null)) {
+                return;
+            }
             this._relay(baton);
         }
     };
+    /**
+     * run
+     */
     ThenFail.prototype._run = function (handler, baton) {
         var _this = this;
         ThenFail.Utils.nextTick(function () {
             var ret;
+            if (typeof _this._onavailassertion === 'function' && !_this._onavailassertion.call(null)) {
+                return;
+            }
+            var time = baton.time;
             try {
                 if (baton.state == 1 /* fulfilled */) {
                     ret = handler(baton.value);
@@ -94,11 +108,13 @@ var ThenFail = (function () {
                 }
                 _this._relay({
                     state: 2 /* rejected */,
-                    reason: e
+                    reason: e,
+                    time: baton.time
                 });
                 return;
             }
             ThenFail._unpack(_this, ret, function (baton, previous) {
+                baton.time = time;
                 _this._relay(baton, previous);
             });
         });
@@ -118,7 +134,9 @@ var ThenFail = (function () {
             if (ThenFail.longStackTrace && thisArg instanceof ThenFail) {
                 thisArg._previous = value;
             }
-            if (value._baton.state == 0 /* pending */) {
+            var promise = value;
+            var baton = promise._baton;
+            if (baton.state == 0 /* pending */) {
                 value.then(function (fulfilledValue) {
                     callback({
                         state: 1 /* fulfilled */,
@@ -132,7 +150,7 @@ var ThenFail = (function () {
                 });
             }
             else {
-                callback(value._baton, value);
+                callback(baton, promise);
             }
         }
         else if (value) {
@@ -151,7 +169,7 @@ var ThenFail = (function () {
                         }, null);
                         break;
                     }
-                    if (typeof then == 'function') {
+                    if (typeof then === 'function') {
                         var called = false;
                         try {
                             then.call(value, function (value) {
@@ -206,7 +224,8 @@ var ThenFail = (function () {
         this._baton = {
             state: baton.state,
             value: baton.value,
-            reason: baton.reason
+            reason: baton.reason,
+            time: baton.time
         };
         if (this._nexts) {
             this._nexts.forEach(function (next) {
@@ -253,10 +272,11 @@ var ThenFail = (function () {
     };
     ThenFail.prototype.then = function (onfulfilled, onrejected) {
         var promise = new ThenFail();
-        if (typeof onfulfilled == 'function') {
+        promise._onavailassertion = this._onavailassertion;
+        if (typeof onfulfilled === 'function') {
             promise._onfulfilled = onfulfilled;
         }
-        if (typeof onrejected == 'function') {
+        if (typeof onrejected === 'function') {
             promise._onrejected = onrejected;
         }
         if (this._baton.state == 0 /* pending */) {
@@ -276,6 +296,38 @@ var ThenFail = (function () {
     ThenFail.prototype.done = function () {
         var donePromise = this.then();
         donePromise._nexts = null;
+    };
+    /**
+     * add an assertion to the promises chain, if it returns false, the active promises in this chain will stop relaying on.
+     * returns the current promise.
+     */
+    ThenFail.prototype.avail = function (assertion) {
+        this._onavailassertion = assertion;
+        return this;
+    };
+    /**
+     * mark start time, see also `timeEnd`.
+     */
+    ThenFail.prototype.time = function () {
+        this._markTime = true;
+        if (!this.pending) {
+            this._baton.time = Date.now();
+        }
+        return this;
+    };
+    /**
+     * a string contains "{duration}" that will be replaced as the calculated value.
+     */
+    ThenFail.prototype.timeEnd = function (message) {
+        var _this = this;
+        if (message === void 0) { message = '{duration}'; }
+        this.then(function () {
+            var now = Date.now();
+            var startTime = _this._baton.time || now;
+            message = message.replace('{duration}', now - startTime + 'ms');
+            ThenFail.Options.Log.valueLogger(message);
+        });
+        return this;
     };
     Object.defineProperty(ThenFail.prototype, "pending", {
         /**
@@ -307,6 +359,10 @@ var ThenFail = (function () {
         enumerable: true,
         configurable: true
     });
+    // HELPERS
+    /**
+     * log the fulfilled value or rejection, or specified value.
+     */
     ThenFail.prototype.log = function (object) {
         var hasObjectToLog = !!arguments.length;
         var promise = this.then(function (value) {
@@ -327,14 +383,23 @@ var ThenFail = (function () {
         promise.done();
         return promise;
     };
+    /**
+     * spread an array argument to arguments directly via `onfulfilled.apply(null, value)`.
+     */
     ThenFail.prototype.spread = function (onfulfilled) {
         return this.then(function (args) {
             return onfulfilled.apply(null, args);
         });
     };
+    /**
+     * a shortcut for `promise.then(null, onrejected)`.
+     */
     ThenFail.prototype.fail = function (onrejected) {
         return this.then(null, onrejected);
     };
+    /**
+     * call `onalways` handler when its previous promise get fulfilled or rejected.
+     */
     ThenFail.prototype.always = function (onalways) {
         return this.then(function (value) {
             return onalways(value, undefined);
@@ -360,6 +425,10 @@ var ThenFail = (function () {
             return promise;
         });
     };
+    /**
+     * retry doing something, will be rejected if the failures execeeds limits (defaults to 2).
+     * you may either return a rejected promise or throw an error to produce a failure.
+     */
     ThenFail.prototype.retry = function (onfulfilled, options) {
         var _this = this;
         options = ThenFail.Utils.defaults(options, ThenFail.Options.Retry);
@@ -391,7 +460,7 @@ var ThenFail = (function () {
         });
     };
     /**
-     * resolve current promise in given time (milliseconds) with optional value,
+     * resolve current promise in given time (milliseconds) with optional value.
      * the timer starts immediately when this method is called.
      */
     ThenFail.prototype.timeout = function (time, value) {
@@ -451,11 +520,12 @@ var ThenFail = (function () {
         return this.then(function () { return value; });
     };
     Object.defineProperty(ThenFail, "void", {
+        // STATIC
         /**
          * get a promise already fulfilled with value `undefined`.
          */
         get: function () {
-            return ThenFail._void;
+            return ThenFail.resolved(undefined);
         },
         enumerable: true,
         configurable: true
@@ -465,7 +535,7 @@ var ThenFail = (function () {
          * get a promise already fulfilled with value `true`.
          */
         get: function () {
-            return ThenFail._true;
+            return ThenFail.resolved(true);
         },
         enumerable: true,
         configurable: true
@@ -475,19 +545,34 @@ var ThenFail = (function () {
          * get a promise already fulfilled with value `false`.
          */
         get: function () {
-            return ThenFail._false;
+            return ThenFail.resolved(false);
         },
         enumerable: true,
         configurable: true
     });
+    /**
+     * a static then shortcut of a promise already fulfilled with value `undefined`.
+     */
     ThenFail.then = function (onfulfilled) {
-        return ThenFail._void.then(onfulfilled);
+        return ThenFail.void.then(onfulfilled);
+    };
+    /**
+     * a static avail shortcut of a promise already fulfilled with value `undefined`.
+     */
+    ThenFail.avail = function (assertion) {
+        return ThenFail.void.avail(assertion);
+    };
+    /**
+     * a static time shortcut of a promise already fulfilled with value `undefined`.
+     */
+    ThenFail.time = function () {
+        return ThenFail.void.time();
     };
     /**
      * a static delay shortcut of a promise already fulfilled with value `undefined`.
      */
     ThenFail.delay = function (interval) {
-        return ThenFail._void.delay(interval);
+        return ThenFail.void.delay(interval);
     };
     ThenFail.all = function (promises) {
         var allPromise = new ThenFail();
@@ -530,12 +615,19 @@ var ThenFail = (function () {
         }
         return allPromise;
     };
+    /**
+     * a static retry shortcut of a promise already fulfilled with value `undefined`.
+     */
     ThenFail.retry = function (onfulfilled, options) {
-        return this._void.retry(onfulfilled, options);
+        return this.void.retry(onfulfilled, options);
     };
+    /**
+     * transverse an array, if the return value of handler is a promise, it will wait till the promise gets fulfilled. return `false` in the handler to interrupt the transversing.
+     * this method returns a promise that will be fulfilled with a boolean, `true` indicates that it completes without interruption, otherwise `false`.
+     */
     ThenFail.each = function (items, handler) {
         if (!items) {
-            return ThenFail._true;
+            return ThenFail.true;
         }
         var ret = new ThenFail();
         next(0);
@@ -560,6 +652,9 @@ var ThenFail = (function () {
         }
         return ret;
     };
+    /**
+     * a promise version of `Array.prototype.map`.
+     */
     ThenFail.map = function (items, handler) {
         var mapped = [];
         if (!items) {
@@ -622,6 +717,30 @@ var ThenFail = (function () {
         }
         return promise;
     };
+    /**
+     * call a node style async function.
+     */
+    ThenFail.call = function (fn) {
+        var args = [];
+        for (var _i = 1; _i < arguments.length; _i++) {
+            args[_i - 1] = arguments[_i];
+        }
+        var promise = new ThenFail();
+        try {
+            fn.apply(null, args.concat(function (err, ret) {
+                if (err) {
+                    promise.reject(err);
+                }
+                else {
+                    promise.resolve(ret);
+                }
+            }));
+        }
+        catch (e) {
+            promise.reject(e);
+        }
+        return promise;
+    };
     // OTHERS
     ThenFail._makeStackTraceLong = function (error, promise) {
         var STACK_JUMP_SEPARATOR = 'From previous event:';
@@ -636,10 +755,6 @@ var ThenFail = (function () {
             error.stack = concatedStacks;
         }
     };
-    // STATIC
-    ThenFail._void = ThenFail.resolved(undefined);
-    ThenFail._true = ThenFail.resolved(true);
-    ThenFail._false = ThenFail.resolved(false);
     return ThenFail;
 })();
 var ThenFail;
@@ -673,6 +788,9 @@ var ThenFail;
         function PromiseLock() {
             this._promise = ThenFail.void;
         }
+        /**
+         * handler will be called once this promise lock is unlocked, and it will be locked again until the promise returned by handler get fulfilled.
+         */
         PromiseLock.prototype.lock = function (handler, unlockOnRejection) {
             if (unlockOnRejection === void 0) { unlockOnRejection = true; }
             var promise = this._promise.then(handler);
@@ -683,7 +801,7 @@ var ThenFail;
                 else {
                     promise.log();
                 }
-            });
+            }).void;
             return promise;
         };
         PromiseLock.prototype.ready = function (handler) {
@@ -965,4 +1083,5 @@ var ThenFail;
 self._thenfailCaptureEndLine = function () { return ThenFail.Utils.captureLine(); };
 ThenFail.Utils.captureBoundaries();
 module.exports = ThenFail;
+//#end if
 //# sourceMappingURL=thenfail.js.map
