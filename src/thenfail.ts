@@ -391,7 +391,7 @@ class ThenFail<T> implements ThenFail.IPromise<T> {
     /**
      * a string contains "{duration}" that will be replaced as the calculated value.
      */
-    timeEnd(message: string = '{duration}'): ThenFail<T> {
+    timeEnd(message = '{duration}'): ThenFail<T> {
         this.then(() => {
             var now = Date.now();
             var startTime = this._baton.time || now;
