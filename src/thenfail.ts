@@ -1,18 +1,18 @@
 ﻿/*
- * ThenFail v0.1
+ * ThenFail v0.2
  * Just another Promises/A+ implementation
  * https://github.com/vilic/thenfail
- * 
+ *
  * By VILIC VANE
  * https://github.com/vilic
- * 
+ *
  * MIT License
  */
 
 'use strict';
 
 declare var self: Window;
-declare var global;
+declare var global: Window;
 
 if (typeof self === 'undefined') {
     global.self = global;
@@ -23,7 +23,7 @@ if (typeof self === 'undefined') {
 /**
  * the instance of class ThenFail is the promise as well as the promise resolver.
  */
-class ThenFail<T> implements ThenFail.IPromise<T> {
+class ThenFail<T> implements ThenFail.Thenable<T> {
     /*
      * to make things simpler to understand, a ThenFail instance could be imagined as
      * a relay runner who can relay its "state" to several other runners following
@@ -34,7 +34,7 @@ class ThenFail<T> implements ThenFail.IPromise<T> {
      */
 
     private _onfulfilled: (value: T) => any;
-    private _onrejected: (reason) => any;
+    private _onrejected: (reason: any) => any;
     private _onavailassertion: () => boolean;
 
     private _markTime = false;
@@ -50,8 +50,8 @@ class ThenFail<T> implements ThenFail.IPromise<T> {
     /**
      * create a ThenFail promise instance.
      */
-    constructor(handler: (resolve: (value?: ThenFail.IPromise<T>|T) => void, reject: (reason: any) => void) => void);
-    constructor(value: ThenFail.IPromise<T>|T);
+    constructor(handler: (resolve: (value?: ThenFail.Thenable<T>|T) => void, reject: (reason: any) => void) => void);
+    constructor(value: ThenFail.Thenable<T>|T);
     constructor();
     constructor(value?: any) {
         if (arguments.length) {
@@ -60,12 +60,15 @@ class ThenFail<T> implements ThenFail.IPromise<T> {
             }
 
             if (typeof value === 'function') {
-                value(
-                    value => {
+                try {
+                    value((value: any) => {
                         this.resolve(value);
-                    }, reason => {
+                    }, (reason: any) => {
                         this.reject(reason);
                     });
+                } catch (e) {
+                    this.reject(e);
+                }
             } else {
                 ThenFail._unpack({}, value, (baton, previous) => {
                     this._grab(baton, previous);
@@ -98,7 +101,7 @@ class ThenFail<T> implements ThenFail.IPromise<T> {
             baton.time = Date.now();
         }
 
-        var handler;
+        var handler: (arg: any) => any;
 
         switch (baton.state) {
             case ThenFail.State.fulfilled:
@@ -163,7 +166,7 @@ class ThenFail<T> implements ThenFail.IPromise<T> {
     /**
      * unpack (resolve)
      */
-    private static _unpack(thisArg, value, callback: (baton: ThenFail.IBaton<any>, previous: ThenFail<any>) => void) {
+    private static _unpack(thisArg: any, value: any, callback: (baton: ThenFail.IBaton<any>, previous: ThenFail<any>) => void) {
         if (value == thisArg) {
             callback({
                 state: ThenFail.State.rejected,
@@ -179,12 +182,12 @@ class ThenFail<T> implements ThenFail.IPromise<T> {
 
             if (baton.state == ThenFail.State.pending) {
                 value
-                    .then(fulfilledValue => {
+                    .then((fulfilledValue: any) => {
                         callback({
                             state: ThenFail.State.fulfilled,
                             value: fulfilledValue
                         }, null);
-                    }, reason => {
+                    }, (reason: any) => {
                         callback({
                             state: ThenFail.State.rejected,
                             reason: reason
@@ -198,7 +201,7 @@ class ThenFail<T> implements ThenFail.IPromise<T> {
                 case 'object':
                 case 'function':
                     // ret is thenable
-                    var then;
+                    var then: any;
                     try {
                         then = value.then;
                     } catch (e) {
@@ -213,12 +216,12 @@ class ThenFail<T> implements ThenFail.IPromise<T> {
                         var called = false;
                         try {
                             then
-                                .call(value, value => {
+                                .call(value, (value: any) => {
                                     if (!called) {
                                         called = true;
                                         ThenFail._unpack(this, value, callback);
                                     }
-                                }, reason => {
+                                }, (reason: any) => {
                                     if (!called) {
                                         called = true;
                                         callback({
@@ -310,8 +313,7 @@ class ThenFail<T> implements ThenFail.IPromise<T> {
      * resolve this promise.
      * @param value the value to resolve this promise with, could be a promise.
      */
-    resolve(value: ThenFail.IPromise<T>): void;
-    resolve(value?: T): void;
+    resolve(value?: ThenFail.Thenable<T>|T): void;
     resolve(value?: any): void {
         ThenFail._unpack(this, value, (baton, previous) => {
             this._grab(baton, previous);
@@ -328,13 +330,13 @@ class ThenFail<T> implements ThenFail.IPromise<T> {
             reason: reason
         }, null);
     }
-    
+
     /**
      * then method following Promises/A+ specification.
      */
-    then<R>(onfulfilled?: void, onrejected?: void): ThenFail<T>;
-    then<R>(onfulfilled: void, onrejected: (reason: any) => any): ThenFail<T>;
-    then<R>(onfulfilled: (value: T) => ThenFail.IPromise<R>|R, onrejected?: (reason: any) => any): ThenFail<R>;
+    then(onfulfilled?: void, onrejected?: void): ThenFail<T>;
+    then(onfulfilled: void, onrejected: (reason: any) => any): ThenFail<T>;
+    then<R>(onfulfilled: (value: T) => ThenFail.Thenable<R>|R, onrejected?: (reason: any) => any): ThenFail<R>;
     then(onfulfilled?: any, onrejected?: any): ThenFail<any> {
         var promise = new ThenFail<any>();
 
@@ -383,7 +385,7 @@ class ThenFail<T> implements ThenFail.IPromise<T> {
     time(): ThenFail<T> {
         this._markTime = true;
         if (!this.pending) {
-            this._baton.time = Date.now();    
+            this._baton.time = Date.now();
         }
         return this;
     }
@@ -408,14 +410,14 @@ class ThenFail<T> implements ThenFail.IPromise<T> {
     get pending(): boolean {
         return this._baton.state == ThenFail.State.pending;
     }
-    
+
     /**
      * get a boolean indicates whether the state of this promise is `fulfilled`.
      */
     get fulfilled(): boolean {
         return this._baton.state == ThenFail.State.fulfilled;
     }
-    
+
     /**
      * get a boolean indicates whether the state of this promise is `rejected`.
      */
@@ -454,7 +456,7 @@ class ThenFail<T> implements ThenFail.IPromise<T> {
     /**
      * spread an array argument to arguments directly via `onfulfilled.apply(null, value)`.
      */
-    spread<R>(onfulfilled: (...args: any[]) => ThenFail.IPromise<R>|R): ThenFail<R> {
+    spread<R>(onfulfilled: (...args: any[]) => ThenFail.Thenable<R>|R): ThenFail<R> {
         return this.then<R>((args: any) => {
             return onfulfilled.apply(null, args);
         });
@@ -468,16 +470,36 @@ class ThenFail<T> implements ThenFail.IPromise<T> {
     }
 
     /**
+     * catch.
+     */
+    catch(onrejected: (reason: any) => any): ThenFail<T>;
+    catch(ErrorType: Function, onrejected: (reason: any) => any): ThenFail<T>;
+    catch(ErrorType: any, onrejected?: any): ThenFail<T> {
+        if (typeof onrejected === 'function') {
+            return this.then<T>(null, reason => {
+                if (reason instanceof ErrorType) {
+                    return onrejected(reason);
+                } else {
+                    throw reason;
+                }
+            });
+        } else {
+            onrejected = ErrorType;
+            return this.then<T>(null, onrejected);
+        }
+    }
+
+    /**
      * call `onalways` handler when its previous promise get fulfilled or rejected.
      */
-    always<R>(onalways: (value: T, reason: any) => ThenFail.IPromise<R>|R): ThenFail<R> {
+    always<R>(onalways: (value: T, reason: any) => ThenFail.Thenable<R>|R): ThenFail<R> {
         return this
             .then(value => {
                 return onalways(value, undefined);
             }, reason => {
                 onalways(undefined, reason);
             });
-    } 
+    }
 
     /**
      * a helper that delays the relaying of fulfilled value from previous promise.
@@ -502,15 +524,15 @@ class ThenFail<T> implements ThenFail.IPromise<T> {
      * retry doing something, will be rejected if the failures execeeds limits (defaults to 2).
      * you may either return a rejected promise or throw an error to produce a failure.
      */
-    retry<R>(onfulfilled: (value: T) => ThenFail.IPromise<R>|R, options?: ThenFail.IRetryOptions): ThenFail<R> {
+    retry<R>(onfulfilled: (value: T) => ThenFail.Thenable<R>|R, options?: ThenFail.IRetryOptions): ThenFail<R> {
         options = ThenFail.Utils.defaults<ThenFail.IRetryOptions>(options, ThenFail.Options.Retry);
 
         return this.then(value => {
             var fulfilled = ThenFail.resolved(value);
             var retryPromise = new ThenFail<R>();
 
-            var retry = (retriesLeft: number, lastReason?) => {
-                if (arguments.length > 1 && options.onretry) {
+            var retry = (retriesLeft: number, lastReason?: any) => {
+                if (lastReason && options.onretry) {
                     options.onretry(retriesLeft, lastReason);
                 }
 
@@ -571,21 +593,28 @@ class ThenFail<T> implements ThenFail.IPromise<T> {
     get void(): ThenFail<void> {
         return this.then(() => { });
     }
-    
+
     /**
      * get a promise that will be fulfilled with value `true` when its previous promise gets fulfilled.
      */
     get true(): ThenFail<boolean> {
         return this.then(() => true);
     }
-    
+
     /**
      * get a promise that will be fulfilled with value `false` when its previous promise gets fulfilled.
      */
     get false(): ThenFail<boolean> {
         return this.then(() => false);
     }
-    
+
+    /**
+     * get the nth element in the array returned.
+     */
+    first<T>(): ThenFail<T> {
+        return this.then(values => (<any>values)[0]);
+    }
+
     /**
      * get a promise that will be fulfilled with the value given when its previous promise gets fulfilled.
      */
@@ -601,14 +630,14 @@ class ThenFail<T> implements ThenFail.IPromise<T> {
     static get void(): ThenFail<void> {
         return ThenFail.resolved<void>(undefined);
     }
-    
+
     /**
      * get a promise already fulfilled with value `true`.
      */
     static get true(): ThenFail<boolean> {
         return ThenFail.resolved(true);
     }
-    
+
     /**
      * get a promise already fulfilled with value `false`.
      */
@@ -619,22 +648,22 @@ class ThenFail<T> implements ThenFail.IPromise<T> {
     /**
      * a static then shortcut of a promise already fulfilled with value `undefined`.
      */
-    static then<R>(onfulfilled: (value: void) => ThenFail.IPromise<R>|R): ThenFail<R> {
+    static then<R>(onfulfilled: (value: void) => ThenFail.Thenable<R>|R): ThenFail<R> {
         return ThenFail.void.then(onfulfilled);
     }
-    
+
     /**
      * a static avail shortcut of a promise already fulfilled with value `undefined`.
      */
     static avail(assertion: () => boolean): ThenFail<void> {
         return ThenFail.void.avail(assertion);
     }
-    
+
     /**
      * a static time shortcut of a promise already fulfilled with value `undefined`.
      */
     static time(): ThenFail<void> {
-        return ThenFail.void.time();    
+        return ThenFail.void.time();
     }
 
     /**
@@ -648,14 +677,12 @@ class ThenFail<T> implements ThenFail.IPromise<T> {
      * create a promise that will be fulfilled after all promises (or values) get fulfilled,
      * and will be rejected after at least one promise (or value) gets rejected and the others get fulfilled.
      */
-    static all(promises: (ThenFail.IPromise<void>|void)[]): ThenFail<void>;
-    static all<R>(promises: (ThenFail.IPromise<R>|R)[]): ThenFail<R[]>
-    static all<R>(promises: any[]): ThenFail<any> {
+    static all<R>(promises: (ThenFail.Thenable<R>|R)[]): ThenFail<R[]> {
         var allPromise = new ThenFail<any>();
         var values = Array(promises.length);
 
         var rejected = false;
-        var rejectedReason;
+        var rejectedReason: any;
 
         var remain = promises.length;
 
@@ -698,7 +725,7 @@ class ThenFail<T> implements ThenFail.IPromise<T> {
     /**
      * a static retry shortcut of a promise already fulfilled with value `undefined`.
      */
-    static retry<R>(onfulfilled: (value: void) => ThenFail.IPromise<R>|R, options?: ThenFail.IRetryOptions): ThenFail<R> {
+    static retry<R>(onfulfilled: (value: void) => ThenFail.Thenable<R>|R, options?: ThenFail.IRetryOptions): ThenFail<R> {
         return this.void.retry(onfulfilled, options);
     }
 
@@ -706,7 +733,7 @@ class ThenFail<T> implements ThenFail.IPromise<T> {
      * transverse an array, if the return value of handler is a promise, it will wait till the promise gets fulfilled. return `false` in the handler to interrupt the transversing.
      * this method returns a promise that will be fulfilled with a boolean, `true` indicates that it completes without interruption, otherwise `false`.
      */
-    static each<T>(items: T[], handler: (item: T, index: number) => ThenFail.IPromise<any>|boolean|void): ThenFail<boolean> {
+    static each<T>(items: T[], handler: (item: T, index: number) => ThenFail.Thenable<any>|boolean|void): ThenFail<boolean> {
         if (!items) {
             return ThenFail.true;
         }
@@ -745,45 +772,22 @@ class ThenFail<T> implements ThenFail.IPromise<T> {
     /**
      * a promise version of `Array.prototype.map`.
      */
-    static map<T, R>(items: T[], handler: (item: T, index: number) => ThenFail.IPromise<R>|R): ThenFail<R[]> {
+    static map<T, R>(items: T[], handler: (item: T, index: number) => ThenFail.Thenable<R>|R): ThenFail<R[]> {
         var mapped: R[] = [];
 
         if (!items) {
             return ThenFail.resolved(mapped);
         }
 
-        var ret = new ThenFail<R[]>();
+        var promises = items.map((item, i) => handler(item, i));
 
-        next(0);
-
-        function next(index: number) {
-            if (index >= items.length) {
-                ret.resolve(mapped);
-                return;
-            }
-
-            var item = items[index];
-
-            ThenFail
-                .then<R>(() => {
-                    return handler(item, index);
-                })
-                .then(result => {
-                    mapped.push(result);
-                    next(index + 1);
-                })
-                .fail(reason => {
-                    ret.reject(reason);
-                });
-        }
-
-        return ret;
+        return ThenFail.all(promises);
     }
 
     /**
      * create a promise resolved by given value.
      */
-    static resolved<T>(value: T): ThenFail<T> {
+    static resolved<T>(value: ThenFail.Thenable<T>|T): ThenFail<T> {
         var promise = new ThenFail<T>();
         promise.resolve(value);
         return promise;
@@ -799,31 +803,31 @@ class ThenFail<T> implements ThenFail.IPromise<T> {
         promise.reject(reason);
         return promise;
     }
-    
+
 
     // NODE HELPER
 
     /**
      * invoke a node style async method.
      */
-    static invoke<T>(object: Object, method: string, ...args: any[]): ThenFail<T> { 
+    static invoke<T>(object: Object, method: string, ...args: any[]): ThenFail<T> {
         var promise = new ThenFail<T>();
 
         try {
-            object[method].apply(object, args.concat((err, ret) => {
+            (<any>object)[method].apply(object, args.concat((err: any, ret: any) => {
                 if (err) {
                     promise.reject(err);
                 } else {
                     promise.resolve(ret);
                 }
             }));
-        } catch (e) { 
+        } catch (e) {
             promise.reject(e);
         }
 
         return promise;
     }
-    
+
     /**
      * call a node style async function.
      */
@@ -831,7 +835,7 @@ class ThenFail<T> implements ThenFail.IPromise<T> {
         var promise = new ThenFail<T>();
 
         try {
-            fn.apply(null, args.concat((err, ret) => {
+            fn.apply(null, args.concat((err: any, ret: any) => {
                 if (err) {
                     promise.reject(err);
                 } else {
@@ -874,9 +878,9 @@ module ThenFail {
      * log rejections not been relayed.
      */
     export var logRejectionsNotRelayed = true;
-    
+
     /**
-     * chain the stack trace for debugging reason. 
+     * chain the stack trace for debugging reason.
      * this has serious performance impact, never use in production.
      */
     export var longStackTrace = false;
@@ -908,9 +912,8 @@ module ThenFail {
     /**
      * for general promise implementations.
      */
-    export interface IPromise<T> {
-        // commented for better matching of other promise
-        then<R>(onfulfilled: (value: T) => IPromise<R>|R, onrejected?: (reason) => any): IPromise<R>;
+    export interface Thenable<T> {
+        then<R>(onfulfilled: (value: T) => Thenable<R>|R, onrejected?: (reason: any) => any): Thenable<R>;
     }
 
     /**
@@ -922,7 +925,7 @@ module ThenFail {
         /**
          * handler will be called once this promise lock is unlocked, and it will be locked again until the promise returned by handler get fulfilled.
          */
-        lock<T>(handler: () => IPromise<T>|T, unlockOnRejection = true): ThenFail<T> {
+        lock<T>(handler: () => Thenable<T>|T, unlockOnRejection = true): ThenFail<T> {
             var promise = this._promise.then(handler);
             this._promise = promise
                 .fail(reason => {
@@ -940,8 +943,8 @@ module ThenFail {
          * handler will be called once this promise lock is unlocked, but unlike `lock` method, `ready` will not lock it again.
          */
         ready(): ThenFail<void>;
-        ready<T>(handler: () => IPromise<T>|T): ThenFail<T>;
-        ready<T>(handler?: () => IPromise<T>|T): ThenFail<T|void> {
+        ready<T>(handler: () => Thenable<T>|T): ThenFail<T>;
+        ready<T>(handler?: () => Thenable<T>|T): ThenFail<T|void> {
             return this._promise.then(handler);
         }
     }
@@ -963,7 +966,7 @@ module ThenFail {
             // the multiplier that will be applied to the interval each time after retry, defaults to 1.
             export var intervalMultiplier = 1;
             // a handler that will be triggered when retries happens.
-            export var onretry = null;
+            export var onretry: any = null;
         }
 
         /**
@@ -1024,7 +1027,7 @@ module ThenFail {
          */
         intervalMultiplier?: number;
         /**
-         * a handler that will be triggered when retries happens. 
+         * a handler that will be triggered when retries happens.
          */
         onretry?: (retriesLeft: number, lastReason: any) => void;
     }
@@ -1038,17 +1041,17 @@ module ThenFail {
             var result = options || {};
             for (var name in defaultOptions) {
                 if (hop.call(options, name)) {
-                    result[name] = options[name];
+                    (<any>result)[name] = (<any>options)[name];
                 }
                 else {
-                    result[name] = defaultOptions[name];
+                    (<any>result)[name] = (<any>defaultOptions)[name];
                 }
             }
             return result;
         }
 
-        declare var process;
-        declare var setImmediate;
+        declare var process: any;
+        declare var setImmediate: typeof window.setImmediate;
 
         interface INextTickTask {
             task?: () => void;

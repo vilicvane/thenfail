@@ -1,0 +1,10 @@
+node_modules
+bin
+obj
+packages
+scripts
+*.sln.ide
+packages.config
+*.csproj.user
+*.suo
+/.vs
