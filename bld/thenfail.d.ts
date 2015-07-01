@@ -112,7 +112,7 @@ declare class ThenFail<T> implements ThenFail.Thenable<T> {
      * retry doing something, will be rejected if the failures execeeds limits (defaults to 2).
      * you may either return a rejected promise or throw an error to produce a failure.
      */
-    retry<R>(onfulfilled: (value: T) => ThenFail.Thenable<R> | R, options?: ThenFail.IRetryOptions): ThenFail<R>;
+    retry<R>(onfulfilled: (value: T) => ThenFail.Thenable<R> | R, options?: ThenFail.RetryOptions): ThenFail<R>;
     /**
      * resolve current promise in given time (milliseconds) with optional value.
      * the timer starts immediately when this method is called.
@@ -122,6 +122,10 @@ declare class ThenFail<T> implements ThenFail.Thenable<T> {
      * relay the state of current promise to the promise given, and return current promise itself.
      */
     handle(promise: ThenFail<T>): ThenFail<T>;
+    /**
+     * invoke to relay the state of current promise to the callback given, and return current promise itself.
+     */
+    handle(callback: ThenFail.NodeStyleCallback<T>): ThenFail<T>;
     /**
      * get a promise that will be fulfilled with value `undefined` when its previous promise gets fulfilled.
      */
@@ -178,7 +182,7 @@ declare class ThenFail<T> implements ThenFail.Thenable<T> {
     /**
      * a static retry shortcut of a promise already fulfilled with value `undefined`.
      */
-    static retry<R>(onfulfilled: (value: void) => ThenFail.Thenable<R> | R, options?: ThenFail.IRetryOptions): ThenFail<R>;
+    static retry<R>(onfulfilled: (value: void) => ThenFail.Thenable<R> | R, options?: ThenFail.RetryOptions): ThenFail<R>;
     /**
      * transverse an array, if the return value of handler is a promise, it will wait till the promise gets fulfilled. return `false` in the handler to interrupt the transversing.
      * this method returns a promise that will be fulfilled with a boolean, `true` indicates that it completes without interruption, otherwise `false`.
@@ -218,6 +222,12 @@ declare module ThenFail {
      */
     var longStackTrace: boolean;
     /**
+     * node style callback.
+     */
+    interface NodeStyleCallback<T> {
+        (error: any, value: T): void;
+    }
+    /**
      * promise states.
      */
     enum State {
@@ -228,7 +238,7 @@ declare module ThenFail {
     /**
      * baton used to be relayed among promises.
      */
-    interface IBaton<T> {
+    interface Baton<T> {
         state: State;
         value?: T;
         reason?: any;
@@ -294,7 +304,7 @@ declare module ThenFail {
     /**
      * interface for retry options
      */
-    interface IRetryOptions {
+    interface RetryOptions {
         /**
          * number of times to retry, defaults to 2.
          */
@@ -320,7 +330,7 @@ declare module ThenFail {
         /**
          * defaults helper
          */
-        function defaults<T>(options: T, defaultOptions: T): {};
+        function defaults<T>(options: T, defaultOptions: T): any;
         /**
          * from Q.
          */

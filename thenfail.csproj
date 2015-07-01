@@ -23,13 +23,6 @@
   </ItemGroup>
   <ItemGroup>
     <TypeScriptCompile Include="src\thenfail.ts" />
-    <TypeScriptCompile Include="scripts\typings\fs-extra\fs-extra.d.ts" />
-    <TypeScriptCompile Include="scripts\typings\glob\glob.d.ts" />
-    <TypeScriptCompile Include="scripts\typings\minimatch\minimatch.d.ts" />
-    <TypeScriptCompile Include="scripts\typings\node\node.d.ts" />
-  </ItemGroup>
-  <ItemGroup>
-    <Content Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <Content Include=".travis.yml" />

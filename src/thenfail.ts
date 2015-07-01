@@ -40,7 +40,7 @@ class ThenFail<T> implements ThenFail.Thenable<T> {
     private _markTime = false;
     private _hasNexts = false;
     private _nexts: ThenFail<any>[] = [];
-    private _baton: ThenFail.IBaton<T> = {
+    private _baton: ThenFail.Baton<T> = {
         state: ThenFail.State.pending
     };
 
@@ -88,7 +88,7 @@ class ThenFail<T> implements ThenFail.Thenable<T> {
     /**
      * grab
      */
-    private _grab(baton: ThenFail.IBaton<T>, previous: ThenFail<any>) {
+    private _grab(baton: ThenFail.Baton<T>, previous: ThenFail<any>) {
         if (this._baton.state != ThenFail.State.pending) {
             return;
         }
@@ -126,7 +126,7 @@ class ThenFail<T> implements ThenFail.Thenable<T> {
     /**
      * run
      */
-    private _run(handler: (valueOrReason: any) => any, baton?: ThenFail.IBaton<T>) {
+    private _run(handler: (valueOrReason: any) => any, baton?: ThenFail.Baton<T>) {
         ThenFail.Utils.nextTick(() => {
             var ret: any;
 
@@ -166,7 +166,7 @@ class ThenFail<T> implements ThenFail.Thenable<T> {
     /**
      * unpack (resolve)
      */
-    private static _unpack(thisArg: any, value: any, callback: (baton: ThenFail.IBaton<any>, previous: ThenFail<any>) => void) {
+    private static _unpack(thisArg: any, value: any, callback: (baton: ThenFail.Baton<any>, previous: ThenFail<any>) => void) {
         if (value == thisArg) {
             callback({
                 state: ThenFail.State.rejected,
@@ -259,7 +259,7 @@ class ThenFail<T> implements ThenFail.Thenable<T> {
     /**
      * relay
      */
-    private _relay(baton: ThenFail.IBaton<T>, previous?: ThenFail<any>) {
+    private _relay(baton: ThenFail.Baton<T>, previous?: ThenFail<any>) {
         if (this._baton.state != ThenFail.State.pending) {
             return;
         }
@@ -524,8 +524,8 @@ class ThenFail<T> implements ThenFail.Thenable<T> {
      * retry doing something, will be rejected if the failures execeeds limits (defaults to 2).
      * you may either return a rejected promise or throw an error to produce a failure.
      */
-    retry<R>(onfulfilled: (value: T) => ThenFail.Thenable<R>|R, options?: ThenFail.IRetryOptions): ThenFail<R> {
-        options = ThenFail.Utils.defaults<ThenFail.IRetryOptions>(options, ThenFail.Options.Retry);
+    retry<R>(onfulfilled: (value: T) => ThenFail.Thenable<R>|R, options?: ThenFail.RetryOptions): ThenFail<R> {
+        options = ThenFail.Utils.defaults<ThenFail.RetryOptions>(options, ThenFail.Options.Retry);
 
         return this.then(value => {
             var fulfilled = ThenFail.resolved(value);
@@ -576,13 +576,25 @@ class ThenFail<T> implements ThenFail.Thenable<T> {
     /**
      * relay the state of current promise to the promise given, and return current promise itself.
      */
-    handle(promise: ThenFail<T>): ThenFail<T> {
-        this
-            .then(value => {
-                promise._grab(this._baton, this._previous);
+    handle(promise: ThenFail<T>): ThenFail<T>;
+    /**
+     * invoke to relay the state of current promise to the callback given, and return current promise itself.
+     */
+    handle(callback: ThenFail.NodeStyleCallback<T>): ThenFail<T>;
+    handle(promiseOrCallback: ThenFail<T>|ThenFail.NodeStyleCallback<T>): ThenFail<T> {
+        if (promiseOrCallback && typeof (<ThenFail<T>>promiseOrCallback)._grab === 'function') {
+            this.then(value => {
+                (<ThenFail<T>>promiseOrCallback)._grab(this._baton, this._previous);
             }, reason => {
-                promise._grab(this._baton, this._previous);
+                (<ThenFail<T>>promiseOrCallback)._grab(this._baton, this._previous);
             });
+        } else if (typeof promiseOrCallback === 'function') {
+            this.then(value => {
+                (<ThenFail.NodeStyleCallback<T>>promiseOrCallback)(undefined, value);
+            }, reason => {
+                (<ThenFail.NodeStyleCallback<T>>promiseOrCallback)(reason, undefined);
+            });
+        }
 
         return this;
     }
@@ -725,7 +737,7 @@ class ThenFail<T> implements ThenFail.Thenable<T> {
     /**
      * a static retry shortcut of a promise already fulfilled with value `undefined`.
      */
-    static retry<R>(onfulfilled: (value: void) => ThenFail.Thenable<R>|R, options?: ThenFail.IRetryOptions): ThenFail<R> {
+    static retry<R>(onfulfilled: (value: void) => ThenFail.Thenable<R>|R, options?: ThenFail.RetryOptions): ThenFail<R> {
         return this.void.retry(onfulfilled, options);
     }
 
@@ -886,6 +898,13 @@ module ThenFail {
     export var longStackTrace = false;
 
     /**
+     * node style callback.
+     */
+    export interface NodeStyleCallback<T> {
+        (error: any, value: T): void;
+    }
+
+    /**
      * promise states.
      */
     export enum State {
@@ -897,7 +916,7 @@ module ThenFail {
     /**
      * baton used to be relayed among promises.
      */
-    export interface IBaton<T> {
+    export interface Baton<T> {
         state: State;
         value?: T;
         reason?: any;
@@ -1009,7 +1028,7 @@ module ThenFail {
     /**
      * interface for retry options
      */
-    export interface IRetryOptions {
+    export interface RetryOptions {
         /**
          * number of times to retry, defaults to 2.
          */
@@ -1038,13 +1057,13 @@ module ThenFail {
          */
         export function defaults<T>(options: T, defaultOptions: T) {
             var hop = Object.prototype.hasOwnProperty;
-            var result = options || {};
+            options = options || <T>{};
+            var result: any = {};
             for (var name in defaultOptions) {
                 if (hop.call(options, name)) {
-                    (<any>result)[name] = (<any>options)[name];
-                }
-                else {
-                    (<any>result)[name] = (<any>defaultOptions)[name];
+                    result[name] = (<any>options)[name];
+                } else {
+                    result[name] = (<any>defaultOptions)[name];
                 }
             }
             return result;
@@ -1053,10 +1072,10 @@ module ThenFail {
         declare var process: any;
         declare var setImmediate: typeof window.setImmediate;
 
-        interface INextTickTask {
+        interface NextTickTask {
             task?: () => void;
             domain?: any;
-            next?: INextTickTask;
+            next?: NextTickTask;
         }
 
         /**
@@ -1064,7 +1083,7 @@ module ThenFail {
          */
         export var nextTick = (() => {
             // linked list of tasks (single, with head node)
-            var head: INextTickTask = {};
+            var head: NextTickTask = {};
             var tail = head;
             var flushing = false;
             var requestTick: () => void = null;

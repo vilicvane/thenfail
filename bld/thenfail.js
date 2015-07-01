@@ -500,17 +500,22 @@ var ThenFail = (function () {
         }, Math.floor(time));
         return this;
     };
-    /**
-     * relay the state of current promise to the promise given, and return current promise itself.
-     */
-    ThenFail.prototype.handle = function (promise) {
+    ThenFail.prototype.handle = function (promiseOrCallback) {
         var _this = this;
-        this
-            .then(function (value) {
-            promise._grab(_this._baton, _this._previous);
-        }, function (reason) {
-            promise._grab(_this._baton, _this._previous);
-        });
+        if (promiseOrCallback && typeof promiseOrCallback._grab === 'function') {
+            this.then(function (value) {
+                promiseOrCallback._grab(_this._baton, _this._previous);
+            }, function (reason) {
+                promiseOrCallback._grab(_this._baton, _this._previous);
+            });
+        }
+        else if (typeof promiseOrCallback === 'function') {
+            this.then(function (value) {
+                promiseOrCallback(undefined, value);
+            }, function (reason) {
+                promiseOrCallback(reason, undefined);
+            });
+        }
         return this;
     };
     Object.defineProperty(ThenFail.prototype, "void", {
@@ -917,7 +922,8 @@ var ThenFail;
          */
         function defaults(options, defaultOptions) {
             var hop = Object.prototype.hasOwnProperty;
-            var result = options || {};
+            options = options || {};
+            var result = {};
             for (var name in defaultOptions) {
                 if (hop.call(options, name)) {
                     result[name] = options[name];
