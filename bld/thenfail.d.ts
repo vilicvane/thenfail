@@ -145,7 +145,7 @@ declare class ThenFail<T> implements ThenFail.Thenable<T> {
     /**
      * get a promise that will be fulfilled with the value given when its previous promise gets fulfilled.
      */
-    return<T>(value: T): ThenFail<T>;
+    return<T>(value: ThenFail.Thenable<T> | T): ThenFail<T>;
     /**
      * get a promise already fulfilled with value `undefined`.
      */

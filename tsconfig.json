@@ -1,0 +1,12 @@
+{
+    "compilerOptions": {
+        "target": "ES5",
+        "module": "commonjs",
+        "sourceMap": true,
+        "declaration": true,
+        "outDir": "bld"
+    },
+    "files": [
+        "src/thenfail.ts"
+    ]
+}

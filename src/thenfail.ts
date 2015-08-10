@@ -280,7 +280,7 @@ class ThenFail<T> implements ThenFail.Thenable<T> {
                 ThenFail.logRejectionsNotRelayed &&
                 baton.state == ThenFail.State.rejected &&
                 !this._hasNexts
-                ) {
+            ) {
                 ThenFail.Utils.nextTick(() => {
                     if (!this._hasNexts) {
                         ThenFail.Options.Log.errorLogger(
@@ -497,7 +497,7 @@ class ThenFail<T> implements ThenFail.Thenable<T> {
             .then(value => {
                 return onalways(value, undefined);
             }, reason => {
-                onalways(undefined, reason);
+                return onalways(undefined, reason);
             });
     }
 
@@ -630,7 +630,7 @@ class ThenFail<T> implements ThenFail.Thenable<T> {
     /**
      * get a promise that will be fulfilled with the value given when its previous promise gets fulfilled.
      */
-    return<T>(value: T): ThenFail<T> {
+    return<T>(value: ThenFail.Thenable<T>|T): ThenFail<T> {
         return this.then(() => value);
     }
 

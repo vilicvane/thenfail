@@ -431,7 +431,7 @@ var ThenFail = (function () {
             .then(function (value) {
             return onalways(value, undefined);
         }, function (reason) {
-            onalways(undefined, reason);
+            return onalways(undefined, reason);
         });
     };
     /**
