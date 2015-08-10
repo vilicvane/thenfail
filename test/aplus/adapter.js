@@ -1,8 +1,15 @@
-var ThenFail = require('../bld/thenfail.js');
+var ThenFail = require('../../bld/thenfail.js');
+var Promise = ThenFail.Promise;
 
 module.exports = {
+    // resolved: function (value) {
+    //     return Promise.resolved(value);
+    // },
+    // rejected: function (reason) {
+    //     return Promise.rejected(reason);
+    // },
     deferred: function () {
-        var promise = new ThenFail();
+        var promise = new Promise();
         return {
             promise: promise,
             resolve: function (value) {

@@ -1,12 +1,15 @@
 {
     "compilerOptions": {
         "target": "ES5",
-        "module": "commonjs",
+        "module": "umd",
+        "noEmitOnError": true,
+        "noImplicitAny": true,
         "sourceMap": true,
         "declaration": true,
+        "preserveConstEnums": true,
         "outDir": "bld"
     },
-    "files": [
-        "src/thenfail.ts"
+    "exclude": [
+        "bld"
     ]
 }

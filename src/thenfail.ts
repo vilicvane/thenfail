@@ -1,1290 +1,873 @@
-﻿/*
- * ThenFail v0.2
- * Just another Promises/A+ implementation
+/**
+ * ThenFail v0.3
+ * Just another Promises/A+ Library
+ * 
  * https://github.com/vilic/thenfail
- *
- * By VILIC VANE
- * https://github.com/vilic
- *
+ * 
  * MIT License
  */
 
-'use strict';
+import { asap } from './utils';
 
-declare var self: Window;
-declare var global: Window;
-
-if (typeof self === 'undefined') {
-    global.self = global;
-}
-
-(<any>self)._thenfailCaptureStartLine = () => ThenFail.Utils.captureLine();
+/////////////
+// Promise //
+/////////////
 
 /**
- * the instance of class ThenFail is the promise as well as the promise resolver.
+ * Promise like object.
  */
-class ThenFail<T> implements ThenFail.Thenable<T> {
-    /*
-     * to make things simpler to understand, a ThenFail instance could be imagined as
-     * a relay runner who can relay its "state" to several other runners following
-     * steps below:
-     * 1. "grab" the "state" from the previous runner or something invisible.
-     * 2. "run" and finish its task.
-     * 3. "relay" its "state" to the next runner.
+export interface Thenable<Value> {
+    then<Return>(onfulfilled: (value: Value) => Thenable<Return>|Return, onrejected?: (reason: any) => any): Thenable<Return>;
+}
+
+export interface Resolver<Value> {
+    (
+        resolve: (value?: Thenable<Value>|Value) => void,
+        reject: (reason: any) => void
+    ): void;
+}
+
+export interface OnFulfilledHandler<Value, Return> {
+    (value: Value): Promise<Return>|Thenable<Return>|Return;
+}
+
+export interface OnRejectedHandler<Return> {
+    (reason: any): Promise<Return>|Thenable<Return>|Return;
+}
+
+export interface OnAnyHandler<Return> {
+    (valueOrReason: any): Promise<Return>|Thenable<Return>|Return;
+}
+
+export interface OnInterruptedHandler {
+    (): void;
+}
+
+export interface NodeStyleCallback<Value> {
+    (error: any, value: Value): void;
+}
+
+export interface MapCallback<Value, Return> {
+    (value: Value, index: number, array: Value[]): Promise<Return>|Thenable<Return>|Return;
+}
+
+export class Context {
+    _disposed = false;
+    _enclosed = false;
+
+    _subContexts: Context[];
+    
+    /**
+     * (get) A boolean that indicates whether this promise context is disposed.
+     * See https://github.com/vilic/thenfail# for more information.
      */
+    get disposed(): boolean {
+        return this._disposed;
+    }
+    
+    /**
+     * (get) A boolean that indicates whether this promise context is enclosed.
+     * See https://github.com/vilic/thenfail# for more information.
+     */
+    get enclosed(): boolean {
+        return this._enclosed;
+    }
+    
+    /**
+     * Dispose this promise context.
+     * See https://github.com/vilic/thenfail# for more information.
+     */
+    dispose(): void {
+        this._disposed = true;
+        this.disposeSubContexts();
+    }
+    
+    /**
+     * Dispose all sub contexts of this promise context.
+     */
+    disposeSubContexts(): void {
+        if (this._subContexts) {
+            for (let context of this._subContexts) {
+                context.dispose();
+            }
+            
+            this._subContexts = undefined;
+        }
+    }
+}
 
-    private _onfulfilled: (value: T) => any;
-    private _onrejected: (reason: any) => any;
-    private _onavailassertion: () => boolean;
+/**
+ * Possible states of a promise.
+ */
+export const enum State {
+    pending,
+    fulfilled,
+    rejected,
+    interrupted
+}
 
-    private _markTime = false;
-    private _hasNexts = false;
-    private _nexts: ThenFail<any>[] = [];
-    private _baton: ThenFail.Baton<T> = {
-        state: ThenFail.State.pending
-    };
+namespace CustomError {
+    declare class Error {
+        constructor(message?: string);
+        
+        name: string;
+        message: string;
+        stack: string;
+    }
 
-    private _stack: string;
-    private _previous: ThenFail<any>;
+    export class TimeoutError extends Error {
+        name = 'TimeoutError';
+    }
+}
+
+/**
+ * The signal objects for interrupting promises context.
+ */
+const BREAK_SIGNAL = {};
+const PRE_BREAK_SIGNAL = {};
+
+// The core abstraction of this implementation is to imagine the behavior of promises
+// as relay runners.
+//  1. Grab the baton state (and value/reason).
+//  2. Run and get its own state.
+//  3. Relay the new state to next runners.
+
+export class Promise<Value> implements Thenable<Value> {
+    private _state = State.pending;
+    private _running = false;
+    private _valueOrReason: any;
+
+    private _context: Context;
+
+    /** 
+     * Next promises in the chain.
+     */
+    private _chainedPromise: Promise<any>;
+    private _chainedPromises: Promise<any>[];
+
+    /** 
+     * Promises that will share the same state (and value/reason).
+     * 
+     * Example:
+     *  
+     *  var promiseA = Promise.then(() => {
+     *      var promiseB = Promise.then(() => ...);
+     *      return promiseB;
+     *  });
+     * 
+     *  The state of `promiseB` will determine the state of `promiseA`.
+     *  And `promiseA` will then be in here.
+     */
+    private _handledPromise: Promise<Value>;
+    private _handledPromises: Promise<Value>[];
+    
+    private _onPreviousFulfilled: OnFulfilledHandler<any, Value>;
+    private _onPreviousRejected: OnRejectedHandler<Value>;
+    private _onPreviousInterrupted: OnInterruptedHandler;
 
     /**
-     * create a ThenFail promise instance.
+     * Promise constructor.
      */
-    constructor(handler: (resolve: (value?: ThenFail.Thenable<T>|T) => void, reject: (reason: any) => void) => void);
-    constructor(value: ThenFail.Thenable<T>|T);
     constructor();
-    constructor(value?: any) {
-        if (arguments.length) {
-            if (value instanceof ThenFail) {
-                return value;
-            }
-
-            if (typeof value === 'function') {
-                try {
-                    value((value: any) => {
-                        this.resolve(value);
-                    }, (reason: any) => {
-                        this.reject(reason);
-                    });
-                } catch (e) {
-                    this.reject(e);
-                }
-            } else {
-                ThenFail._unpack({}, value, (baton, previous) => {
-                    this._grab(baton, previous);
-                });
-            }
+    constructor(resolver: Resolver<Value>);
+    constructor(context: Context);
+    constructor(resolverOrContext?: Resolver<Value>|Context) {
+        if (resolverOrContext instanceof Context && !resolverOrContext._enclosed) {
+            this._context = resolverOrContext;
+        } else {
+            this._context = new Context();
         }
-
-        if (ThenFail.longStackTrace) {
+        
+        if (typeof resolverOrContext === 'function') {
             try {
-                throw new Error();
-            } catch (e) {
-                this._stack = ThenFail.Utils.filterStackString(e.stack.substr(e.stack.indexOf('\n') + 1));
+                (<Resolver<Value>>resolverOrContext)(
+                    value => this.resolve(value),
+                    reason => this.reject(reason)
+                );
+            } catch (error) {
+                this.reject(error);
             }
         }
     }
 
     /**
-     * grab
+     * Get the state from previous promise in chain.
      */
-    private _grab(baton: ThenFail.Baton<T>, previous: ThenFail<any>) {
-        if (this._baton.state != ThenFail.State.pending) {
+    private _grab(previousState: State, previousValueOrReason?: any): void {
+        if (this._state !== State.pending) {
             return;
         }
-
-        if (ThenFail.longStackTrace) {
-            this._previous = previous;
+        
+        let handler: OnAnyHandler<Thenable<Value>|Value>;
+        
+        if (previousState === State.fulfilled) {
+            handler = this._onPreviousFulfilled;
+        } else if (previousState === State.rejected) {
+            handler = this._onPreviousRejected;
         }
-
-        if (this._markTime) {
-            baton.time = Date.now();
-        }
-
-        var handler: (arg: any) => any;
-
-        switch (baton.state) {
-            case ThenFail.State.fulfilled:
-                handler = this._onfulfilled;
-                break;
-            case ThenFail.State.rejected:
-                handler = this._onrejected;
-                break;
-        }
-
+        
         if (handler) {
-            this._run(handler, baton);
+            this._run(handler, previousValueOrReason);
         } else {
-            if (typeof this._onavailassertion === 'function' && !this._onavailassertion.call(null)) {
-                return;
-            }
-
-            this._relay(baton);
+            this._relay(previousState, previousValueOrReason);
         }
     }
 
     /**
-     * run
+     * Invoke `onfulfilled` or `onrejected` handlers.
      */
-    private _run(handler: (valueOrReason: any) => any, baton?: ThenFail.Baton<T>) {
-        ThenFail.Utils.nextTick(() => {
-            var ret: any;
-
-            if (typeof this._onavailassertion === 'function' && !this._onavailassertion.call(null)) {
-                return;
-            }
-
-            var time = baton.time;
+    private _run(handler: OnAnyHandler<any>, previousValueOrReason: any): void {
+        this._running = true;
+        
+        asap(() => {
+            let ret: Thenable<Value>|Value;
 
             try {
-                if (baton.state == ThenFail.State.fulfilled) {
-                    ret = handler(baton.value);
-                } else {
-                    ret = handler(baton.reason);
-                }
-            } catch (e) {
-                if (ThenFail.longStackTrace) {
-                    ThenFail._makeStackTraceLong(e, this);
-                }
-
-                this._relay({
-                    state: ThenFail.State.rejected,
-                    reason: e,
-                    time: baton.time
-                });
-
+                ret = handler(previousValueOrReason);
+            } catch (error) {
+                this._relay(State.rejected, error);
+                this._running = false;
                 return;
             }
 
-            ThenFail._unpack(this, ret, (baton, previous) => {
-                baton.time = time;
-                this._relay(baton, previous);
+            this._unpack(ret, (state, valueOrReason) => {
+                this._relay(state, valueOrReason);
+                this._running = false;
             });
         });
     }
-
+    
     /**
-     * unpack (resolve)
+     * The resolve process defined in Promises/A+ specifications.
      */
-    private static _unpack(thisArg: any, value: any, callback: (baton: ThenFail.Baton<any>, previous: ThenFail<any>) => void) {
-        if (value == thisArg) {
-            callback({
-                state: ThenFail.State.rejected,
-                reason: new TypeError('the promise should not return itself')
-            }, null);
-        } else if (value instanceof ThenFail) {
-            if (ThenFail.longStackTrace && thisArg instanceof ThenFail) {
-                thisArg._previous = value;
-            }
-
-            var promise = <ThenFail<any>>value;
-            var baton = promise._baton;
-
-            if (baton.state == ThenFail.State.pending) {
-                value
-                    .then((fulfilledValue: any) => {
-                        callback({
-                            state: ThenFail.State.fulfilled,
-                            value: fulfilledValue
-                        }, null);
-                    }, (reason: any) => {
-                        callback({
-                            state: ThenFail.State.rejected,
-                            reason: reason
-                        }, null);
-                    });
+    private _unpack(value: Thenable<Value>|Value, callback: (state: State, valueOrReason: any) => void): void {
+        if (this === value) {
+            callback(State.rejected, new TypeError('The promise should not return itself'));
+        } else if (value instanceof Promise) {
+            if (value._state === State.pending) {
+                if (value._handledPromise) {
+                    value._handledPromises = [value._handledPromise, this];
+                    value._handledPromise = undefined;
+                } else if (value._handledPromises) {
+                    value._handledPromises.push(this);
+                } else {
+                    value._handledPromise = this;
+                }
+                
+                let context = this._context;
+                
+                if (context._subContexts) {
+                    context._subContexts.push(value._context);
+                } else {
+                    context._subContexts = [value._context];
+                }
             } else {
-                callback(baton, promise);
+                callback(value._state, value._valueOrReason);
             }
-        } else if (value) { // in case of null
+        } else if (value) {
             switch (typeof value) {
                 case 'object':
                 case 'function':
-                    // ret is thenable
-                    var then: any;
                     try {
-                        then = value.then;
-                    } catch (e) {
-                        callback({
-                            state: ThenFail.State.rejected,
-                            reason: e
-                        }, null);
-                        break;
-                    }
+                        let then = (<Thenable<any>>value).then;
 
-                    if (typeof then === 'function') {
-                        var called = false;
-                        try {
-                            then
-                                .call(value, (value: any) => {
-                                    if (!called) {
-                                        called = true;
-                                        ThenFail._unpack(this, value, callback);
+                        if (typeof then === 'function') {
+                            then.call(
+                                value,
+                                (value: any) => {
+                                    if (callback) {
+                                        this._unpack(value, callback);
+                                        callback = undefined;
                                     }
-                                }, (reason: any) => {
-                                    if (!called) {
-                                        called = true;
-                                        callback({
-                                            state: ThenFail.State.rejected,
-                                            reason: reason
-                                        }, null);
+                                },
+                                (reason: any) => {
+                                    if (callback) {
+                                        callback(State.rejected, reason);
+                                        callback = undefined;
                                     }
-                                });
-                        } catch (e) {
-                            if (!called) {
-                                called = true;
-                                callback({
-                                    state: ThenFail.State.rejected,
-                                    reason: e
-                                }, null);
-                            }
+                                }
+                            );
+
+                            break;
                         }
+                    } catch (e) {
+                        if (callback) {
+                            callback(State.rejected, e);
+                            callback = undefined;
+                        }
+
                         break;
                     }
                 default:
-                    callback({
-                        state: ThenFail.State.fulfilled,
-                        value: value
-                    }, null);
+                    callback(State.fulfilled, value);
                     break;
             }
         } else {
-            callback({
-                state: ThenFail.State.fulfilled,
-                value: value
-            }, null);
+            callback(State.fulfilled, value);
         }
     }
 
     /**
-     * relay
+     * Set the state of current promise and relay it to next promises.
      */
-    private _relay(baton: ThenFail.Baton<T>, previous?: ThenFail<any>) {
-        if (this._baton.state != ThenFail.State.pending) {
+    private _relay(state: State, valueOrReason?: any): void {
+        if (this._state !== State.pending) {
             return;
         }
-
-        this._baton = {
-            state: baton.state,
-            value: baton.value,
-            reason: baton.reason,
-            time: baton.time
-        };
-
-        if (this._nexts) {
-            this._nexts.forEach(next => {
-                next._grab(baton, previous || this);
-            });
-
-            if (
-                ThenFail.logRejectionsNotRelayed &&
-                baton.state == ThenFail.State.rejected &&
-                !this._hasNexts
-            ) {
-                ThenFail.Utils.nextTick(() => {
-                    if (!this._hasNexts) {
-                        ThenFail.Options.Log.errorLogger(
-                            'A rejection has not been relayed occurs, you may want to add .done() or .log() to the end of every promise.',
-                            baton.reason,
-                            'Turn off this message by setting ThenFail.logRejectionsNotRelayed to false.'
-                        );
+        
+        let relayState: State;
+        
+        if (
+            valueOrReason === BREAK_SIGNAL ||
+            valueOrReason === PRE_BREAK_SIGNAL ||
+            this._context._disposed
+        ) {
+            relayState = State.interrupted;
+            
+            if (this._running) {
+                this._state = State.fulfilled;
+                
+                if (this._onPreviousInterrupted) {
+                    try {
+                        let handler = this._onPreviousInterrupted;
+                        handler();
+                    } catch (error) {
+                        relayState = State.rejected;
+                        valueOrReason = error;
                     }
-                });
+                }
+            } else {
+                this._state = State.interrupted;
             }
-        } else if (baton.state == ThenFail.State.rejected) {
-            ThenFail.Utils.nextTick(() => {
-                throw baton.reason;
-            });
+        } else {
+            relayState = state;
+            this._state = state;
+            this._valueOrReason = valueOrReason;
         }
-
-        this._relax();
+        
+        if (relayState === State.interrupted) {
+            if (this._chainedPromise) {
+                if (this._chainedPromise._context === this._context) {
+                    this._chainedPromise._relay(State.interrupted);
+                } else {
+                    this._chainedPromise._grab(State.fulfilled);
+                }
+            } else if (this._chainedPromises) {
+                for (let promise of this._chainedPromises) {
+                    if (promise._context === this._context) {
+                        promise._relay(State.interrupted);
+                    } else {
+                        promise._grab(State.fulfilled);
+                    }
+                }
+            }
+            
+            relayState = valueOrReason === PRE_BREAK_SIGNAL ? State.interrupted : State.fulfilled;
+            
+            if (this._handledPromise) {
+                this._handledPromise._relay(relayState);
+            } else if (this._handledPromises) {
+                for (let promise of this._handledPromises) {
+                    promise._relay(relayState);
+                }
+            }
+        } else {
+            if (this._chainedPromise) {
+                this._chainedPromise._grab(relayState, valueOrReason);
+            } else if (this._chainedPromises) {
+                for (let promise of this._chainedPromises) {
+                    promise._grab(relayState, valueOrReason);
+                }
+            }
+            
+            if (this._handledPromise) {
+                this._handledPromise._relay(relayState, valueOrReason);
+            } else if (this._handledPromises) {
+                for (let promise of this._handledPromises) {
+                    promise._relay(relayState, valueOrReason);
+                }
+            }
+        }
+        
+        if (this._onPreviousFulfilled) {
+            this._onPreviousFulfilled = undefined;
+        }
+        
+        if (this._onPreviousRejected) {
+            this._onPreviousRejected = undefined;
+        }
+        
+        if (this._onPreviousInterrupted) {
+            this._onPreviousInterrupted = undefined;
+        }
+        
+        if (this._chainedPromise) {
+            this._chainedPromise = undefined;
+        } else {
+            this._chainedPromises = undefined;
+        }
+        
+        if (this._handledPromise) {
+            this._handledPromise = undefined;
+        } else {
+            this._handledPromises = undefined;
+        }
     }
-
+    
     /**
-     * relax
+     * The `then` method that follows Promises/A+ specifications <https://promisesaplus.com>.
+     * To learn how to use promise, please check out <https://github.com/vilic/thenfail>.
      */
-    private _relax() {
-        this._onfulfilled = null;
-        this._onrejected = null;
-        this._nexts = null;
-    }
-
-    /**
-     * resolve this promise.
-     * @param value the value to resolve this promise with, could be a promise.
-     */
-    resolve(value?: ThenFail.Thenable<T>|T): void;
-    resolve(value?: any): void {
-        ThenFail._unpack(this, value, (baton, previous) => {
-            this._grab(baton, previous);
-        });
-    }
-
-    /**
-     * reject this promise.
-     * @param reason the reason to reject this promise with.
-     */
-    reject(reason: any) {
-        this._grab({
-            state: ThenFail.State.rejected,
-            reason: reason
-        }, null);
-    }
-
-    /**
-     * then method following Promises/A+ specification.
-     */
-    then(onfulfilled?: void, onrejected?: void): ThenFail<T>;
-    then(onfulfilled: void, onrejected: (reason: any) => any): ThenFail<T>;
-    then<R>(onfulfilled: (value: T) => ThenFail.Thenable<R>|R, onrejected?: (reason: any) => any): ThenFail<R>;
-    then(onfulfilled?: any, onrejected?: any): ThenFail<any> {
-        var promise = new ThenFail<any>();
-
-        promise._onavailassertion = this._onavailassertion;
-
+    then<Return>(onfulfilled: OnFulfilledHandler<Value, Return>, onrejected?: OnRejectedHandler<Return>): Promise<Return>;
+    then(onfulfilled: void, onrejected: OnRejectedHandler<Value>): Promise<Value>;
+    then(onfulfilled?: any, onrejected?: any): Promise<any> {
+        let promise = new Promise<any>(this._context);
+        
         if (typeof onfulfilled === 'function') {
-            promise._onfulfilled = onfulfilled;
+            promise._onPreviousFulfilled = onfulfilled;
         }
+        
         if (typeof onrejected === 'function') {
-            promise._onrejected = onrejected;
+            promise._onPreviousRejected = onrejected;
         }
-
-        if (this._baton.state == ThenFail.State.pending) {
-            this._nexts.push(promise);
+        
+        if (this._state === State.pending) {
+            if (this._chainedPromise) {
+                this._chainedPromises = [this._chainedPromise, promise];
+                this._chainedPromise = undefined;
+            } else if (this._chainedPromises) {
+                this._chainedPromises.push(promise);
+            } else {
+                this._chainedPromise = promise;
+            }
         } else {
-            promise._grab(this._baton, this);
+            promise._grab(this._state, this._valueOrReason);
         }
-
-        if (!this._hasNexts) {
-            this._hasNexts = true;
-        }
-
+        
         return promise;
     }
-
+    
     /**
-     * add an invisible promise with no nexts to the chain, error will be thrown if it's relayed to this promise (i.e. not handled by parent promises).
+     * Resolve this promise with a value or thenable.
+     * @param value A normal value, or a promise/thenable.
      */
-    done() {
-        var donePromise = this.then();
-        donePromise._nexts = null;
+    resolve(value?: Thenable<Value>|Value): void {
+        this._unpack(value, (state, valueOrReason) => this._grab(state, valueOrReason));
     }
-
+    
     /**
-     * add an assertion to the promises chain, if it returns false, the active promises in this chain will stop relaying on.
-     * returns the current promise.
+     * Reject this promise with a reason.
      */
-    avail(assertion: () => boolean): ThenFail<T> {
-        this._onavailassertion = assertion;
-        return this;
+    reject(reason: any): void {
+        this._grab(State.rejected, reason);
     }
-
+    
     /**
-     * mark start time, see also `timeEnd`.
+     * Add an interruption handler. This handler will only be invoked if previous
+     * onfulfilled/onrejected handler has run and been interrupted.
      */
-    time(): ThenFail<T> {
-        this._markTime = true;
-        if (!this.pending) {
-            this._baton.time = Date.now();
-        }
-        return this;
-    }
-
-    /**
-     * a string contains "{duration}" that will be replaced as the calculated value.
-     */
-    timeEnd(message = '{duration}'): ThenFail<T> {
-        this.then(() => {
-            var now = Date.now();
-            var startTime = this._baton.time || now;
-            message = message.replace('{duration}', now - startTime + 'ms');
-            ThenFail.Options.Log.valueLogger(message);
-        });
-
-        return this;
-    }
-
-    /**
-     * get a boolean indicates whether the state of this promise is `pending`.
-     */
-    get pending(): boolean {
-        return this._baton.state == ThenFail.State.pending;
-    }
-
-    /**
-     * get a boolean indicates whether the state of this promise is `fulfilled`.
-     */
-    get fulfilled(): boolean {
-        return this._baton.state == ThenFail.State.fulfilled;
-    }
-
-    /**
-     * get a boolean indicates whether the state of this promise is `rejected`.
-     */
-    get rejected(): boolean {
-        return this._baton.state == ThenFail.State.rejected;
-    }
-
-    // HELPERS
-
-    /**
-     * log the fulfilled value or rejection, or specified value.
-     */
-    log(object?: any): ThenFail<void> {
-        var hasObjectToLog = !!arguments.length;
-
-        var promise = this
-            .then(value => {
-                if (hasObjectToLog) {
-                    ThenFail.Options.Log.valueLogger(object);
-                } else if (value !== undefined) {
-                    ThenFail.Options.Log.valueLogger(value);
-                }
-            }, reason => {
-                if (ThenFail.Options.Log.throwUnhandledRejection) {
-                    throw reason;
-                } else {
-                    ThenFail.Options.Log.errorLogger(reason);
-                }
-            });
-
-        promise.done();
-
-        return promise;
-    }
-
-    /**
-     * spread an array argument to arguments directly via `onfulfilled.apply(null, value)`.
-     */
-    spread<R>(onfulfilled: (...args: any[]) => ThenFail.Thenable<R>|R): ThenFail<R> {
-        return this.then<R>((args: any) => {
-            return onfulfilled.apply(null, args);
-        });
-    }
-
-    /**
-     * a shortcut for `promise.then(null, onrejected)`.
-     */
-    fail(onrejected: (reason: any) => any): ThenFail<T> {
-        return this.then<T>(null, onrejected);
-    }
-
-    /**
-     * catch.
-     */
-    catch(onrejected: (reason: any) => any): ThenFail<T>;
-    catch(ErrorType: Function, onrejected: (reason: any) => any): ThenFail<T>;
-    catch(ErrorType: any, onrejected?: any): ThenFail<T> {
-        if (typeof onrejected === 'function') {
-            return this.then<T>(null, reason => {
-                if (reason instanceof ErrorType) {
-                    return onrejected(reason);
-                } else {
-                    throw reason;
-                }
-            });
+    interruption(oninterrupted: OnInterruptedHandler): Promise<Value> {
+        if (this._state === State.pending) {
+            if (this._onPreviousInterrupted) {
+                throw new Error('Interruption handler has already been set');
+            }
+            
+            this._onPreviousInterrupted = oninterrupted;
         } else {
-            onrejected = ErrorType;
-            return this.then<T>(null, onrejected);
+            // To unify error handling behavior, handler would not be invoked
+            // if it's added after promise state being no longer pending.
+            console.warn('Handler added after promise state no longer being pending');
         }
+        
+        return this;
     }
-
+    
     /**
-     * call `onalways` handler when its previous promise get fulfilled or rejected.
+     * Enclose current promise context.
      */
-    always<R>(onalways: (value: T, reason: any) => ThenFail.Thenable<R>|R): ThenFail<R> {
+    enclose(): Promise<Value> {
+        this._context._enclosed = true;
+        return this;
+    }
+    
+    /**
+     * Delay a period of time (milliseconds).
+     */
+    delay(timeout: number): Promise<Value> {
+        return this.then(value => {
+            return new Promise<Value>(resolve => {
+                setTimeout(() => resolve(value), Math.floor(timeout) || 0);
+            });
+        });
+    }
+    
+    /**
+     * Set a timeout of current promise context. This will enclose current promise context.
+     */
+    timeout(timeout: number): Promise<Value> {
+        this._context._enclosed = true;
+        
+        setTimeout(() => {
+            if (this._state === State.pending) {
+                this._relay(State.rejected, new CustomError.TimeoutError());
+                this._context.disposeSubContexts();
+            }
+        }, Math.floor(timeout) || 0);
+        
+        return this;
+    }
+    
+    /**
+     * Handle another promise with the same state (and value/reason) of the current one.
+     * @return Current promise.
+     */
+    handle(promise: Promise<Value>): Promise<Value>;
+    handle(callback: NodeStyleCallback<Value>): Promise<Value>;
+    handle(promiseOrCallback: Promise<Value>|NodeStyleCallback<Value>): Promise<Value> {
+        if (promiseOrCallback instanceof Promise) {
+            if (this._state === State.pending) {
+                if (this._handledPromise) {
+                    this._handledPromises = [this._handledPromise, promiseOrCallback];
+                    this._handledPromise = undefined;
+                } else if (this._handledPromises) {
+                    this._handledPromises.push(promiseOrCallback);
+                } else {
+                    this._handledPromise = promiseOrCallback;
+                }
+            } else {
+                promiseOrCallback._relay(this._state, this._valueOrReason);
+            }
+        } else if (typeof promiseOrCallback === 'function') {
+            this.then(
+                value => {
+                    (<NodeStyleCallback<Value>>promiseOrCallback)(undefined, value);
+                },
+                reason => {
+                    (<NodeStyleCallback<Value>>promiseOrCallback)(reason, undefined)
+                }
+            );
+        }
+        
+        return this;
+    }
+    
+    /**
+     * Create a disposable resource promise.
+     * @param disposer 
+     */
+    disposable(disposer: Disposer<Value>): Promise<Disposable<Value>> {
+        return this.then(resource => {
+            return {
+                resource,
+                dispose: disposer
+            };
+        });
+    }
+    
+    /**
+     * Handle `fulfilled` without change its original return value.
+     * 
+     * Example:
+     * 
+     *  promise
+     *      .resolved(123)
+     *      .tap(value => {
+     *          console.log(value); // 123
+     *          return Promise.delay(100);
+     *      })
+     *      .then(value => {
+     *          console.log(value); // 123
+     *      });
+     */
+    tap(onfulfilled: OnFulfilledHandler<Value, void>): Promise<Value> {
+        let relayValue: Value;
         return this
             .then(value => {
-                return onalways(value, undefined);
-            }, reason => {
-                return onalways(undefined, reason);
-            });
+                relayValue = value;
+                return onfulfilled(value);
+            })
+            .then(() => relayValue);
     }
-
+    
     /**
-     * a helper that delays the relaying of fulfilled value from previous promise.
-     * @param interval delay interval (milliseconds, default to 0).
+     * Promise version of `array.map`.
      */
-    delay(interval = 0): ThenFail<T> {
-        return this.then(value => {
-            var promise = new ThenFail<T>();
-
-            setTimeout(() => {
-                promise._grab({
-                    state: ThenFail.State.fulfilled,
-                    value: value
-                }, this);
-            }, Math.floor(interval) || 0);
-
-            return promise;
+    map<Value>(callback: MapCallback<any, Value>): Promise<Value[]> {
+        return this.then((values: any) => Promise.map(values, callback));
+    }
+    
+    /**
+     * (get) A shortcut of `promise.then(() => { Promise.break; })`.
+     * See https://github.com/vilic/thenfail# for more information.
+     */
+    get break(): Promise<void> {
+        return this.then(() => {
+            throw PRE_BREAK_SIGNAL;
         });
     }
-
+    
     /**
-     * retry doing something, will be rejected if the failures execeeds limits (defaults to 2).
-     * you may either return a rejected promise or throw an error to produce a failure.
+     * (get) A promise that will eventually been fulfilled with value `undefined`.
      */
-    retry<R>(onfulfilled: (value: T) => ThenFail.Thenable<R>|R, options?: ThenFail.RetryOptions): ThenFail<R> {
-        options = ThenFail.Utils.defaults<ThenFail.RetryOptions>(options, ThenFail.Options.Retry);
-
-        return this.then(value => {
-            var fulfilled = ThenFail.resolved(value);
-            var retryPromise = new ThenFail<R>();
-
-            var retry = (retriesLeft: number, lastReason?: any) => {
-                if (lastReason && options.onretry) {
-                    options.onretry(retriesLeft, lastReason);
-                }
-
-                fulfilled
-                    .then<R>(value => {
-                        return onfulfilled(value);
-                    })
-                    .then(value => {
-                        retryPromise._grab({
-                            state: ThenFail.State.fulfilled,
-                            value: value
-                        }, this);
-                    })
-                    .fail(reason => {
-                        if (retriesLeft) {
-                            retry(retriesLeft - 1);
-                        } else {
-                            retryPromise.reject(reason);
-                        }
-                    });
-            };
-
-            retry(options.limit);
-
-            return retryPromise;
-        });
+    get void(): Promise<void> {
+        return this.then(() => undefined);
     }
-
+    
     /**
-     * resolve current promise in given time (milliseconds) with optional value.
-     * the timer starts immediately when this method is called.
+     * (get) A promise that will eventually been fulfilled with value `true`.
      */
-    timeout(time: number, value?: T): ThenFail<T> {
-        setTimeout(() => {
-            this.resolve(value);
-        }, Math.floor(time));
-
-        return this;
-    }
-
-    /**
-     * relay the state of current promise to the promise given, and return current promise itself.
-     */
-    handle(promise: ThenFail<T>): ThenFail<T>;
-    /**
-     * invoke to relay the state of current promise to the callback given, and return current promise itself.
-     */
-    handle(callback: ThenFail.NodeStyleCallback<T>): ThenFail<T>;
-    handle(promiseOrCallback: ThenFail<T>|ThenFail.NodeStyleCallback<T>): ThenFail<T> {
-        if (promiseOrCallback && typeof (<ThenFail<T>>promiseOrCallback)._grab === 'function') {
-            this.then(value => {
-                (<ThenFail<T>>promiseOrCallback)._grab(this._baton, this._previous);
-            }, reason => {
-                (<ThenFail<T>>promiseOrCallback)._grab(this._baton, this._previous);
-            });
-        } else if (typeof promiseOrCallback === 'function') {
-            this.then(value => {
-                (<ThenFail.NodeStyleCallback<T>>promiseOrCallback)(undefined, value);
-            }, reason => {
-                (<ThenFail.NodeStyleCallback<T>>promiseOrCallback)(reason, undefined);
-            });
-        }
-
-        return this;
-    }
-
-    /**
-     * get a promise that will be fulfilled with value `undefined` when its previous promise gets fulfilled.
-     */
-    get void(): ThenFail<void> {
-        return this.then(() => { });
-    }
-
-    /**
-     * get a promise that will be fulfilled with value `true` when its previous promise gets fulfilled.
-     */
-    get true(): ThenFail<boolean> {
+    get true(): Promise<boolean> {
         return this.then(() => true);
     }
-
+    
     /**
-     * get a promise that will be fulfilled with value `false` when its previous promise gets fulfilled.
+     * (get) A promise that will eventually been fulfilled with value `false`.
      */
-    get false(): ThenFail<boolean> {
+    get false(): Promise<boolean> {
         return this.then(() => false);
     }
-
+    
     /**
-     * get the nth element in the array returned.
+     * (get) Get the context of current promise.
      */
-    first<T>(): ThenFail<T> {
-        return this.then(values => (<any>values)[0]);
+    get context(): Context {
+        return this._context;
     }
-
+    
     /**
-     * get a promise that will be fulfilled with the value given when its previous promise gets fulfilled.
+     * (get) A boolean that indicates whether the current promise is pending.
      */
-    return<T>(value: ThenFail.Thenable<T>|T): ThenFail<T> {
-        return this.then(() => value);
+    get pending(): boolean {
+        return this._state === State.pending;
     }
-
-    // STATIC
-
+    
     /**
-     * get a promise already fulfilled with value `undefined`.
+     * (get) A boolean that indicates whether the current promise is fulfilled.
      */
-    static get void(): ThenFail<void> {
-        return ThenFail.resolved<void>(undefined);
+    get fulfilled(): boolean {
+        return this._state === State.fulfilled;
     }
-
+    
     /**
-     * get a promise already fulfilled with value `true`.
+     * (get) A boolean that indicates whether the current promise is rejected.
      */
-    static get true(): ThenFail<boolean> {
-        return ThenFail.resolved(true);
+    get rejected(): boolean {
+        return this._state === State.rejected;
     }
-
+    
     /**
-     * get a promise already fulfilled with value `false`.
+     * (get) A boolean that indicates whether the current promise is interrupted.
      */
-    static get false(): ThenFail<boolean> {
-        return ThenFail.resolved(false);
+    get interrupted(): boolean {
+        return this._state === State.interrupted;
     }
-
+    
+    // Static helpers
+    
     /**
-     * a static then shortcut of a promise already fulfilled with value `undefined`.
+     * A shortcut of `Promise.void.then(onfulfilled)`.
      */
-    static then<R>(onfulfilled: (value: void) => ThenFail.Thenable<R>|R): ThenFail<R> {
-        return ThenFail.void.then(onfulfilled);
+    static then<Value>(onfulfilled: OnFulfilledHandler<void, Value>): Promise<Value> {
+        return Promise.void.then(onfulfilled);
     }
-
+    
     /**
-     * a static avail shortcut of a promise already fulfilled with value `undefined`.
+     * A shortcut of `Promise.then(() => value)`.
+     * @return Return the value itself if it's an instanceof ThenFail Promise.
      */
-    static avail(assertion: () => boolean): ThenFail<void> {
-        return ThenFail.void.avail(assertion);
-    }
-
-    /**
-     * a static time shortcut of a promise already fulfilled with value `undefined`.
-     */
-    static time(): ThenFail<void> {
-        return ThenFail.void.time();
-    }
-
-    /**
-     * a static delay shortcut of a promise already fulfilled with value `undefined`.
-     */
-    static delay(interval: number): ThenFail<void> {
-        return ThenFail.void.delay(interval);
-    }
-
-    /**
-     * create a promise that will be fulfilled after all promises (or values) get fulfilled,
-     * and will be rejected after at least one promise (or value) gets rejected and the others get fulfilled.
-     */
-    static all<R>(promises: (ThenFail.Thenable<R>|R)[]): ThenFail<R[]> {
-        var allPromise = new ThenFail<any>();
-        var values = Array(promises.length);
-
-        var rejected = false;
-        var rejectedReason: any;
-
-        var remain = promises.length;
-
-        if (remain) {
-            promises.forEach((promise, i) => {
-                ThenFail._unpack({}, promise, baton => {
-                    if (baton.state == ThenFail.State.fulfilled) {
-                        values[i] = baton.value;
-                    } else if (!rejected) {
-                        rejected = true;
-                        rejectedReason = baton.reason;
-                    }
-
-                    done();
-                });
-            });
+    static resolve<Value>(value: Thenable<Value>|Value): Promise<Value> {
+        if (value instanceof Promise) {
+            return value;
         } else {
-            done();
+            let promise = new Promise<Value>();
+            promise.resolve(value);
+            return promise;
         }
-
-        function done() {
-            if (--remain <= 0) {
-                if (rejected) {
-                    allPromise._grab({
-                        state: ThenFail.State.rejected,
-                        reason: rejectedReason
-                    }, null);
-                } else {
-                    allPromise._grab({
-                        state: ThenFail.State.fulfilled,
-                        value: values
-                    }, null);
-                }
-            }
-        }
-
-        return allPromise;
     }
-
+    
     /**
-     * a static retry shortcut of a promise already fulfilled with value `undefined`.
+     * A shortcut of `Promise.then(() => { throw reason; })`.
      */
-    static retry<R>(onfulfilled: (value: void) => ThenFail.Thenable<R>|R, options?: ThenFail.RetryOptions): ThenFail<R> {
-        return this.void.retry(onfulfilled, options);
-    }
-
-    /**
-     * transverse an array, if the return value of handler is a promise, it will wait till the promise gets fulfilled. return `false` in the handler to interrupt the transversing.
-     * this method returns a promise that will be fulfilled with a boolean, `true` indicates that it completes without interruption, otherwise `false`.
-     */
-    static each<T>(items: T[], handler: (item: T, index: number) => ThenFail.Thenable<any>|boolean|void): ThenFail<boolean> {
-        if (!items) {
-            return ThenFail.true;
-        }
-
-        var ret = new ThenFail<boolean>();
-
-        next(0);
-
-        function next(index: number) {
-            if (index >= items.length) {
-                ret.resolve(true);
-                return;
-            }
-
-            var item = items[index];
-
-            ThenFail
-                .then(() => {
-                    return handler(item, index);
-                })
-                .then(result => {
-                    if (result === false) {
-                        ret.resolve(false);
-                    } else {
-                        next(index + 1);
-                    }
-                })
-                .fail(reason => {
-                    ret.reject(reason);
-                });
-        }
-
-        return ret;
-    }
-
-    /**
-     * a promise version of `Array.prototype.map`.
-     */
-    static map<T, R>(items: T[], handler: (item: T, index: number) => ThenFail.Thenable<R>|R): ThenFail<R[]> {
-        var mapped: R[] = [];
-
-        if (!items) {
-            return ThenFail.resolved(mapped);
-        }
-
-        var promises = items.map((item, i) => handler(item, i));
-
-        return ThenFail.all(promises);
-    }
-
-    /**
-     * create a promise resolved by given value.
-     */
-    static resolved<T>(value: ThenFail.Thenable<T>|T): ThenFail<T> {
-        var promise = new ThenFail<T>();
-        promise.resolve(value);
-        return promise;
-    }
-
-    /**
-     * create a promise already rejected by given reason.
-     */
-    static rejected(reason: any): ThenFail<any>;
-    static rejected<T>(reason: any): ThenFail<T>;
-    static rejected(reason: any): ThenFail<any> {
-        var promise = new ThenFail<any>();
+    static reject<T>(reason: any): Promise<T> {
+        let promise = new Promise<T>();
         promise.reject(reason);
         return promise;
     }
-
-
-    // NODE HELPER
-
+    
     /**
-     * invoke a node style async method.
+     * Alias of `Promise.resolve`.
      */
-    static invoke<T>(object: Object, method: string, ...args: any[]): ThenFail<T> {
-        var promise = new ThenFail<T>();
-
-        try {
-            (<any>object)[method].apply(object, args.concat((err: any, ret: any) => {
-                if (err) {
-                    promise.reject(err);
-                } else {
-                    promise.resolve(ret);
-                }
-            }));
-        } catch (e) {
-            promise.reject(e);
-        }
-
+    static when<Value>(value: Thenable<Value>|Value): Promise<Value> {
+        return Promise.resolve(value);
+    }
+    
+    /**
+     * Create a promise under given context.
+     */
+    static context(context: Context): Promise<void> {
+        let promise = new Promise<void>(context);
+        promise.resolve();
         return promise;
     }
-
+    
     /**
-     * call a node style async function.
+     * Delay a period of time (milliseconds).
      */
-    static call<T>(fn: Function, ...args: any[]): ThenFail<T> {
-        var promise = new ThenFail<T>();
-
-        try {
-            fn.apply(null, args.concat((err: any, ret: any) => {
-                if (err) {
-                    promise.reject(err);
-                } else {
-                    promise.resolve(ret);
-                }
-            }));
-        } catch (e) {
-            promise.reject(e);
-        }
-
-        return promise;
+    static delay(timeout: number): Promise<void> {
+        return new Promise<void>(resolve => {
+            setTimeout(() => resolve(), Math.floor(timeout) || 0);
+        });
     }
-
-    // OTHERS
-
-    private static _makeStackTraceLong(error: any, promise: ThenFail<any>) {
-        var STACK_JUMP_SEPARATOR = 'From previous event:';
-
-        if (promise._stack &&
-            error && error.stack &&
-            error.stack.indexOf(STACK_JUMP_SEPARATOR) < 0
-            ) {
-
-            var stacks = [ThenFail.Utils.filterStackString(error.stack)];
-
-            for (var p = promise; p; p = p._previous) {
-                if (p._stack) {
-                    stacks.push(p._stack);
+    
+    /**
+     * Create a promise that will be fulfilled:
+     *  1. when all values are fulfilled.
+     *  2. with the value of an array of fulfilled values.
+     * And will be rejected:
+     *  1. if any of the values is rejected.
+     *  2. with the reason of the first rejection as its reason.
+     *  3. after all values are either fulfilled or rejected.
+     */
+    static all<Value>(values: (Thenable<Value>|Value)[]): Promise<Value[]> {
+        if (!values.length) {
+            return Promise.resolve([]);
+        }
+        
+        let resultsPromise = new Promise<Value[]>();
+        
+        let results: Value[] = [];
+        let remaining = values.length;
+        
+        let reasons: any[] = [];
+        
+        values.forEach((value, index) => {
+            Promise
+                .resolve(value)
+                .then(result => {
+                    results[index] = result;
+                    checkCompletion();
+                }, reason => {
+                    reasons.push(reason);
+                    checkCompletion();
+                });
+        });
+        
+        function checkCompletion(): void {
+            remaining--;
+            
+            if (!remaining) {
+                if (reasons.length) {
+                    resultsPromise.reject(reasons[0]);
+                } else {
+                    resultsPromise.resolve(results);
                 }
             }
-
-            var concatedStacks = stacks.join('\n' + STACK_JUMP_SEPARATOR + '\n');
-            error.stack = concatedStacks;
         }
+        
+        return resultsPromise;
+    }
+    
+    /**
+     * A promise version of `array.map`.
+     */
+    static map<Value, Return>(values: Value[], callback: MapCallback<Value, Return>): Promise<Return[]> {
+        return Promise.all(values.map(callback));
+    }
+    
+    /**
+     * (fake statement) This getter will always throw a break signal that interrupts the promises chain.
+     * 
+     * Example:
+     * 
+     *  promise
+     *      .then(() => {
+     *          if (toBreak) {
+     *              Promise.break;
+     *          }
+     * 
+     *          // Or not to break.
+     *      })
+     *      .then(() => {
+     *          // If `toBreak` is true, it will never enter this handler.
+     *      }, () => {
+     *          // Nor this handler.
+     *      });
+     */
+    static get break(): void {
+        throw BREAK_SIGNAL;
+    }
+    
+    /**
+     * (get) A promise that has already been fulfilled with value `undefined`.
+     */
+    static get void(): Promise<void> {
+        let promise = new Promise<void>();
+        promise.resolve(undefined);
+        return promise;
+    }
+    
+    /**
+     * (get) A promise that has already been fulfilled with value `true`.
+     */
+    static get true(): Promise<boolean> {
+        let promise = new Promise<boolean>();
+        promise.resolve(true);
+        return promise;
+    }
+    
+    /**
+     * (get) A promise that has already been fulfilled with value `false`.
+     */
+    static get false(): Promise<boolean> {
+        let promise = new Promise<boolean>();
+        promise.resolve(false);
+        return promise;
     }
 }
 
-module ThenFail {
-    /**
-     * log rejections not been relayed.
-     */
-    export var logRejectionsNotRelayed = true;
+export default Promise;
 
-    /**
-     * chain the stack trace for debugging reason.
-     * this has serious performance impact, never use in production.
-     */
-    export var longStackTrace = false;
+////////////////
+// Disposable //
+////////////////
 
-    /**
-     * node style callback.
-     */
-    export interface NodeStyleCallback<T> {
-        (error: any, value: T): void;
-    }
-
-    /**
-     * promise states.
-     */
-    export enum State {
-        pending,
-        fulfilled,
-        rejected
-    }
-
-    /**
-     * baton used to be relayed among promises.
-     */
-    export interface Baton<T> {
-        state: State;
-        value?: T;
-        reason?: any;
-        time?: number;
-    }
-
-    /**
-     * alias for ThenFail.
-     */
-    export var Promise = ThenFail;
-
-    /**
-     * for general promise implementations.
-     */
-    export interface Thenable<T> {
-        then<R>(onfulfilled: (value: T) => Thenable<R>|R, onrejected?: (reason: any) => any): Thenable<R>;
-    }
-
-    /**
-     * A small helper class to queue async operations.
-     */
-    export class PromiseLock {
-        private _promise = ThenFail.void;
-
-        /**
-         * handler will be called once this promise lock is unlocked, and it will be locked again until the promise returned by handler get fulfilled.
-         */
-        lock<T>(handler: () => Thenable<T>|T, unlockOnRejection = true): ThenFail<T> {
-            var promise = this._promise.then(handler);
-            this._promise = promise
-                .fail(reason => {
-                    if (!unlockOnRejection) {
-                        throw reason;
-                    } else {
-                        promise.log();
-                    }
-                })
-                .void;
-            return promise;
-        }
-
-        /**
-         * handler will be called once this promise lock is unlocked, but unlike `lock` method, `ready` will not lock it again.
-         */
-        ready(): ThenFail<void>;
-        ready<T>(handler: () => Thenable<T>|T): ThenFail<T>;
-        ready<T>(handler?: () => Thenable<T>|T): ThenFail<T|void> {
-            return this._promise.then(handler);
-        }
-    }
-
-    /**
-     * default settings
-     */
-    export module Options {
-        /**
-         * default settings for retry
-         */
-        export module Retry {
-            // number of times to retry, defaults to 2.
-            export var limit = 2;
-            // interval (milliseconds) between every retry, defaults to 0.
-            export var interval = 0;
-            // max interval (milliseconds) for retry if interval multiplier is applied, defaults to Infinity.
-            export var maxInterval = Infinity;
-            // the multiplier that will be applied to the interval each time after retry, defaults to 1.
-            export var intervalMultiplier = 1;
-            // a handler that will be triggered when retries happens.
-            export var onretry: any = null;
-        }
-
-        /**
-         * `log()` settings
-         */
-        export module Log {
-            /**
-             * whether to throw unhandled rejection when using `log()`.
-             */
-            export var throwUnhandledRejection = false;
-            /**
-             * value logger for `log()`.
-             */
-            export var valueLogger = (...values: any[]) => {
-                values.forEach(value => {
-                    if (value instanceof Object) {
-                        console.log(JSON.stringify(value, null, '    '));
-                    } else {
-                        console.log(value);
-                    }
-                });
-            };
-            /**
-             * error logger for `log()`.
-             */
-            export var errorLogger = (...reasons: any[]) => {
-                reasons.forEach(reason => {
-                    if (reason instanceof Error) {
-                        console.warn(reason.stack || reason);
-                    } else if (reason instanceof Object) {
-                        console.warn(JSON.stringify(reason, null, '    '));
-                    } else {
-                        console.warn(reason);
-                    }
-                });
-            };
-        }
-    }
-
-    /**
-     * interface for retry options
-     */
-    export interface RetryOptions {
-        /**
-         * number of times to retry, defaults to 2.
-         */
-        limit?: number;
-        /**
-         * interval (milliseconds) between every retry, defaults to 0.
-         */
-        interval?: number;
-        /**
-         * max interval (milliseconds) for retry if interval multiplier is applied, defaults to Infinity.
-         */
-        maxInterval?: number;
-        /**
-         * the multiplier that will be applied to the interval each time after retry, defaults to 1.
-         */
-        intervalMultiplier?: number;
-        /**
-         * a handler that will be triggered when retries happens.
-         */
-        onretry?: (retriesLeft: number, lastReason: any) => void;
-    }
-
-    export module Utils {
-        /**
-         * defaults helper
-         */
-        export function defaults<T>(options: T, defaultOptions: T) {
-            var hop = Object.prototype.hasOwnProperty;
-            options = options || <T>{};
-            var result: any = {};
-            for (var name in defaultOptions) {
-                if (hop.call(options, name)) {
-                    result[name] = (<any>options)[name];
-                } else {
-                    result[name] = (<any>defaultOptions)[name];
-                }
-            }
-            return result;
-        }
-
-        declare var process: any;
-        declare var setImmediate: typeof window.setImmediate;
-
-        interface NextTickTask {
-            task?: () => void;
-            domain?: any;
-            next?: NextTickTask;
-        }
-
-        /**
-         * from Q.
-         */
-        export var nextTick = (() => {
-            // linked list of tasks (single, with head node)
-            var head: NextTickTask = {};
-            var tail = head;
-            var flushing = false;
-            var requestTick: () => void = null;
-            var isNodeJS = false;
-
-            function flush() {
-                while (head.next) {
-                    head = head.next;
-                    var task = head.task;
-                    head.task = null;
-                    var domain = head.domain;
-
-                    if (domain) {
-                        head.domain = null;
-                        domain.enter();
-                    }
-
-                    try {
-                        task();
-                    } catch (e) {
-                        if (isNodeJS) {
-                            // In node, uncaught exceptions are considered fatal errors.
-                            // Re-throw them synchronously to interrupt flushing!
-
-                            // Ensure continuation if the uncaught exception is suppressed
-                            // listening "uncaughtException" events (as domains does).
-                            // Continue in next event to avoid tick recursion.
-                            if (domain) {
-                                domain.exit();
-                            }
-                            setTimeout(flush, 0);
-                            if (domain) {
-                                domain.enter();
-                            }
-
-                            throw e;
-                        } else {
-                            // In browsers, uncaught exceptions are not fatal.
-                            // Re-throw them asynchronously to avoid slow-downs.
-                            setTimeout(function () {
-                                throw e;
-                            }, 0);
-                        }
-                    }
-
-                    if (domain) {
-                        domain.exit();
-                    }
-                }
-
-                flushing = false;
-            }
-
-            var nextTick = (task: () => void) => {
-                tail = tail.next = {
-                    task: task,
-                    domain: isNodeJS && process.domain,
-                    next: null
-                };
-
-                if (!flushing) {
-                    flushing = true;
-                    requestTick();
-                }
-            };
-
-            if (typeof process !== 'undefined' && process.nextTick) {
-                // Node.js before 0.9. Note that some fake-Node environments, like the
-                // Mocha test runner, introduce a `process` global without a `nextTick`.
-                isNodeJS = true;
-
-                requestTick = function () {
-                    process.nextTick(flush);
-                };
-
-            } else if (typeof setImmediate === 'function') {
-                // In IE10, Node.js 0.9+, or https://github.com/NobleJS/setImmediate
-                if (typeof window !== 'undefined') {
-                    requestTick = setImmediate.bind(window, flush);
-                } else {
-                    requestTick = () => {
-                        setImmediate(flush);
-                    };
-                }
-
-            } else if (typeof MessageChannel !== 'undefined') {
-                // modern browsers
-                // http://www.nonblocking.io/2011/06/windownexttick.html
-                var channel = new MessageChannel();
-                // At least Safari Version 6.0.5 (8536.30.1) intermittently cannot create
-                // working message ports the first time a page loads.
-                channel.port1.onmessage = function () {
-                    requestTick = requestPortTick;
-                    channel.port1.onmessage = flush;
-                    flush();
-                };
-                var requestPortTick = function () {
-                    // Opera requires us to provide a message payload, regardless of
-                    // whether we use it.
-                    channel.port2.postMessage(0);
-                };
-                requestTick = function () {
-                    setTimeout(flush, 0);
-                    requestPortTick();
-                };
-
-            } else {
-                // old browsers
-                requestTick = function () {
-                    setTimeout(flush, 0);
-                };
-            }
-
-            return nextTick;
-        })();
-
-        var thenfailFileName: string;
-        var thenfailStartLine: number;
-        var thenfailEndLine: number;
-
-        function getFileNameAndLineNumber(stackLine: string): any[] {
-            // Named functions: "at functionName (filename:lineNumber:columnNumber)"
-            // In IE10 function name can have spaces ("Anonymous function") O_o
-            var attempt1 = /at .+ \((.+):(\d+):(?:\d+)\)$/.exec(stackLine);
-            if (attempt1) {
-                return [attempt1[1], Number(attempt1[2])];
-            }
-
-            // Anonymous functions: "at filename:lineNumber:columnNumber"
-            var attempt2 = /at ([^ ]+):(\d+):(?:\d+)$/.exec(stackLine);
-            if (attempt2) {
-                return [attempt2[1], Number(attempt2[2])];
-            }
-
-            // Firefox style: "function@filename:lineNumber or @filename:lineNumber"
-            var attempt3 = /.*@(.+):(\d+)$/.exec(stackLine);
-            if (attempt3) {
-                return [attempt3[1], Number(attempt3[2])];
-            }
-        }
-
-        function isNodeFrame(stackLine: string): boolean {
-            return /\((?:module|node)\.js:/.test(stackLine);
-        }
-
-        function isInternalFrame(stackLine: string): boolean {
-            var fileNameAndLineNumber = getFileNameAndLineNumber(stackLine);
-
-            if (!fileNameAndLineNumber) {
-                return false;
-            }
-
-            var fileName = fileNameAndLineNumber[0];
-            var lineNumber = fileNameAndLineNumber[1];
-
-            return fileName == thenfailFileName && lineNumber >= thenfailStartLine && lineNumber <= thenfailEndLine;
-        }
-
-        export function filterStackString(stackString: string): string {
-            var lines = stackString.split('\n');
-            var desiredLines: string[] = [];
-            for (var i = 0; i < lines.length; ++i) {
-                var line = lines[i];
-
-                if (!isInternalFrame(line) && !isNodeFrame(line) && line) {
-                    desiredLines.push(line);
-                }
-            }
-            return desiredLines.join('\n');
-        }
-
-        export function captureLine(): number {
-            try {
-                throw new Error();
-            } catch (e) {
-                var lines = e.stack.split('\n');
-                var firstLine = lines[0].indexOf('@') > 0 ? lines[1] : lines[2];
-                var fileNameAndLineNumber = getFileNameAndLineNumber(firstLine);
-                if (!fileNameAndLineNumber) {
-                    return;
-                }
-
-                thenfailFileName = fileNameAndLineNumber[0];
-                return fileNameAndLineNumber[1];
-            }
-        }
-
-        export function captureBoundaries(): void {
-            thenfailStartLine = (<any>self)._thenfailCaptureStartLine();
-            thenfailEndLine = (<any>self)._thenfailCaptureEndLine();
-
-            delete (<any>self)._thenfailCaptureStartLine;
-            delete (<any>self)._thenfailCaptureEndLine;
-        }
-    }
+export interface Disposer<Resource> {
+    (resource: Resource): void;
 }
 
-(<any>self)._thenfailCaptureEndLine = () => ThenFail.Utils.captureLine();
+export interface Disposable<Resource> {
+    resource: Resource;
+    dispose: Disposer<Resource>;
+}
 
-ThenFail.Utils.captureBoundaries();
-
-//#if args.module
-export = ThenFail;
-//#end if
+/**
+ * Use a disposable resource and dispose it after been used.
+ */
+export function using<Resource, Return>(disposable: Thenable<Disposable<Resource>>|Disposable<Resource>, handler: OnFulfilledHandler<Resource, Return>): Promise<Return> {
+    let resolvedDisposable: Disposable<Resource>;
+    
+    let promise = Promise
+        .when(disposable)
+        .then(disposable => {
+            resolvedDisposable = disposable;
+            return handler(disposable.resource);
+        });
+    
+    let disposed = false;
+    
+    function dispose(): void {
+        if (!disposed) {
+            // Change the value of `disposed` first to avoid exception in
+            // `resolvedDisposable.dispose()` causing `onrejected` handler been called
+            // again.
+            disposed = true;
+            resolvedDisposable.dispose(resolvedDisposable.resource);
+        }
+    }
+    
+    promise
+        .interruption(dispose)
+        .then(dispose, dispose);
+    
+    return promise;
+}

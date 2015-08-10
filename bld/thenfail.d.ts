@@ -1,343 +1,294 @@
 /**
- * the instance of class ThenFail is the promise as well as the promise resolver.
+ * Promise like object.
  */
-declare class ThenFail<T> implements ThenFail.Thenable<T> {
-    private _onfulfilled;
-    private _onrejected;
-    private _onavailassertion;
-    private _markTime;
-    private _hasNexts;
-    private _nexts;
-    private _baton;
-    private _stack;
-    private _previous;
+export interface Thenable<Value> {
+    then<Return>(onfulfilled: (value: Value) => Thenable<Return> | Return, onrejected?: (reason: any) => any): Thenable<Return>;
+}
+export interface Resolver<Value> {
+    (resolve: (value?: Thenable<Value> | Value) => void, reject: (reason: any) => void): void;
+}
+export interface OnFulfilledHandler<Value, Return> {
+    (value: Value): Promise<Return> | Thenable<Return> | Return;
+}
+export interface OnRejectedHandler<Return> {
+    (reason: any): Promise<Return> | Thenable<Return> | Return;
+}
+export interface OnAnyHandler<Return> {
+    (valueOrReason: any): Promise<Return> | Thenable<Return> | Return;
+}
+export interface OnInterruptedHandler {
+    (): void;
+}
+export interface NodeStyleCallback<Value> {
+    (error: any, value: Value): void;
+}
+export interface MapCallback<Value, Return> {
+    (value: Value, index: number, array: Value[]): Promise<Return> | Thenable<Return> | Return;
+}
+export declare class Context {
+    _disposed: boolean;
+    _enclosed: boolean;
+    _subContexts: Context[];
     /**
-     * create a ThenFail promise instance.
+     * (get) A boolean that indicates whether this promise context is disposed.
+     * See https://github.com/vilic/thenfail# for more information.
      */
-    constructor(handler: (resolve: (value?: ThenFail.Thenable<T> | T) => void, reject: (reason: any) => void) => void);
-    constructor(value: ThenFail.Thenable<T> | T);
+    disposed: boolean;
+    /**
+     * (get) A boolean that indicates whether this promise context is enclosed.
+     * See https://github.com/vilic/thenfail# for more information.
+     */
+    enclosed: boolean;
+    /**
+     * Dispose this promise context.
+     * See https://github.com/vilic/thenfail# for more information.
+     */
+    dispose(): void;
+    /**
+     * Dispose all sub contexts of this promise context.
+     */
+    disposeSubContexts(): void;
+}
+/**
+ * Possible states of a promise.
+ */
+export declare const enum State {
+    pending = 0,
+    fulfilled = 1,
+    rejected = 2,
+    interrupted = 3,
+}
+export declare class Promise<Value> implements Thenable<Value> {
+    private _state;
+    private _running;
+    private _valueOrReason;
+    private _context;
+    /**
+     * Next promises in the chain.
+     */
+    private _chainedPromise;
+    private _chainedPromises;
+    /**
+     * Promises that will share the same state (and value/reason).
+     *
+     * Example:
+     *
+     *  var promiseA = Promise.then(() => {
+     *      var promiseB = Promise.then(() => ...);
+     *      return promiseB;
+     *  });
+     *
+     *  The state of `promiseB` will determine the state of `promiseA`.
+     *  And `promiseA` will then be in here.
+     */
+    private _handledPromise;
+    private _handledPromises;
+    private _onPreviousFulfilled;
+    private _onPreviousRejected;
+    private _onPreviousInterrupted;
+    /**
+     * Promise constructor.
+     */
     constructor();
+    constructor(resolver: Resolver<Value>);
+    constructor(context: Context);
     /**
-     * grab
+     * Get the state from previous promise in chain.
      */
-    private _grab(baton, previous);
+    private _grab(previousState, previousValueOrReason?);
     /**
-     * run
+     * Invoke `onfulfilled` or `onrejected` handlers.
      */
-    private _run(handler, baton?);
+    private _run(handler, previousValueOrReason);
     /**
-     * unpack (resolve)
+     * The resolve process defined in Promises/A+ specifications.
      */
-    private static _unpack(thisArg, value, callback);
+    private _unpack(value, callback);
     /**
-     * relay
+     * Set the state of current promise and relay it to next promises.
      */
-    private _relay(baton, previous?);
+    private _relay(state, valueOrReason?);
     /**
-     * relax
+     * The `then` method that follows Promises/A+ specifications <https://promisesaplus.com>.
+     * To learn how to use promise, please check out <https://github.com/vilic/thenfail>.
      */
-    private _relax();
+    then<Return>(onfulfilled: OnFulfilledHandler<Value, Return>, onrejected?: OnRejectedHandler<Return>): Promise<Return>;
+    then(onfulfilled: void, onrejected: OnRejectedHandler<Value>): Promise<Value>;
     /**
-     * resolve this promise.
-     * @param value the value to resolve this promise with, could be a promise.
+     * Resolve this promise with a value or thenable.
+     * @param value A normal value, or a promise/thenable.
      */
-    resolve(value?: ThenFail.Thenable<T> | T): void;
+    resolve(value?: Thenable<Value> | Value): void;
     /**
-     * reject this promise.
-     * @param reason the reason to reject this promise with.
+     * Reject this promise with a reason.
      */
     reject(reason: any): void;
     /**
-     * then method following Promises/A+ specification.
+     * Add an interruption handler. This handler will only be invoked if previous
+     * onfulfilled/onrejected handler has run and been interrupted.
      */
-    then(onfulfilled?: void, onrejected?: void): ThenFail<T>;
-    then(onfulfilled: void, onrejected: (reason: any) => any): ThenFail<T>;
-    then<R>(onfulfilled: (value: T) => ThenFail.Thenable<R> | R, onrejected?: (reason: any) => any): ThenFail<R>;
+    interruption(oninterrupted: OnInterruptedHandler): Promise<Value>;
     /**
-     * add an invisible promise with no nexts to the chain, error will be thrown if it's relayed to this promise (i.e. not handled by parent promises).
+     * Enclose current promise context.
      */
-    done(): void;
+    enclose(): Promise<Value>;
     /**
-     * add an assertion to the promises chain, if it returns false, the active promises in this chain will stop relaying on.
-     * returns the current promise.
+     * Delay a period of time (milliseconds).
      */
-    avail(assertion: () => boolean): ThenFail<T>;
+    delay(timeout: number): Promise<Value>;
     /**
-     * mark start time, see also `timeEnd`.
+     * Set a timeout of current promise context. This will enclose current promise context.
      */
-    time(): ThenFail<T>;
+    timeout(timeout: number): Promise<Value>;
     /**
-     * a string contains "{duration}" that will be replaced as the calculated value.
+     * Handle another promise with the same state (and value/reason) of the current one.
+     * @return Current promise.
      */
-    timeEnd(message?: string): ThenFail<T>;
+    handle(promise: Promise<Value>): Promise<Value>;
+    handle(callback: NodeStyleCallback<Value>): Promise<Value>;
     /**
-     * get a boolean indicates whether the state of this promise is `pending`.
+     * Create a disposable resource promise.
+     * @param disposer
+     */
+    disposable(disposer: Disposer<Value>): Promise<Disposable<Value>>;
+    /**
+     * Handle `fulfilled` without change its original return value.
+     *
+     * Example:
+     *
+     *  promise
+     *      .resolved(123)
+     *      .tap(value => {
+     *          console.log(value); // 123
+     *          return Promise.delay(100);
+     *      })
+     *      .then(value => {
+     *          console.log(value); // 123
+     *      });
+     */
+    tap(onfulfilled: OnFulfilledHandler<Value, void>): Promise<Value>;
+    /**
+     * Promise version of `array.map`.
+     */
+    map<Value>(callback: MapCallback<any, Value>): Promise<Value[]>;
+    /**
+     * (get) A shortcut of `promise.then(() => { Promise.break; })`.
+     * See https://github.com/vilic/thenfail# for more information.
+     */
+    break: Promise<void>;
+    /**
+     * (get) A promise that will eventually been fulfilled with value `undefined`.
+     */
+    void: Promise<void>;
+    /**
+     * (get) A promise that will eventually been fulfilled with value `true`.
+     */
+    true: Promise<boolean>;
+    /**
+     * (get) A promise that will eventually been fulfilled with value `false`.
+     */
+    false: Promise<boolean>;
+    /**
+     * (get) Get the context of current promise.
+     */
+    context: Context;
+    /**
+     * (get) A boolean that indicates whether the current promise is pending.
      */
     pending: boolean;
     /**
-     * get a boolean indicates whether the state of this promise is `fulfilled`.
+     * (get) A boolean that indicates whether the current promise is fulfilled.
      */
     fulfilled: boolean;
     /**
-     * get a boolean indicates whether the state of this promise is `rejected`.
+     * (get) A boolean that indicates whether the current promise is rejected.
      */
     rejected: boolean;
     /**
-     * log the fulfilled value or rejection, or specified value.
+     * (get) A boolean that indicates whether the current promise is interrupted.
      */
-    log(object?: any): ThenFail<void>;
+    interrupted: boolean;
     /**
-     * spread an array argument to arguments directly via `onfulfilled.apply(null, value)`.
+     * A shortcut of `Promise.void.then(onfulfilled)`.
      */
-    spread<R>(onfulfilled: (...args: any[]) => ThenFail.Thenable<R> | R): ThenFail<R>;
+    static then<Value>(onfulfilled: OnFulfilledHandler<void, Value>): Promise<Value>;
     /**
-     * a shortcut for `promise.then(null, onrejected)`.
+     * A shortcut of `Promise.then(() => value)`.
+     * @return Return the value itself if it's an instanceof ThenFail Promise.
      */
-    fail(onrejected: (reason: any) => any): ThenFail<T>;
+    static resolve<Value>(value: Thenable<Value> | Value): Promise<Value>;
     /**
-     * catch.
+     * A shortcut of `Promise.then(() => { throw reason; })`.
      */
-    catch(onrejected: (reason: any) => any): ThenFail<T>;
-    catch(ErrorType: Function, onrejected: (reason: any) => any): ThenFail<T>;
+    static reject<T>(reason: any): Promise<T>;
     /**
-     * call `onalways` handler when its previous promise get fulfilled or rejected.
+     * Alias of `Promise.resolve`.
      */
-    always<R>(onalways: (value: T, reason: any) => ThenFail.Thenable<R> | R): ThenFail<R>;
+    static when<Value>(value: Thenable<Value> | Value): Promise<Value>;
     /**
-     * a helper that delays the relaying of fulfilled value from previous promise.
-     * @param interval delay interval (milliseconds, default to 0).
+     * Create a promise under given context.
      */
-    delay(interval?: number): ThenFail<T>;
+    static context(context: Context): Promise<void>;
     /**
-     * retry doing something, will be rejected if the failures execeeds limits (defaults to 2).
-     * you may either return a rejected promise or throw an error to produce a failure.
+     * Delay a period of time (milliseconds).
      */
-    retry<R>(onfulfilled: (value: T) => ThenFail.Thenable<R> | R, options?: ThenFail.RetryOptions): ThenFail<R>;
+    static delay(timeout: number): Promise<void>;
     /**
-     * resolve current promise in given time (milliseconds) with optional value.
-     * the timer starts immediately when this method is called.
+     * Create a promise that will be fulfilled:
+     *  1. when all values are fulfilled.
+     *  2. with the value of an array of fulfilled values.
+     * And will be rejected:
+     *  1. if any of the values is rejected.
+     *  2. with the reason of the first rejection as its reason.
+     *  3. after all values are either fulfilled or rejected.
      */
-    timeout(time: number, value?: T): ThenFail<T>;
+    static all<Value>(values: (Thenable<Value> | Value)[]): Promise<Value[]>;
     /**
-     * relay the state of current promise to the promise given, and return current promise itself.
+     * A promise version of `array.map`.
      */
-    handle(promise: ThenFail<T>): ThenFail<T>;
+    static map<Value, Return>(values: Value[], callback: MapCallback<Value, Return>): Promise<Return[]>;
     /**
-     * invoke to relay the state of current promise to the callback given, and return current promise itself.
+     * (fake statement) This getter will always throw a break signal that interrupts the promises chain.
+     *
+     * Example:
+     *
+     *  promise
+     *      .then(() => {
+     *          if (toBreak) {
+     *              Promise.break;
+     *          }
+     *
+     *          // Or not to break.
+     *      })
+     *      .then(() => {
+     *          // If `toBreak` is true, it will never enter this handler.
+     *      }, () => {
+     *          // Nor this handler.
+     *      });
      */
-    handle(callback: ThenFail.NodeStyleCallback<T>): ThenFail<T>;
+    static break: void;
     /**
-     * get a promise that will be fulfilled with value `undefined` when its previous promise gets fulfilled.
+     * (get) A promise that has already been fulfilled with value `undefined`.
      */
-    void: ThenFail<void>;
+    static void: Promise<void>;
     /**
-     * get a promise that will be fulfilled with value `true` when its previous promise gets fulfilled.
+     * (get) A promise that has already been fulfilled with value `true`.
      */
-    true: ThenFail<boolean>;
+    static true: Promise<boolean>;
     /**
-     * get a promise that will be fulfilled with value `false` when its previous promise gets fulfilled.
+     * (get) A promise that has already been fulfilled with value `false`.
      */
-    false: ThenFail<boolean>;
-    /**
-     * get the nth element in the array returned.
-     */
-    first<T>(): ThenFail<T>;
-    /**
-     * get a promise that will be fulfilled with the value given when its previous promise gets fulfilled.
-     */
-    return<T>(value: ThenFail.Thenable<T> | T): ThenFail<T>;
-    /**
-     * get a promise already fulfilled with value `undefined`.
-     */
-    static void: ThenFail<void>;
-    /**
-     * get a promise already fulfilled with value `true`.
-     */
-    static true: ThenFail<boolean>;
-    /**
-     * get a promise already fulfilled with value `false`.
-     */
-    static false: ThenFail<boolean>;
-    /**
-     * a static then shortcut of a promise already fulfilled with value `undefined`.
-     */
-    static then<R>(onfulfilled: (value: void) => ThenFail.Thenable<R> | R): ThenFail<R>;
-    /**
-     * a static avail shortcut of a promise already fulfilled with value `undefined`.
-     */
-    static avail(assertion: () => boolean): ThenFail<void>;
-    /**
-     * a static time shortcut of a promise already fulfilled with value `undefined`.
-     */
-    static time(): ThenFail<void>;
-    /**
-     * a static delay shortcut of a promise already fulfilled with value `undefined`.
-     */
-    static delay(interval: number): ThenFail<void>;
-    /**
-     * create a promise that will be fulfilled after all promises (or values) get fulfilled,
-     * and will be rejected after at least one promise (or value) gets rejected and the others get fulfilled.
-     */
-    static all<R>(promises: (ThenFail.Thenable<R> | R)[]): ThenFail<R[]>;
-    /**
-     * a static retry shortcut of a promise already fulfilled with value `undefined`.
-     */
-    static retry<R>(onfulfilled: (value: void) => ThenFail.Thenable<R> | R, options?: ThenFail.RetryOptions): ThenFail<R>;
-    /**
-     * transverse an array, if the return value of handler is a promise, it will wait till the promise gets fulfilled. return `false` in the handler to interrupt the transversing.
-     * this method returns a promise that will be fulfilled with a boolean, `true` indicates that it completes without interruption, otherwise `false`.
-     */
-    static each<T>(items: T[], handler: (item: T, index: number) => ThenFail.Thenable<any> | boolean | void): ThenFail<boolean>;
-    /**
-     * a promise version of `Array.prototype.map`.
-     */
-    static map<T, R>(items: T[], handler: (item: T, index: number) => ThenFail.Thenable<R> | R): ThenFail<R[]>;
-    /**
-     * create a promise resolved by given value.
-     */
-    static resolved<T>(value: ThenFail.Thenable<T> | T): ThenFail<T>;
-    /**
-     * create a promise already rejected by given reason.
-     */
-    static rejected(reason: any): ThenFail<any>;
-    static rejected<T>(reason: any): ThenFail<T>;
-    /**
-     * invoke a node style async method.
-     */
-    static invoke<T>(object: Object, method: string, ...args: any[]): ThenFail<T>;
-    /**
-     * call a node style async function.
-     */
-    static call<T>(fn: Function, ...args: any[]): ThenFail<T>;
-    private static _makeStackTraceLong(error, promise);
+    static false: Promise<boolean>;
 }
-declare module ThenFail {
-    /**
-     * log rejections not been relayed.
-     */
-    var logRejectionsNotRelayed: boolean;
-    /**
-     * chain the stack trace for debugging reason.
-     * this has serious performance impact, never use in production.
-     */
-    var longStackTrace: boolean;
-    /**
-     * node style callback.
-     */
-    interface NodeStyleCallback<T> {
-        (error: any, value: T): void;
-    }
-    /**
-     * promise states.
-     */
-    enum State {
-        pending = 0,
-        fulfilled = 1,
-        rejected = 2,
-    }
-    /**
-     * baton used to be relayed among promises.
-     */
-    interface Baton<T> {
-        state: State;
-        value?: T;
-        reason?: any;
-        time?: number;
-    }
-    /**
-     * alias for ThenFail.
-     */
-    var Promise: typeof ThenFail;
-    /**
-     * for general promise implementations.
-     */
-    interface Thenable<T> {
-        then<R>(onfulfilled: (value: T) => Thenable<R> | R, onrejected?: (reason: any) => any): Thenable<R>;
-    }
-    /**
-     * A small helper class to queue async operations.
-     */
-    class PromiseLock {
-        private _promise;
-        /**
-         * handler will be called once this promise lock is unlocked, and it will be locked again until the promise returned by handler get fulfilled.
-         */
-        lock<T>(handler: () => Thenable<T> | T, unlockOnRejection?: boolean): ThenFail<T>;
-        /**
-         * handler will be called once this promise lock is unlocked, but unlike `lock` method, `ready` will not lock it again.
-         */
-        ready(): ThenFail<void>;
-        ready<T>(handler: () => Thenable<T> | T): ThenFail<T>;
-    }
-    /**
-     * default settings
-     */
-    module Options {
-        /**
-         * default settings for retry
-         */
-        module Retry {
-            var limit: number;
-            var interval: number;
-            var maxInterval: number;
-            var intervalMultiplier: number;
-            var onretry: any;
-        }
-        /**
-         * `log()` settings
-         */
-        module Log {
-            /**
-             * whether to throw unhandled rejection when using `log()`.
-             */
-            var throwUnhandledRejection: boolean;
-            /**
-             * value logger for `log()`.
-             */
-            var valueLogger: (...values: any[]) => void;
-            /**
-             * error logger for `log()`.
-             */
-            var errorLogger: (...reasons: any[]) => void;
-        }
-    }
-    /**
-     * interface for retry options
-     */
-    interface RetryOptions {
-        /**
-         * number of times to retry, defaults to 2.
-         */
-        limit?: number;
-        /**
-         * interval (milliseconds) between every retry, defaults to 0.
-         */
-        interval?: number;
-        /**
-         * max interval (milliseconds) for retry if interval multiplier is applied, defaults to Infinity.
-         */
-        maxInterval?: number;
-        /**
-         * the multiplier that will be applied to the interval each time after retry, defaults to 1.
-         */
-        intervalMultiplier?: number;
-        /**
-         * a handler that will be triggered when retries happens.
-         */
-        onretry?: (retriesLeft: number, lastReason: any) => void;
-    }
-    module Utils {
-        /**
-         * defaults helper
-         */
-        function defaults<T>(options: T, defaultOptions: T): any;
-        /**
-         * from Q.
-         */
-        var nextTick: (task: () => void) => void;
-        function filterStackString(stackString: string): string;
-        function captureLine(): number;
-        function captureBoundaries(): void;
-    }
+export default Promise;
+export interface Disposer<Resource> {
+    (resource: Resource): void;
 }
-export = ThenFail;
+export interface Disposable<Resource> {
+    resource: Resource;
+    dispose: Disposer<Resource>;
+}
+/**
+ * Use a disposable resource and dispose it after been used.
+ */
+export declare function using<Resource, Return>(disposable: Thenable<Disposable<Resource>> | Disposable<Resource>, handler: OnFulfilledHandler<Resource, Return>): Promise<Return>;
