@@ -168,6 +168,15 @@ export declare class Promise<Value> implements Thenable<Value> {
      */
     tap(onfulfilled: OnFulfilledHandler<Value, void>): Promise<Value>;
     /**
+     * A shortcut of `promise.then(undefined, onrejected)`.
+     */
+    fail(onrejected: OnRejectedHandler<Value>): Promise<Value>;
+    /**
+     * Catch specific type of error if specified. Otherwise it the same like `promise.fail`.
+     */
+    catch(onrejected: OnRejectedHandler<Value>): Promise<Value>;
+    catch(ErrorType: Function, onrejected: OnRejectedHandler<Value>): Promise<Value>;
+    /**
      * Promise version of `array.map`.
      */
     map<Value>(callback: MapCallback<any, Value>): Promise<Value[]>;
@@ -220,7 +229,8 @@ export declare class Promise<Value> implements Thenable<Value> {
     /**
      * A shortcut of `Promise.then(() => { throw reason; })`.
      */
-    static reject<T>(reason: any): Promise<T>;
+    static reject(reason: any): Promise<void>;
+    static reject<Value>(reason: any): Promise<Value>;
     /**
      * Alias of `Promise.resolve`.
      */
@@ -281,6 +291,17 @@ export declare class Promise<Value> implements Thenable<Value> {
     static false: Promise<boolean>;
 }
 export default Promise;
+export interface PromiseLockHandler<Return> {
+    (): Promise<Return> | Thenable<Return> | Return;
+}
+export declare class PromiseLock {
+    private _promise;
+    /**
+     * handler will be called once this promise lock is unlocked, and it will be
+     * locked again until the value returned by handler is fulfilled.
+     */
+    lock<Return>(handler: PromiseLockHandler<Return>): Promise<Return>;
+}
 export interface Disposer<Resource> {
     (resource: Resource): void;
 }

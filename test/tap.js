@@ -11,14 +11,35 @@ describe('Feature: tap', function () {
         return Promise
             .true
             .tap(function (value) {
-                assert(value === true);
+                assert.equal(value, true);
             })
             .tap(function (value) {
-                assert(value === true);
-                return Promise.delay(10);
+                assert.equal(value, true);
+                return new Promise(function (resolve) {
+                    setTimeout(resolve, 10);
+                });
             })
             .then(function (value) {
-                assert(value === true);
+                assert.equal(value, true);
+            });
+    });
+    
+    it('Should be in the chain', function (done) {
+        Promise
+            .true
+            .tap(function (value) {
+                return new Promise(function (resolve, reject) {
+                    setTimeout(function () {
+                        reject();
+                    }, 10);
+                });
+            })
+            .tap(function (value) {
+                return Promise.delay(10);
+            })
+            .then(function (value) { })
+            .then(undefined, function () {
+                done();
             });
     });
 });

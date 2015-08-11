@@ -494,6 +494,28 @@ var __extends = (this && this.__extends) || function (d, b) {
                 .then(function () { return relayValue; });
         };
         /**
+         * A shortcut of `promise.then(undefined, onrejected)`.
+         */
+        Promise.prototype.fail = function (onrejected) {
+            return this.then(undefined, onrejected);
+        };
+        Promise.prototype.catch = function (ErrorType, onrejected) {
+            if (typeof onrejected === 'function') {
+                return this.then(undefined, function (reason) {
+                    if (reason instanceof ErrorType) {
+                        return onrejected(reason);
+                    }
+                    else {
+                        throw reason;
+                    }
+                });
+            }
+            else {
+                onrejected = ErrorType;
+                return this.then(undefined, onrejected);
+            }
+        };
+        /**
          * Promise version of `array.map`.
          */
         Promise.prototype.map = function (callback) {
@@ -613,9 +635,6 @@ var __extends = (this && this.__extends) || function (d, b) {
                 return promise;
             }
         };
-        /**
-         * A shortcut of `Promise.then(() => { throw reason; })`.
-         */
         Promise.reject = function (reason) {
             var promise = new Promise();
             promise.reject(reason);
@@ -756,6 +775,24 @@ var __extends = (this && this.__extends) || function (d, b) {
     })();
     exports.Promise = Promise;
     exports.default = Promise;
+    var PromiseLock = (function () {
+        function PromiseLock() {
+            this._promise = Promise.void;
+        }
+        /**
+         * handler will be called once this promise lock is unlocked, and it will be
+         * locked again until the value returned by handler is fulfilled.
+         */
+        PromiseLock.prototype.lock = function (handler) {
+            var promise = this._promise.then(handler);
+            this._promise = promise
+                .fail(function (reason) { return undefined; })
+                .void;
+            return promise;
+        };
+        return PromiseLock;
+    })();
+    exports.PromiseLock = PromiseLock;
     /**
      * Use a disposable resource and dispose it after been used.
      */

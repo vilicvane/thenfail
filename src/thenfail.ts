@@ -588,6 +588,33 @@ export class Promise<Value> implements Thenable<Value> {
             })
             .then(() => relayValue);
     }
+
+    /**
+     * A shortcut of `promise.then(undefined, onrejected)`.
+     */
+    fail(onrejected: OnRejectedHandler<Value>): Promise<Value> {
+        return this.then<Value>(undefined, onrejected);
+    }
+
+    /**
+     * Catch specific type of error if specified. Otherwise it the same like `promise.fail`.
+     */
+    catch(onrejected: OnRejectedHandler<Value>): Promise<Value>;
+    catch(ErrorType: Function, onrejected: OnRejectedHandler<Value>): Promise<Value>;
+    catch(ErrorType: Function|OnRejectedHandler<Value>, onrejected?: OnRejectedHandler<Value>): Promise<Value> {
+        if (typeof onrejected === 'function') {
+            return this.then<Value>(undefined, reason => {
+                if (reason instanceof ErrorType) {
+                    return onrejected(reason);
+                } else {
+                    throw reason;
+                }
+            });
+        } else {
+            onrejected = <OnRejectedHandler<Value>>ErrorType;
+            return this.then<Value>(undefined, onrejected);
+        }
+    }
     
     /**
      * Promise version of `array.map`.
@@ -688,8 +715,10 @@ export class Promise<Value> implements Thenable<Value> {
     /**
      * A shortcut of `Promise.then(() => { throw reason; })`.
      */
-    static reject<T>(reason: any): Promise<T> {
-        let promise = new Promise<T>();
+    static reject(reason: any): Promise<void>;
+    static reject<Value>(reason: any): Promise<Value>;
+    static reject<Value>(reason: any): Promise<Value> {
+        let promise = new Promise<Value>();
         promise.reject(reason);
         return promise;
     }
@@ -826,6 +855,30 @@ export class Promise<Value> implements Thenable<Value> {
 }
 
 export default Promise;
+
+//////////////////
+// Promise Lock //
+//////////////////
+
+export interface PromiseLockHandler<Return> {
+    (): Promise<Return>|Thenable<Return>|Return;
+}
+
+export class PromiseLock {
+    private _promise = Promise.void;
+
+    /**
+     * handler will be called once this promise lock is unlocked, and it will be
+     * locked again until the value returned by handler is fulfilled.
+     */
+    lock<Return>(handler: PromiseLockHandler<Return>): Promise<Return> {
+        var promise = this._promise.then(handler);
+        this._promise = promise
+            .fail(reason => undefined)
+            .void;
+        return promise;
+    }
+}
 
 ////////////////
 // Disposable //
