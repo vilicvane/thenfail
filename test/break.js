@@ -71,6 +71,26 @@ describe('Feature: break promises chain', function () {
             });
     });
     
+    it('Should break enclosed part with onrejected handler', function (done) {
+        var promise = Promise
+            .then(function () {
+                Promise.break;
+            })
+            .then(function () {
+                done('Did not break');
+            }, function () {
+                done('Did not break');
+            })
+            .enclose()
+            .then(function (str) {
+                if (str !== undefined) {
+                    done('str should be undefined');
+                } else {
+                    done();
+                }
+            });
+    });
+    
     it('Should only break current chain', function (done) {
         var str = '';
         

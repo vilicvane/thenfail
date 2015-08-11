@@ -58,6 +58,19 @@ export declare const enum State {
     rejected = 2,
     interrupted = 3,
 }
+export declare module _CustomError {
+    class Error {
+        constructor(message?: string);
+        name: string;
+        message: string;
+        stack: string;
+    }
+    class TimeoutError extends Error {
+        name: string;
+    }
+}
+export declare var TimeoutError: typeof _CustomError.TimeoutError;
+export declare type TimeoutError = _CustomError.TimeoutError;
 export declare class Promise<Value> implements Thenable<Value> {
     private _state;
     private _running;

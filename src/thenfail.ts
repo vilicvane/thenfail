@@ -106,8 +106,8 @@ export const enum State {
     interrupted
 }
 
-namespace CustomError {
-    declare class Error {
+export namespace _CustomError {
+    export declare class Error {
         constructor(message?: string);
         
         name: string;
@@ -119,6 +119,9 @@ namespace CustomError {
         name = 'TimeoutError';
     }
 }
+
+export var TimeoutError = _CustomError.TimeoutError;
+export type TimeoutError = _CustomError.TimeoutError;
 
 /**
  * The signal objects for interrupting promises context.
@@ -509,7 +512,7 @@ export class Promise<Value> implements Thenable<Value> {
         
         setTimeout(() => {
             if (this._state === State.pending) {
-                this._relay(State.rejected, new CustomError.TimeoutError());
+                this._relay(State.rejected, new TimeoutError());
                 this._context.disposeSubContexts();
             }
         }, Math.floor(timeout) || 0);

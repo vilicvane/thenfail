@@ -81,8 +81,8 @@ var __extends = (this && this.__extends) || function (d, b) {
         State[State["interrupted"] = 3] = "interrupted";
     })(exports.State || (exports.State = {}));
     var State = exports.State;
-    var CustomError;
-    (function (CustomError) {
+    var _CustomError;
+    (function (_CustomError) {
         var TimeoutError = (function (_super) {
             __extends(TimeoutError, _super);
             function TimeoutError() {
@@ -91,8 +91,9 @@ var __extends = (this && this.__extends) || function (d, b) {
             }
             return TimeoutError;
         })(Error);
-        CustomError.TimeoutError = TimeoutError;
-    })(CustomError || (CustomError = {}));
+        _CustomError.TimeoutError = TimeoutError;
+    })(_CustomError = exports._CustomError || (exports._CustomError = {}));
+    exports.TimeoutError = _CustomError.TimeoutError;
     /**
      * The signal objects for interrupting promises context.
      */
@@ -424,7 +425,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             this._context._enclosed = true;
             setTimeout(function () {
                 if (_this._state === 0 /* pending */) {
-                    _this._relay(2 /* rejected */, new CustomError.TimeoutError());
+                    _this._relay(2 /* rejected */, new exports.TimeoutError());
                     _this._context.disposeSubContexts();
                 }
             }, Math.floor(timeout) || 0);
