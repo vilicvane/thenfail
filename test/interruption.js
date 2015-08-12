@@ -1,6 +1,8 @@
-var assert = require('assert');
+var Assert = require('assert');
 
 var ThenFail = require('../bld/thenfail');
+
+ThenFail.options.disableUnrelayedRejectionWarning = true;
 
 var Promise = ThenFail.Promise;
 
@@ -19,7 +21,7 @@ describe('Feature: interruption', function () {
             
             promise.then(function () {
                 setTimeout(function () {
-                    assert.equal(str, 'a');
+                    Assert.equal(str, 'a');
                     done();
                 }, 10);
             });
@@ -42,7 +44,7 @@ describe('Feature: interruption', function () {
             
             promise.then(function () {
                 setTimeout(function () {
-                    assert.equal(str, '');
+                    Assert.equal(str, '');
                     done();
                 }, 10);
             });

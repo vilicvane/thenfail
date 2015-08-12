@@ -129,6 +129,13 @@ export type TimeoutError = _CustomError.TimeoutError;
 const BREAK_SIGNAL = {};
 const PRE_BREAK_SIGNAL = {};
 
+/**
+ * ThenFail promise options.
+ */
+export var options = {
+    disableUnrelayedRejectionWarning: false
+};
+
 // The core abstraction of this implementation is to imagine the behavior of promises
 // as relay runners.
 //  1. Grab the baton state (and value/reason).
@@ -392,6 +399,15 @@ export class Promise<Value> implements Thenable<Value> {
             }
         }
         
+        if (state === State.rejected) {
+            let relayed = !!(this._chainedPromise || this._chainedPromises || this._handledPromise || this._handledPromises);
+        
+            if (!options.disableUnrelayedRejectionWarning && !relayed) {
+                let error = valueOrReason && (valueOrReason.stack || valueOrReason.message) || valueOrReason;
+                console.warn(`An unrelayed rejection happens:\n${error}`);
+            }
+        }
+        
         if (this._onPreviousFulfilled) {
             this._onPreviousFulfilled = undefined;
         }
@@ -624,6 +640,45 @@ export class Promise<Value> implements Thenable<Value> {
      */
     map<Value>(callback: MapCallback<any, Value>): Promise<Value[]> {
         return this.then((values: any) => Promise.map(values, callback));
+    }
+    
+    /**
+     * Log fulfilled value or rejected reason of current promise.
+     * @return Current promise.
+     */
+    log(): Promise<Value>;
+    /**
+     * Log given value or rejected reason of current promise.
+     * @return Current promise.
+     */
+    log(object: any): Promise<Value>;
+    log(object?: any): Promise<Value> {
+        var promise = new Promise<Value>();
+        
+        this.handle(promise);
+        
+        promise.then(value => {
+            if (object !== undefined) {
+                console.log(object);
+            } else if (value !== undefined) {
+                console.log(value);
+            }
+        }, reason => {
+            console.error(reason && (reason.stack || reason.message) || reason);
+        });
+        
+        return this;
+    }
+    
+    /**
+     * Call `this.then` with `onrejected` handler only, and throw the rejection error if any.
+     */
+    done(): void {
+        this.then(undefined, reason => {
+            asap(() => {
+                throw reason;
+            });
+        });
     }
     
     /**

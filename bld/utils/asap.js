@@ -15,7 +15,7 @@ https://github.com/kriskowal/asap
     /// <reference path="../../typings/node/node.d.ts" />
     exports.asap;
     if (typeof process === 'object' &&
-        process.toString() === "[object process]" &&
+        process.toString() === '[object process]' &&
         process.nextTick) {
         // Node.js
         exports.asap = getNodeASAP();
@@ -26,7 +26,7 @@ https://github.com/kriskowal/asap
     function getNodeASAP() {
         // raw.js
         var domain;
-        var hasSetImmediate = typeof setImmediate === "function";
+        var hasSetImmediate = typeof setImmediate === 'function';
         var rawAsap = function (task) {
             if (!queue.length) {
                 requestFlush();
@@ -60,7 +60,7 @@ https://github.com/kriskowal/asap
             var parentDomain = process.domain;
             if (parentDomain) {
                 if (!domain) {
-                    domain = require("domain");
+                    domain = require('domain');
                 }
                 domain.active = process.domain = null;
             }
@@ -147,7 +147,7 @@ https://github.com/kriskowal/asap
             flushing = false;
         }
         var BrowserMutationObserver = global.MutationObserver || global.WebKitMutationObserver;
-        if (typeof BrowserMutationObserver === "function") {
+        if (typeof BrowserMutationObserver === 'function') {
             requestFlush = makeRequestCallFromMutationObserver(flush);
         }
         else {
@@ -157,7 +157,7 @@ https://github.com/kriskowal/asap
         function makeRequestCallFromMutationObserver(callback) {
             var toggle = 1;
             var observer = new BrowserMutationObserver(callback);
-            var node = document.createTextNode("");
+            var node = document.createTextNode('');
             observer.observe(node, { characterData: true });
             return function requestCall() {
                 toggle = -toggle;

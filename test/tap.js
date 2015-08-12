@@ -1,6 +1,8 @@
-var assert = require('assert');
+var Assert = require('assert');
 
 var ThenFail = require('../bld/thenfail');
+
+ThenFail.options.disableUnrelayedRejectionWarning = true;
 
 var Promise = ThenFail.Promise;
 
@@ -11,16 +13,16 @@ describe('Feature: tap', function () {
         return Promise
             .true
             .tap(function (value) {
-                assert.equal(value, true);
+                Assert.equal(value, true);
             })
             .tap(function (value) {
-                assert.equal(value, true);
+                Assert.equal(value, true);
                 return new Promise(function (resolve) {
                     setTimeout(resolve, 10);
                 });
             })
             .then(function (value) {
-                assert.equal(value, true);
+                Assert.equal(value, true);
             });
     });
     

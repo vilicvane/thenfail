@@ -1,6 +1,8 @@
-var assert = require('assert');
+var Assert = require('assert');
 
 var ThenFail = require('../bld/thenfail');
+
+ThenFail.options.disableUnrelayedRejectionWarning = true;
 
 var Promise = ThenFail.Promise;
 
@@ -12,7 +14,7 @@ describe('Feature: delay', function () {
             .delay(50)
             .then(function () {
                 var elapsed = Date.now() - timestamp;
-                assert(elapsed >= 40);
+                Assert.equal(elapsed >= 40, true);
             });
     });
     
@@ -23,10 +25,10 @@ describe('Feature: delay', function () {
             .true
             .delay(50)
             .then(function (value) {
-                assert(value === true);
+                Assert.equal(value, true);
                 
                 var elapsed = Date.now() - timestamp;
-                assert(elapsed >= 40);
+                Assert.equal(elapsed >= 40, true);
             });
     });
 });

@@ -1,6 +1,8 @@
-var assert = require('assert');
+var Assert = require('assert');
 
 var ThenFail = require('../bld/thenfail');
+
+ThenFail.options.disableUnrelayedRejectionWarning = true;
 
 var Promise = ThenFail.Promise;
 
@@ -21,7 +23,7 @@ describe('Feature: constants', function () {
                 
                 it('Promise.' + key + ' should eventually equal `' + expectedValue + '`', function () {
                     return Promise[key].then(function (value) {
-                        assert.strictEqual(value, expectedValue);
+                        Assert.strictEqual(value, expectedValue);
                     });
                 });
             });
@@ -37,7 +39,7 @@ describe('Feature: constants', function () {
                 
                 it('promise.' + key + ' should eventually equal `' + expectedValue + '`', function () {
                     return promise[key].then(function (value) {
-                        assert.strictEqual(value, expectedValue);
+                        Assert.strictEqual(value, expectedValue);
                     });
                 });
             });

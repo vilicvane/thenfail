@@ -1,6 +1,8 @@
-var assert = require('assert');
+var Assert = require('assert');
 
 var ThenFail = require('../bld/thenfail');
+
+ThenFail.options.disableUnrelayedRejectionWarning = true;
 
 var Promise = ThenFail.Promise;
 var Context = ThenFail.Context;
@@ -15,9 +17,9 @@ describe('Feature: handle', function () {
     context('Handle by fulfilled promises', function () {
         ThreeCases.testFulfilled(testValue, function (promise, done) {
             var anotherPromise = new Promise();
-            assert.equal(promise.handle(anotherPromise), promise);
+            Assert.equal(promise.handle(anotherPromise), promise);
             anotherPromise.then(function (value) {
-                assert.equal(value, testValue);
+                Assert.equal(value, testValue);
                 done();
             });
         });
@@ -26,7 +28,7 @@ describe('Feature: handle', function () {
     context('Handle by rejected promises', function () {
         ThreeCases.testRejected(testValue, function (promise, done) {
             var anotherPromise = new Promise();
-            assert.equal(promise.handle(anotherPromise), promise);
+            Assert.equal(promise.handle(anotherPromise), promise);
             anotherPromise.then(undefined, function () {
                 done();
             });

@@ -1,6 +1,8 @@
-var assert = require('assert');
+var Assert = require('assert');
 
 var ThenFail = require('../bld/thenfail');
+
+ThenFail.options.disableUnrelayedRejectionWarning = true;
 
 var Promise = ThenFail.Promise;
 
@@ -23,7 +25,7 @@ describe('Feature: all', function () {
         return Promise
             .all(promises)
             .then(function (values) {
-                assert.deepEqual(values, ['a', 'b', 'c']);
+                Assert.deepEqual(values, ['a', 'b', 'c']);
             });
     });
     
@@ -49,8 +51,8 @@ describe('Feature: all', function () {
             .all(promises)
             .then(undefined, function (reason) {
                 // Expecting wait until all promises are either fulfilled or rejected.
-                assert.equal(count, 2);
-                assert.equal(reason, error);
+                Assert.equal(count, 2);
+                Assert.equal(reason, error);
             });
     });
     
@@ -82,8 +84,8 @@ describe('Feature: all', function () {
             .all(promises)
             .then(undefined, function (reason) {
                 // Expecting wait until all promises are either fulfilled or rejected.
-                assert.equal(count, 3);
-                assert.equal(reason, error);
+                Assert.equal(count, 3);
+                Assert.equal(reason, error);
             });
     });
     
@@ -91,7 +93,7 @@ describe('Feature: all', function () {
         return Promise
             .all([])
             .then(function (values) {
-                assert.equal(values.length, 0);
+                Assert.equal(values.length, 0);
             });
     });
 });

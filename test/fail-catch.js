@@ -1,6 +1,8 @@
-var assert = require('assert');
+var Assert = require('assert');
 
 var ThenFail = require('../bld/thenfail');
+
+ThenFail.options.disableUnrelayedRejectionWarning = true;
 
 var Promise = ThenFail.Promise;
 
@@ -20,7 +22,7 @@ describe('Feature: fail and catch', function () {
                 });
                 
             setTimeout(function () {
-                assert.equal(str, 'a');
+                Assert.equal(str, 'a');
                 done();
             }, 20);
         });
@@ -39,7 +41,7 @@ describe('Feature: fail and catch', function () {
                 });
                 
             setTimeout(function () {
-                assert.equal(str, 'a');
+                Assert.equal(str, 'a');
                 done();
             }, 20);
         });
@@ -58,7 +60,7 @@ describe('Feature: fail and catch', function () {
                 });
                 
             setTimeout(function () {
-                assert.equal(str, 'b');
+                Assert.equal(str, 'b');
                 done();
             }, 20);
         });
@@ -77,7 +79,7 @@ describe('Feature: fail and catch', function () {
                 });
                 
             setTimeout(function () {
-                assert.equal(str, 'b');
+                Assert.equal(str, 'b');
                 done();
             }, 20);
         });
@@ -105,7 +107,7 @@ describe('Feature: fail and catch', function () {
                 });
                 
             setTimeout(function () {
-                assert.equal(str, 'b');
+                Assert.equal(str, 'b');
                 done();
             }, 20);
         });
@@ -127,7 +129,7 @@ describe('Feature: fail and catch', function () {
                 });
                 
             setTimeout(function () {
-                assert.equal(str, 'c');
+                Assert.equal(str, 'c');
                 done();
             }, 20);
         });
@@ -152,7 +154,7 @@ describe('Feature: fail and catch', function () {
                 });
                 
             setTimeout(function () {
-                assert.equal(str, 'c');
+                Assert.equal(str, 'c');
                 done();
             }, 20);
         });

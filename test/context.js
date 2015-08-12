@@ -1,19 +1,13 @@
-var assert = require('assert');
+var Assert = require('assert');
 
 var ThenFail = require('../bld/thenfail');
+
+ThenFail.options.disableUnrelayedRejectionWarning = true;
 
 var Promise = ThenFail.Promise;
 var Context = ThenFail.Context;
 
 describe('Feature: promise context', function () {
-    // it('Should throw error if context has not been created', function () {
-    //     var context = new Context();
-        
-    //     assert.throws(function () {
-    //         Promise.context(context);
-    //     });
-    // });
-    
     it('Should not be interrupted if context persists', function () {
         var context = new Context();
         
@@ -28,7 +22,7 @@ describe('Feature: promise context', function () {
                 count++;
             })
             .then(function () {
-                assert.equal(count, 2);
+                Assert.equal(count, 2);
             });
     });
     
@@ -55,8 +49,8 @@ describe('Feature: promise context', function () {
         }, 10);
         
         setTimeout(function () {
-            assert(promise.interrupted);
-            assert.equal(str, 'a');
+            Assert(promise.interrupted);
+            Assert.equal(str, 'a');
             done();
         }, 30);
     });
@@ -87,7 +81,7 @@ describe('Feature: promise context', function () {
         }, 10);
         
         setTimeout(function () {
-            assert.equal(str, 'ab');
+            Assert.equal(str, 'ab');
             done();
         }, 30);
     });
@@ -118,8 +112,8 @@ describe('Feature: promise context', function () {
         }, 10);
         
         setTimeout(function () {
-            assert(promise.interrupted);
-            assert.equal(str, 'a');
+            Assert(promise.interrupted);
+            Assert.equal(str, 'a');
             done();
         }, 30);
     });

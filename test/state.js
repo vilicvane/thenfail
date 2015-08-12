@@ -1,6 +1,8 @@
-var assert = require('assert');
+var Assert = require('assert');
 
 var ThenFail = require('../bld/thenfail');
+
+ThenFail.options.disableUnrelayedRejectionWarning = true;
 
 var Promise = ThenFail.Promise;
 
@@ -11,7 +13,7 @@ describe('Feature: state', function () {
         ThreeCases.testFulfilled(undefined, function (promise, done) {
             promise.then(function () {
                 setTimeout(function () {
-                    assert(promise.fulfilled);
+                    Assert(promise.fulfilled);
                     done();
                 }, 0);
             });
@@ -19,10 +21,10 @@ describe('Feature: state', function () {
     });
     
     context('Rejected promises', function () {
-        ThreeCases.testRejected(undefined, function (promise, done) {
+        ThreeCases.testRejected(new Error(), function (promise, done) {
             promise.then(undefined, function () {
                 setTimeout(function () {
-                    assert(promise.rejected);
+                    Assert(promise.rejected);
                     done();
                 }, 0);
             });
@@ -40,8 +42,8 @@ describe('Feature: state', function () {
             });
             
             setTimeout(function () {
-                assert(promiseA.fulfilled);
-                assert(promiseB.interrupted);
+                Assert(promiseA.fulfilled);
+                Assert(promiseB.interrupted);
                 done();
             }, 0);
         });
@@ -57,7 +59,7 @@ describe('Feature: state', function () {
                 .then(function () { });
             
             setTimeout(function () {
-                assert(promise.fulfilled);
+                Assert(promise.fulfilled);
                 done();
             }, 0);
         });

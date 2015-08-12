@@ -71,6 +71,12 @@ export declare module _CustomError {
 }
 export declare var TimeoutError: typeof _CustomError.TimeoutError;
 export declare type TimeoutError = _CustomError.TimeoutError;
+/**
+ * ThenFail promise options.
+ */
+export declare var options: {
+    disableUnrelayedRejectionWarning: boolean;
+};
 export declare class Promise<Value> implements Thenable<Value> {
     private _state;
     private _running;
@@ -193,6 +199,20 @@ export declare class Promise<Value> implements Thenable<Value> {
      * Promise version of `array.map`.
      */
     map<Value>(callback: MapCallback<any, Value>): Promise<Value[]>;
+    /**
+     * Log fulfilled value or rejected reason of current promise.
+     * @return Current promise.
+     */
+    log(): Promise<Value>;
+    /**
+     * Log given value or rejected reason of current promise.
+     * @return Current promise.
+     */
+    log(object: any): Promise<Value>;
+    /**
+     * Call `this.then` with `onrejected` handler only, and throw the rejection error if any.
+     */
+    done(): void;
     /**
      * (get) A shortcut of `promise.then(() => { Promise.break; })`.
      * See https://github.com/vilic/thenfail# for more information.

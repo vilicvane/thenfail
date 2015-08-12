@@ -1,6 +1,8 @@
-var assert = require('assert');
+var Assert = require('assert');
 
 var ThenFail = require('../bld/thenfail');
+
+ThenFail.options.disableUnrelayedRejectionWarning = true;
 
 var Promise = ThenFail.Promise;
 
@@ -17,7 +19,7 @@ describe('Feature: map', function () {
                 });
             })
             .then(function (values) {
-                assert.deepEqual(values, [1, 2, 3]);
+                Assert.deepEqual(values, [1, 2, 3]);
             });
     });
     
@@ -32,7 +34,7 @@ describe('Feature: map', function () {
                 });
             })
             .then(function (values) {
-                assert.deepEqual(values, [1, 2, 3]);
+                Assert.deepEqual(values, [1, 2, 3]);
             });
     });
 });

@@ -99,6 +99,12 @@ var __extends = (this && this.__extends) || function (d, b) {
      */
     var BREAK_SIGNAL = {};
     var PRE_BREAK_SIGNAL = {};
+    /**
+     * ThenFail promise options.
+     */
+    exports.options = {
+        disableUnrelayedRejectionWarning: false
+    };
     // The core abstraction of this implementation is to imagine the behavior of promises
     // as relay runners.
     //  1. Grab the baton state (and value/reason).
@@ -321,6 +327,13 @@ var __extends = (this && this.__extends) || function (d, b) {
                     }
                 }
             }
+            if (state === 2 /* rejected */) {
+                var relayed = !!(this._chainedPromise || this._chainedPromises || this._handledPromise || this._handledPromises);
+                if (!exports.options.disableUnrelayedRejectionWarning && !relayed) {
+                    var error = valueOrReason && (valueOrReason.stack || valueOrReason.message) || valueOrReason;
+                    console.warn("An unrelayed rejection happens:\n" + error);
+                }
+            }
             if (this._onPreviousFulfilled) {
                 this._onPreviousFulfilled = undefined;
             }
@@ -521,6 +534,31 @@ var __extends = (this && this.__extends) || function (d, b) {
          */
         Promise.prototype.map = function (callback) {
             return this.then(function (values) { return Promise.map(values, callback); });
+        };
+        Promise.prototype.log = function (object) {
+            var promise = new Promise();
+            this.handle(promise);
+            promise.then(function (value) {
+                if (object !== undefined) {
+                    console.log(object);
+                }
+                else if (value !== undefined) {
+                    console.log(value);
+                }
+            }, function (reason) {
+                console.error(reason && (reason.stack || reason.message) || reason);
+            });
+            return this;
+        };
+        /**
+         * Call `this.then` with `onrejected` handler only, and throw the rejection error if any.
+         */
+        Promise.prototype.done = function () {
+            this.then(undefined, function (reason) {
+                utils_1.asap(function () {
+                    throw reason;
+                });
+            });
         };
         Object.defineProperty(Promise.prototype, "break", {
             /**

@@ -39,7 +39,7 @@ export var asap: ASAP;
 
 if (
     typeof process === 'object' &&
-    process.toString() === "[object process]" &&
+    process.toString() === '[object process]' &&
     process.nextTick
 ) {
     // Node.js
@@ -52,7 +52,7 @@ function getNodeASAP(): ASAP {
     // raw.js
     
     var domain: Domain;
-    var hasSetImmediate = typeof setImmediate === "function";
+    var hasSetImmediate = typeof setImmediate === 'function';
     
     var rawAsap: RawASAP = <any>function (task: Task) {
         if (!queue.length) {
@@ -86,11 +86,12 @@ function getNodeASAP(): ASAP {
     }
     
     rawAsap.requestFlush = requestFlush;
+    
     function requestFlush() {
         var parentDomain = (<any>process).domain;
         if (parentDomain) {
             if (!domain) {
-                domain = require("domain");
+                domain = require('domain');
             }
             domain.active = (<any>process).domain = null;
         }
@@ -190,7 +191,7 @@ function getBrowserASAP(): ASAP {
     
     var BrowserMutationObserver: typeof MutationObserver = (<any>global).MutationObserver || (<any>global).WebKitMutationObserver;
     
-    if (typeof BrowserMutationObserver === "function") {
+    if (typeof BrowserMutationObserver === 'function') {
         requestFlush = makeRequestCallFromMutationObserver(flush);
     } else {
         requestFlush = makeRequestCallFromTimer(flush);
@@ -201,7 +202,7 @@ function getBrowserASAP(): ASAP {
     function makeRequestCallFromMutationObserver(callback: () => void) {
         var toggle = 1;
         var observer = new BrowserMutationObserver(callback);
-        var node = document.createTextNode("");
+        var node = document.createTextNode('');
         observer.observe(node, {characterData: true});
         return function requestCall() {
             toggle = -toggle;

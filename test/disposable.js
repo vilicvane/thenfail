@@ -1,6 +1,8 @@
-var assert = require('assert');
+var Assert = require('assert');
 
 var ThenFail = require('../bld/thenfail');
+
+ThenFail.options.disableUnrelayedRejectionWarning = true;
 
 var Promise = ThenFail.Promise;
 var using = ThenFail.using;
@@ -51,7 +53,7 @@ describe('Feature: disposable', function () {
     });
     
     context('Rejected promises', function () {
-        ThreeCases.testRejected(undefined, function (promise, done) {
+        ThreeCases.testRejected(new Error(), function (promise, done) {
             var disposableResource = Promise
                 .when(new Resource())
                 .disposable(function (resource) {
@@ -146,7 +148,7 @@ describe('Feature: disposable', function () {
             promise.context.dispose();
         
             setTimeout(function () {
-                assert.equal(resource.disposed, true);
+                Assert.equal(resource.disposed, true);
                 done();
             }, 50);
         }, 10);
@@ -183,7 +185,7 @@ describe('Feature: disposable', function () {
             promise.context.dispose();
         
             setTimeout(function () {
-                assert.equal(resource.disposed, true);
+                Assert.equal(resource.disposed, true);
                 done();
             }, 50);
         }, 10);
