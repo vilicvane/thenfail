@@ -197,7 +197,7 @@ page.on('unload', () => {
 });
 ```
 
-With ThenFail, every promise has something called `context`. And if the context is disposed, the chain gets canceled.
+With ThenFail, every promise has something called a `context`. And if the context is disposed, the chain gets cancelled.
 
 ```ts
 import { Context } from 'thenfail';
