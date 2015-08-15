@@ -12,7 +12,6 @@ https://github.com/kriskowal/asap
         define(deps, factory);
     }
 })(["require", "exports"], function (require, exports) {
-    /// <reference path="../../typings/node/node.d.ts" />
     exports.asap;
     if (typeof process === 'object' &&
         process.toString() === '[object process]' &&
@@ -146,7 +145,7 @@ https://github.com/kriskowal/asap
             index = 0;
             flushing = false;
         }
-        var BrowserMutationObserver = global.MutationObserver || global.WebKitMutationObserver;
+        var BrowserMutationObserver = window.MutationObserver || window.WebKitMutationObserver;
         if (typeof BrowserMutationObserver === 'function') {
             requestFlush = makeRequestCallFromMutationObserver(flush);
         }

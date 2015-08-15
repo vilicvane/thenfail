@@ -17,12 +17,12 @@ import { asap } from './utils';
  * Promise like object.
  */
 export interface Thenable<Value> {
-    then<Return>(onfulfilled: (value: Value) => Thenable<Return>|Return, onrejected?: (reason: any) => any): Thenable<Return>;
+    then<Return>(onfulfilled: (value: Value) => Promise<Return>|Thenable<Return>|Return, onrejected?: (reason: any) => any): Thenable<Return>;
 }
 
 export interface Resolver<Value> {
     (
-        resolve: (value?: Thenable<Value>|Value) => void,
+        resolve: (value?: Promise<Value>|Thenable<Value>|Value) => void,
         reject: (reason: any) => void
     ): void;
 }
@@ -49,6 +49,10 @@ export interface NodeStyleCallback<Value> {
 
 export interface MapCallback<Value, Return> {
     (value: Value, index: number, array: Value[]): Promise<Return>|Thenable<Return>|Return;
+}
+
+export interface EachCallback<Value> {
+    (value: Value, index: number, array: Value[]): Promise<boolean|void>|Thenable<boolean|void>|boolean|void;
 }
 
 export class Context {
@@ -208,7 +212,7 @@ export class Promise<Value> implements Thenable<Value> {
             return;
         }
         
-        let handler: OnAnyHandler<Thenable<Value>|Value>;
+        let handler: OnAnyHandler<Promise<Value>|Thenable<Value>|Value>;
         
         if (previousState === State.fulfilled) {
             handler = this._onPreviousFulfilled;
@@ -230,7 +234,7 @@ export class Promise<Value> implements Thenable<Value> {
         this._running = true;
         
         asap(() => {
-            let ret: Thenable<Value>|Value;
+            let ret: Promise<Value>|Thenable<Value>|Value;
 
             try {
                 ret = handler(previousValueOrReason);
@@ -250,7 +254,7 @@ export class Promise<Value> implements Thenable<Value> {
     /**
      * The resolve process defined in Promises/A+ specifications.
      */
-    private _unpack(value: Thenable<Value>|Value, callback: (state: State, valueOrReason: any) => void): void {
+    private _unpack(value: Promise<Value>|Thenable<Value>|Value, callback: (state: State, valueOrReason: any) => void): void {
         if (this === value) {
             callback(State.rejected, new TypeError('The promise should not return itself'));
         } else if (value instanceof Promise) {
@@ -470,7 +474,7 @@ export class Promise<Value> implements Thenable<Value> {
      * Resolve this promise with a value or thenable.
      * @param value A normal value, or a promise/thenable.
      */
-    resolve(value?: Thenable<Value>|Value): void {
+    resolve(value?: Promise<Value>|Thenable<Value>|Value): void {
         this._unpack(value, (state, valueOrReason) => this._grab(state, valueOrReason));
     }
     
@@ -636,10 +640,17 @@ export class Promise<Value> implements Thenable<Value> {
     }
     
     /**
-     * Promise version of `array.map`.
+     * A shortcut of `Promise.map`, assuming the fulfilled value of previous promise is a array.
      */
     map<Value>(callback: MapCallback<any, Value>): Promise<Value[]> {
         return this.then((values: any) => Promise.map(values, callback));
+    }
+    
+    /**
+     * A shortcut of `Promise.each`, assuming the fulfilled value of previous promise is a array.
+     */
+    each<Value>(callback: EachCallback<Value>): Promise<boolean> {
+        return this.then((values: any) => Promise.each(values, callback));
     }
     
     /**
@@ -760,7 +771,7 @@ export class Promise<Value> implements Thenable<Value> {
      * A shortcut of `Promise.then(() => value)`.
      * @return Return the value itself if it's an instanceof ThenFail Promise.
      */
-    static resolve<Value>(value: Thenable<Value>|Value): Promise<Value> {
+    static resolve<Value>(value: Promise<Value>|Thenable<Value>|Value): Promise<Value> {
         if (value instanceof Promise) {
             return value;
         } else {
@@ -784,7 +795,7 @@ export class Promise<Value> implements Thenable<Value> {
     /**
      * Alias of `Promise.resolve`.
      */
-    static when<Value>(value: Thenable<Value>|Value): Promise<Value> {
+    static when<Value>(value: Promise<Value>|Thenable<Value>|Value): Promise<Value> {
         return Promise.resolve(value);
     }
     
@@ -815,7 +826,7 @@ export class Promise<Value> implements Thenable<Value> {
      *  2. with the reason of the first rejection as its reason.
      *  3. after all values are either fulfilled or rejected.
      */
-    static all<Value>(values: (Thenable<Value>|Value)[]): Promise<Value[]> {
+    static all<Value>(values: (Promise<Value>|Thenable<Value>|Value)[]): Promise<Value[]> {
         if (!values.length) {
             return Promise.resolve([]);
         }
@@ -859,6 +870,43 @@ export class Promise<Value> implements Thenable<Value> {
      */
     static map<Value, Return>(values: Value[], callback: MapCallback<Value, Return>): Promise<Return[]> {
         return Promise.all(values.map(callback));
+    }
+    
+    /**
+     * Iterate elements in an array one by one.
+     * Return `false` or a promise that will eventually be fulfilled with `false` to interrupt iteration.
+     */
+    static each<Value>(values: Value[], callback: EachCallback<Value>): Promise<boolean> {
+        if (!values.length) {
+            return Promise.true;
+        }
+
+        let promise = new Promise<boolean>();
+
+        next(0);
+
+        function next(index: number) {
+            if (index >= values.length) {
+                promise.resolve(true);
+                return;
+            }
+
+            let value = values[index];
+
+            Promise
+                .then(() => callback(value, index, values))
+                .enclose()
+                .then(result => {
+                    if (result === false) {
+                        promise.resolve(false);
+                    } else {
+                        next(index + 1);
+                    }
+                })
+                .then(undefined, reason => promise.reject(reason));
+        }
+
+        return promise;
     }
     
     /**

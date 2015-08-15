@@ -2,10 +2,10 @@
  * Promise like object.
  */
 export interface Thenable<Value> {
-    then<Return>(onfulfilled: (value: Value) => Thenable<Return> | Return, onrejected?: (reason: any) => any): Thenable<Return>;
+    then<Return>(onfulfilled: (value: Value) => Promise<Return> | Thenable<Return> | Return, onrejected?: (reason: any) => any): Thenable<Return>;
 }
 export interface Resolver<Value> {
-    (resolve: (value?: Thenable<Value> | Value) => void, reject: (reason: any) => void): void;
+    (resolve: (value?: Promise<Value> | Thenable<Value> | Value) => void, reject: (reason: any) => void): void;
 }
 export interface OnFulfilledHandler<Value, Return> {
     (value: Value): Promise<Return> | Thenable<Return> | Return;
@@ -24,6 +24,9 @@ export interface NodeStyleCallback<Value> {
 }
 export interface MapCallback<Value, Return> {
     (value: Value, index: number, array: Value[]): Promise<Return> | Thenable<Return> | Return;
+}
+export interface EachCallback<Value> {
+    (value: Value, index: number, array: Value[]): Promise<boolean | void> | Thenable<boolean | void> | boolean | void;
 }
 export declare class Context {
     _disposed: boolean;
@@ -137,7 +140,7 @@ export declare class Promise<Value> implements Thenable<Value> {
      * Resolve this promise with a value or thenable.
      * @param value A normal value, or a promise/thenable.
      */
-    resolve(value?: Thenable<Value> | Value): void;
+    resolve(value?: Promise<Value> | Thenable<Value> | Value): void;
     /**
      * Reject this promise with a reason.
      */
@@ -196,9 +199,13 @@ export declare class Promise<Value> implements Thenable<Value> {
     catch(onrejected: OnRejectedHandler<Value>): Promise<Value>;
     catch(ErrorType: Function, onrejected: OnRejectedHandler<Value>): Promise<Value>;
     /**
-     * Promise version of `array.map`.
+     * A shortcut of `Promise.map`, assuming the fulfilled value of previous promise is a array.
      */
     map<Value>(callback: MapCallback<any, Value>): Promise<Value[]>;
+    /**
+     * A shortcut of `Promise.each`, assuming the fulfilled value of previous promise is a array.
+     */
+    each<Value>(callback: EachCallback<Value>): Promise<boolean>;
     /**
      * Log fulfilled value or rejected reason of current promise.
      * @return Current promise.
@@ -258,7 +265,7 @@ export declare class Promise<Value> implements Thenable<Value> {
      * A shortcut of `Promise.then(() => value)`.
      * @return Return the value itself if it's an instanceof ThenFail Promise.
      */
-    static resolve<Value>(value: Thenable<Value> | Value): Promise<Value>;
+    static resolve<Value>(value: Promise<Value> | Thenable<Value> | Value): Promise<Value>;
     /**
      * A shortcut of `Promise.then(() => { throw reason; })`.
      */
@@ -267,7 +274,7 @@ export declare class Promise<Value> implements Thenable<Value> {
     /**
      * Alias of `Promise.resolve`.
      */
-    static when<Value>(value: Thenable<Value> | Value): Promise<Value>;
+    static when<Value>(value: Promise<Value> | Thenable<Value> | Value): Promise<Value>;
     /**
      * Create a promise under given context.
      */
@@ -285,11 +292,16 @@ export declare class Promise<Value> implements Thenable<Value> {
      *  2. with the reason of the first rejection as its reason.
      *  3. after all values are either fulfilled or rejected.
      */
-    static all<Value>(values: (Thenable<Value> | Value)[]): Promise<Value[]>;
+    static all<Value>(values: (Promise<Value> | Thenable<Value> | Value)[]): Promise<Value[]>;
     /**
      * A promise version of `array.map`.
      */
     static map<Value, Return>(values: Value[], callback: MapCallback<Value, Return>): Promise<Return[]>;
+    /**
+     * Iterate elements in an array one by one.
+     * Return `false` or a promise that will eventually be fulfilled with `false` to interrupt iteration.
+     */
+    static each<Value>(values: Value[], callback: EachCallback<Value>): Promise<boolean>;
     /**
      * (fake statement) This getter will always throw a break signal that interrupts the promises chain.
      *

@@ -530,10 +530,16 @@ var __extends = (this && this.__extends) || function (d, b) {
             }
         };
         /**
-         * Promise version of `array.map`.
+         * A shortcut of `Promise.map`, assuming the fulfilled value of previous promise is a array.
          */
         Promise.prototype.map = function (callback) {
             return this.then(function (values) { return Promise.map(values, callback); });
+        };
+        /**
+         * A shortcut of `Promise.each`, assuming the fulfilled value of previous promise is a array.
+         */
+        Promise.prototype.each = function (callback) {
+            return this.then(function (values) { return Promise.each(values, callback); });
         };
         Promise.prototype.log = function (object) {
             var promise = new Promise();
@@ -747,6 +753,37 @@ var __extends = (this && this.__extends) || function (d, b) {
          */
         Promise.map = function (values, callback) {
             return Promise.all(values.map(callback));
+        };
+        /**
+         * Iterate elements in an array one by one.
+         * Return `false` or a promise that will eventually be fulfilled with `false` to interrupt iteration.
+         */
+        Promise.each = function (values, callback) {
+            if (!values.length) {
+                return Promise.true;
+            }
+            var promise = new Promise();
+            next(0);
+            function next(index) {
+                if (index >= values.length) {
+                    promise.resolve(true);
+                    return;
+                }
+                var value = values[index];
+                Promise
+                    .then(function () { return callback(value, index, values); })
+                    .enclose()
+                    .then(function (result) {
+                    if (result === false) {
+                        promise.resolve(false);
+                    }
+                    else {
+                        next(index + 1);
+                    }
+                })
+                    .then(undefined, function (reason) { return promise.reject(reason); });
+            }
+            return promise;
         };
         Object.defineProperty(Promise, "break", {
             /**

@@ -1,4 +1,3 @@
-/// <reference path="../../typings/node/node.d.ts" />
 export interface Domain {
     active: Domain;
 }

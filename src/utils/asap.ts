@@ -5,8 +5,6 @@ https://github.com/kriskowal/asap
 
 */
 
-/// <reference path="../../typings/node/node.d.ts" />
-
 export interface Domain {
     active: Domain;
 }
@@ -189,7 +187,7 @@ function getBrowserASAP(): ASAP {
         flushing = false;
     }
     
-    var BrowserMutationObserver: typeof MutationObserver = (<any>global).MutationObserver || (<any>global).WebKitMutationObserver;
+    var BrowserMutationObserver: typeof MutationObserver = (<any>window).MutationObserver || (<any>window).WebKitMutationObserver;
     
     if (typeof BrowserMutationObserver === 'function') {
         requestFlush = makeRequestCallFromMutationObserver(flush);
