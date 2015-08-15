@@ -72,12 +72,12 @@ export declare module _CustomError {
         name: string;
     }
 }
-export declare var TimeoutError: typeof _CustomError.TimeoutError;
+export declare const TimeoutError: typeof _CustomError.TimeoutError;
 export declare type TimeoutError = _CustomError.TimeoutError;
 /**
  * ThenFail promise options.
  */
-export declare var options: {
+export declare let options: {
     disableUnrelayedRejectionWarning: boolean;
 };
 export declare class Promise<Value> implements Thenable<Value> {
@@ -95,8 +95,8 @@ export declare class Promise<Value> implements Thenable<Value> {
      *
      * Example:
      *
-     *  var promiseA = Promise.then(() => {
-     *      var promiseB = Promise.then(() => ...);
+     *  let promiseA = Promise.then(() => {
+     *      let promiseB = Promise.then(() => ...);
      *      return promiseB;
      *  });
      *

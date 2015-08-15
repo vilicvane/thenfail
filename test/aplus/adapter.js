@@ -1,4 +1,7 @@
 var ThenFail = require('../../bld/thenfail.js');
+
+ThenFail.options.disableUnrelayedRejectionWarning = true;
+
 var Promise = ThenFail.Promise;
 
 module.exports = {

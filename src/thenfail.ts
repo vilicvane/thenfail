@@ -124,7 +124,7 @@ export namespace _CustomError {
     }
 }
 
-export var TimeoutError = _CustomError.TimeoutError;
+export const TimeoutError = _CustomError.TimeoutError;
 export type TimeoutError = _CustomError.TimeoutError;
 
 /**
@@ -136,7 +136,7 @@ const PRE_BREAK_SIGNAL = {};
 /**
  * ThenFail promise options.
  */
-export var options = {
+export let options = {
     disableUnrelayedRejectionWarning: false
 };
 
@@ -164,8 +164,8 @@ export class Promise<Value> implements Thenable<Value> {
      * 
      * Example:
      *  
-     *  var promiseA = Promise.then(() => {
-     *      var promiseB = Promise.then(() => ...);
+     *  let promiseA = Promise.then(() => {
+     *      let promiseB = Promise.then(() => ...);
      *      return promiseB;
      *  });
      * 
@@ -664,7 +664,7 @@ export class Promise<Value> implements Thenable<Value> {
      */
     log(object: any): Promise<Value>;
     log(object?: any): Promise<Value> {
-        var promise = new Promise<Value>();
+        let promise = new Promise<Value>();
         
         this.handle(promise);
         
@@ -978,7 +978,7 @@ export class PromiseLock {
      * locked again until the value returned by handler is fulfilled.
      */
     lock<Return>(handler: PromiseLockHandler<Return>): Promise<Return> {
-        var promise = this._promise.then(handler);
+        let promise = this._promise.then(handler);
         this._promise = promise
             .fail(reason => undefined)
             .void;
