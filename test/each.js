@@ -12,9 +12,7 @@ describe('Feature: each', function () {
     it('All fulfilled without interruption', function () {
         var str = '';
         
-        setTimeout(function () {
-            Assert.equal(str, 'abc');
-        }, 20);
+        var startAt = Date.now();
         
         return Promise
             .each(['a', 'b', 'c', 'd'], function (char) {
@@ -26,7 +24,7 @@ describe('Feature: each', function () {
                     case 'b':
                         return 'false';
                     case 'c':
-                        new Promise(function (resolve) {
+                        return new Promise(function (resolve) {
                             setTimeout(resolve, 50);
                         });
                     case 'd':
@@ -34,6 +32,8 @@ describe('Feature: each', function () {
                 }
             })
             .then(function (completed) {
+                var elapsed = Date.now() - startAt;
+                Assert.equal(elapsed > 40, true);
                 Assert.equal(completed, true);
                 Assert.equal(str, 'abcd');
             });
