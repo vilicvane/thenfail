@@ -55,6 +55,17 @@ export interface EachCallback<Value> {
     (value: Value, index: number, array: Value[]): Promise<boolean|void>|Thenable<boolean|void>|boolean|void;
 }
 
+export interface RetryCallback<Return> {
+    (lastReason: any, attemptIndex: number): Promise<Return>|Thenable<Return>|Return;
+}
+
+export interface RetryOptions {
+    /** Try limit times (defaults to 3). */
+    limit?: number;
+    /** Interval between two tries (defaults to 0). */
+    interval?: number;
+}
+
 export class Context {
     _disposed = false;
     _enclosed = false;
@@ -654,6 +665,15 @@ export class Promise<Value> implements Thenable<Value> {
     }
     
     /**
+     * A shortcut of `Promise.retry`.
+     */
+    retry<Return>(callback: RetryCallback<Return>): Promise<Return>;
+    retry<Return>(options: RetryOptions, callback: RetryCallback<Return>): Promise<Return>;
+    retry<Return>(options: RetryOptions, callback?: RetryCallback<Return>): Promise<Return> {
+        return this.then(() => Promise.retry(options, callback));
+    }
+    
+    /**
      * Log fulfilled value or rejected reason of current promise.
      * @return Current promise.
      */
@@ -880,33 +900,68 @@ export class Promise<Value> implements Thenable<Value> {
         if (!values.length) {
             return Promise.true;
         }
-
-        let promise = new Promise<boolean>();
-
-        next(0);
-
-        function next(index: number) {
-            if (index >= values.length) {
-                promise.resolve(true);
-                return;
-            }
-
-            let value = values[index];
-
-            Promise
-                .then(() => callback(value, index, values))
-                .enclose()
-                .then(result => {
+        
+        let remaining = values.length;
+        
+        return values
+            .reduce((promise, value, index, values) => {
+                return promise.then((result) => {
                     if (result === false) {
-                        promise.resolve(false);
-                    } else {
-                        next(index + 1);
+                        throw BREAK_SIGNAL;
                     }
-                })
-                .then(undefined, reason => promise.reject(reason));
+                    
+                    return callback(value, index, values);
+                });
+            }, Promise.resolve<boolean|void>(undefined))
+            .then(() => true)
+            .enclose()
+            .then(completed => !!completed);
+    }
+    
+    /**
+     * Try a process for several times.
+     */
+    static retry<Return>(callback: RetryCallback<Return>): Promise<Return>;
+    static retry<Return>(options: RetryOptions, callback: RetryCallback<Return>): Promise<Return>;
+    static retry<Return>(options: RetryOptions = {}, callback?: RetryCallback<Return>): Promise<Return> {
+        if (
+            callback === undefined &&
+            typeof options === 'function'
+        ) {
+            callback = <any>options;
+            options = {};
         }
-
-        return promise;
+        
+        let {
+            limit = 3,
+            interval = 0
+        } = options;
+        
+        let lastReason: any;
+        let attemptIndex = 0;
+        
+        return process();
+        
+        function process(): Promise<Return> {
+            return Promise
+                .then(() => callback(lastReason, attemptIndex++))
+                .enclose()
+                .fail(reason => {
+                    if (attemptIndex >= limit) {
+                        throw reason;
+                    }
+                    
+                    lastReason = reason;
+                    
+                    if (interval) {
+                        return Promise
+                            .delay(interval)
+                            .then(() => process());
+                    } else {
+                        return process();
+                    }
+                });
+        }
     }
     
     /**

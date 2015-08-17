@@ -541,6 +541,9 @@ var __extends = (this && this.__extends) || function (d, b) {
         Promise.prototype.each = function (callback) {
             return this.then(function (values) { return Promise.each(values, callback); });
         };
+        Promise.prototype.retry = function (options, callback) {
+            return this.then(function () { return Promise.retry(options, callback); });
+        };
         Promise.prototype.log = function (object) {
             var promise = new Promise();
             this.handle(promise);
@@ -762,28 +765,50 @@ var __extends = (this && this.__extends) || function (d, b) {
             if (!values.length) {
                 return Promise.true;
             }
-            var promise = new Promise();
-            next(0);
-            function next(index) {
-                if (index >= values.length) {
-                    promise.resolve(true);
-                    return;
-                }
-                var value = values[index];
-                Promise
-                    .then(function () { return callback(value, index, values); })
-                    .enclose()
-                    .then(function (result) {
+            var remaining = values.length;
+            return values
+                .reduce(function (promise, value, index, values) {
+                return promise.then(function (result) {
                     if (result === false) {
-                        promise.resolve(false);
+                        throw BREAK_SIGNAL;
+                    }
+                    return callback(value, index, values);
+                });
+            }, Promise.resolve(undefined))
+                .then(function () { return true; })
+                .enclose()
+                .then(function (completed) { return !!completed; });
+        };
+        Promise.retry = function (options, callback) {
+            if (options === void 0) { options = {}; }
+            if (callback === undefined &&
+                typeof options === 'function') {
+                callback = options;
+                options = {};
+            }
+            var _a = options.limit, limit = _a === void 0 ? 3 : _a, _b = options.interval, interval = _b === void 0 ? 0 : _b;
+            var lastReason;
+            var attemptIndex = 0;
+            return process();
+            function process() {
+                return Promise
+                    .then(function () { return callback(lastReason, attemptIndex++); })
+                    .enclose()
+                    .fail(function (reason) {
+                    if (attemptIndex >= limit) {
+                        throw reason;
+                    }
+                    lastReason = reason;
+                    if (interval) {
+                        return Promise
+                            .delay(interval)
+                            .then(function () { return process(); });
                     }
                     else {
-                        next(index + 1);
+                        return process();
                     }
-                })
-                    .then(undefined, function (reason) { return promise.reject(reason); });
+                });
             }
-            return promise;
         };
         Object.defineProperty(Promise, "break", {
             /**

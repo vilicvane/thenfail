@@ -28,6 +28,15 @@ export interface MapCallback<Value, Return> {
 export interface EachCallback<Value> {
     (value: Value, index: number, array: Value[]): Promise<boolean | void> | Thenable<boolean | void> | boolean | void;
 }
+export interface RetryCallback<Return> {
+    (lastReason: any, attemptIndex: number): Promise<Return> | Thenable<Return> | Return;
+}
+export interface RetryOptions {
+    /** Try limit times (defaults to 3). */
+    limit?: number;
+    /** Interval between two tries (defaults to 0). */
+    interval?: number;
+}
 export declare class Context {
     _disposed: boolean;
     _enclosed: boolean;
@@ -207,6 +216,11 @@ export declare class Promise<Value> implements Thenable<Value> {
      */
     each<Value>(callback: EachCallback<Value>): Promise<boolean>;
     /**
+     * A shortcut of `Promise.retry`.
+     */
+    retry<Return>(callback: RetryCallback<Return>): Promise<Return>;
+    retry<Return>(options: RetryOptions, callback: RetryCallback<Return>): Promise<Return>;
+    /**
      * Log fulfilled value or rejected reason of current promise.
      * @return Current promise.
      */
@@ -302,6 +316,11 @@ export declare class Promise<Value> implements Thenable<Value> {
      * Return `false` or a promise that will eventually be fulfilled with `false` to interrupt iteration.
      */
     static each<Value>(values: Value[], callback: EachCallback<Value>): Promise<boolean>;
+    /**
+     * Try a process for several times.
+     */
+    static retry<Return>(callback: RetryCallback<Return>): Promise<Return>;
+    static retry<Return>(options: RetryOptions, callback: RetryCallback<Return>): Promise<Return>;
     /**
      * (fake statement) This getter will always throw a break signal that interrupts the promises chain.
      *

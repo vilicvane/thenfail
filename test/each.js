@@ -12,8 +12,12 @@ describe('Feature: each', function () {
     it('All fulfilled without interruption', function () {
         var str = '';
         
+        setTimeout(function () {
+            Assert.equal(str, 'abc');
+        }, 20);
+        
         return Promise
-            .each(['a', 'b', 'c'], function (char) {
+            .each(['a', 'b', 'c', 'd'], function (char) {
                 str += char;
                 
                 switch (char) {
@@ -22,16 +26,20 @@ describe('Feature: each', function () {
                     case 'b':
                         return 'false';
                     case 'c':
+                        new Promise(function (resolve) {
+                            setTimeout(resolve, 50);
+                        });
+                    case 'd':
                         return true;
                 }
             })
             .then(function (completed) {
                 Assert.equal(completed, true);
-                Assert.equal(str, 'abc');
+                Assert.equal(str, 'abcd');
             });
     });
     
-    it('Survive Promise.break', function () {
+    it('Promise.break can break', function () {
         var str = '';
         
         return Promise
@@ -48,8 +56,8 @@ describe('Feature: each', function () {
                 }
             })
             .then(function (completed) {
-                Assert.equal(completed, true);
-                Assert.equal(str, 'abc');
+                Assert.equal(completed, false);
+                Assert.equal(str, 'ab');
             });
     });
     
