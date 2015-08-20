@@ -47,7 +47,7 @@ Which means if we add the `then` method (which you see everywhere) with `console
 
 ```ts
 // Logs "biu" in 100 ms.
-let secondPromise = promise.then(result => console.log(result));
+let secondPromise = firstPromise.then(result => console.log(result));
 ```
 
 And... Wait, we get the `secondPromise`? Yes, every time we call `then` with handler(s), it creates another promise.
@@ -57,18 +57,18 @@ But how does it determine whether the task is done?
 
 The method `then` generally accepts two parameters, an `onfulfilled` handler and an `onrejected` handler.
 Only one of the two handlers would ever be called (if both of them exist) depending on the state of the previous promise.
-And when been called, it returns a normal value or a promise, or otherwise, throw an error.
+And when been called, it returns a normal value or a promise, or otherwise, throws an error.
 
-If it's not returning a promise, like in the previous example (which returns `undefined`).
-The created promise will be switched to state *fulfilled*, or *rejected* if the handler throws an error.
+If the handler does not return a promise, like in the previous example (which returns `undefined`),
+the created promise (as `then` method will create a promise any way) will be switched to state *fulfilled* (or *rejected* if the handler throws an error).
 
-Otherwise, the state of the created promise will be determined by the promise returned in the handler (which might take some time, asynchronously).
-And if there's following `then`, the handlers in it will be triggered later depending on the returned promise.
+Otherwise, the state of the created promise will be determined by the promise returned in the handler (which might take some time to be settled, asynchronously).
+And if there's a following `then`, the handlers in it will be triggered later depending on the returned promise.
 
 ## Create a ThenFail promise chain
 
 We've learned how to use the constructor to create a promise, but usually we only use that way to bridge other style of asynchronous code.
-When we are writting our own promised API, we can make it simpler:
+When we are writting our own promised API based on other promised API, we can make it simpler:
 
 ```ts
 function getResource(url: string): Promise<Resource> {
@@ -82,6 +82,7 @@ function getResource(url: string): Promise<Resource> {
                 }
                 
                 // And you can certainly throw an error here.
+                // It will be caught by the promise chain and trigger the closest `onrejected` handler.
             })
             .then(rawResource => processResource(rawResource));
     } else {
@@ -170,7 +171,8 @@ Promise
         // Step 4
     })
     // Enclose current context so it won't break too many.
-    // It should be required when writing a method been used somewhere else.
+    // It should be required if this could be directly chained somewhere else.
+    // E.g. Returned as your method result.
     .enclose();
 ```
 
@@ -197,7 +199,7 @@ page.on('unload', () => {
 });
 ```
 
-With ThenFail, every promise has something called a `context`. And if the context is disposed, the chain gets cancelled.
+With ThenFail, every promise has something called `context`. And if the context is disposed, the chain gets cancelled.
 
 ```ts
 import { Context } from 'thenfail';
