@@ -11,7 +11,11 @@ Core features and changes in v0.3:
 + Optimized for better performance.
 + Control flow tools like context and `Promise.break`.
 
+## Install by NPM
 
+```sh
+npm install thenfail --save
+```
 
 ## What is promise
 
@@ -31,6 +35,13 @@ Firstly, let's import ThenFail:
 
 ```ts
 import Promise from 'thenfail';
+
+// Actually now we still need to use relative path instead of package name
+// for TypeScript to correctly load declaration files:
+// import Promise from './node_modules/thenfail/bld/thenfail';
+
+// In 1.6, better module resolution logic would be applied and things would
+// finally get smooth.
 ```
 
 Then let's follow the ES6 standard:
