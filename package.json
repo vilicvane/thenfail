@@ -1,8 +1,8 @@
 {
   "name": "thenfail",
   "version": "0.3.0",
-  "description": "Just another Promises/A+ implementation written in TypeScript",
-  "main": "bld/thenfail.js",
+  "description": "Promises/A+ implementation with the ability to break or cancel the chain. Written in TypeScript.",
+  "main": "./bld/thenfail.js",
   "directories": {
     "test": "test"
   },
@@ -17,14 +17,14 @@
   "registry": "npm",
   "repository": {
     "type": "git",
-    "url": "https://github.com/vilic/thenfail"
+    "url": "git+https://github.com/vilic/thenfail.git"
   },
   "keywords": [
     "thenfail",
     "promises-aplus",
     "promise"
   ],
-  "author": "VILIC VANE",
+  "author": "vilicvane",
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/vilic/thenfail/issues"
