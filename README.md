@@ -11,18 +11,18 @@ Core features and changes in v0.3:
 + Optimized for better performance.
 + Control flow tools like context and `Promise.break`.
 
-## Install by NPM
-
-```sh
-npm install thenfail --save
-```
-
 ## What is promise
 
 Promise is a pattern for handling asynchronous operations.
 
 The most obvious benifit you may get from promise itself IMO is on error handling,
 and maybe the ability to `await` an `async` operation in the future (ES7 and TypeScript 1.6/2.0).
+
+## Install ThenFail
+
+```sh
+npm install thenfail --save
+```
 
 ## Create a promise from the scratch
 
@@ -40,8 +40,8 @@ import Promise from 'thenfail';
 // for TypeScript to correctly load declaration files:
 // import Promise from './node_modules/thenfail/bld/thenfail';
 
-// In 1.6, better module resolution logic would be applied and things would
-// finally get smooth.
+// In TypeScript 1.6, better module resolution logic would be applied and
+// things would eventually get smooth.
 ```
 
 Then let's follow the ES6 standard:
