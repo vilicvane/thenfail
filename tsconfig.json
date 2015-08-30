@@ -10,6 +10,7 @@
         "outDir": "bld"
     },
     "exclude": [
-        "bld"
+        "bld",
+        "node_modules"
     ]
 }

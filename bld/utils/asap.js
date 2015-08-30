@@ -12,7 +12,6 @@ https://github.com/kriskowal/asap
         define(deps, factory);
     }
 })(["require", "exports"], function (require, exports) {
-    exports.asap;
     if (typeof process === 'object' &&
         process.toString() === '[object process]' &&
         process.nextTick) {

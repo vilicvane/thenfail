@@ -13,30 +13,32 @@ import { asap } from './utils';
 // Promise //
 /////////////
 
+export type ThenableOrValue<Value> = Promise<Value>|Thenable<Value>|Value;
+
 /**
  * Promise like object.
  */
 export interface Thenable<Value> {
-    then<Return>(onfulfilled: (value: Value) => Promise<Return>|Thenable<Return>|Return, onrejected?: (reason: any) => any): Thenable<Return>;
+    then<Return>(onfulfilled: (value: Value) => ThenableOrValue<Return>, onrejected?: (reason: any) => any): Thenable<Return>;
 }
 
 export interface Resolver<Value> {
     (
-        resolve: (value?: Promise<Value>|Thenable<Value>|Value) => void,
+        resolve: (value?: ThenableOrValue<Value>) => void,
         reject: (reason: any) => void
     ): void;
 }
 
 export interface OnFulfilledHandler<Value, Return> {
-    (value: Value): Promise<Return>|Thenable<Return>|Return;
+    (value: Value): ThenableOrValue<Return>;
 }
 
 export interface OnRejectedHandler<Return> {
-    (reason: any): Promise<Return>|Thenable<Return>|Return;
+    (reason: any): ThenableOrValue<Return>;
 }
 
 export interface OnAnyHandler<Return> {
-    (valueOrReason: any): Promise<Return>|Thenable<Return>|Return;
+    (valueOrReason: any): ThenableOrValue<Return>;
 }
 
 export interface OnInterruptedHandler {
@@ -48,22 +50,11 @@ export interface NodeStyleCallback<Value> {
 }
 
 export interface MapCallback<Value, Return> {
-    (value: Value, index: number, array: Value[]): Promise<Return>|Thenable<Return>|Return;
+    (value: Value, index: number, array: Value[]): ThenableOrValue<Return>;
 }
 
 export interface EachCallback<Value> {
     (value: Value, index: number, array: Value[]): Promise<boolean|void>|Thenable<boolean|void>|boolean|void;
-}
-
-export interface RetryCallback<Return> {
-    (lastReason: any, attemptIndex: number): Promise<Return>|Thenable<Return>|Return;
-}
-
-export interface RetryOptions {
-    /** Try limit times (defaults to 3). */
-    limit?: number;
-    /** Interval between two tries (defaults to 0). */
-    interval?: number;
 }
 
 export class Context {
@@ -121,22 +112,12 @@ export const enum State {
     interrupted
 }
 
-export namespace _CustomError {
-    export declare class Error {
-        constructor(message?: string);
-        
-        name: string;
-        message: string;
-        stack: string;
-    }
-
-    export class TimeoutError extends Error {
-        name = 'TimeoutError';
-    }
+/**
+ * TimeoutError class.
+ */
+export class TimeoutError extends Error {
+    name = 'TimeoutError';
 }
-
-export const TimeoutError = _CustomError.TimeoutError;
-export type TimeoutError = _CustomError.TimeoutError;
 
 /**
  * The signal objects for interrupting promises context.
@@ -223,7 +204,7 @@ export class Promise<Value> implements Thenable<Value> {
             return;
         }
         
-        let handler: OnAnyHandler<Promise<Value>|Thenable<Value>|Value>;
+        let handler: OnAnyHandler<ThenableOrValue<Value>>;
         
         if (previousState === State.fulfilled) {
             handler = this._onPreviousFulfilled;
@@ -245,7 +226,7 @@ export class Promise<Value> implements Thenable<Value> {
         this._running = true;
         
         asap(() => {
-            let ret: Promise<Value>|Thenable<Value>|Value;
+            let ret: ThenableOrValue<Value>;
 
             try {
                 ret = handler(previousValueOrReason);
@@ -265,7 +246,7 @@ export class Promise<Value> implements Thenable<Value> {
     /**
      * The resolve process defined in Promises/A+ specifications.
      */
-    private _unpack(value: Promise<Value>|Thenable<Value>|Value, callback: (state: State, valueOrReason: any) => void): void {
+    private _unpack(value: ThenableOrValue<Value>, callback: (state: State, valueOrReason: any) => void): void {
         if (this === value) {
             callback(State.rejected, new TypeError('The promise should not return itself'));
         } else if (value instanceof Promise) {
@@ -485,7 +466,7 @@ export class Promise<Value> implements Thenable<Value> {
      * Resolve this promise with a value or thenable.
      * @param value A normal value, or a promise/thenable.
      */
-    resolve(value?: Promise<Value>|Thenable<Value>|Value): void {
+    resolve(value?: ThenableOrValue<Value>): void {
         this._unpack(value, (state, valueOrReason) => this._grab(state, valueOrReason));
     }
     
@@ -791,7 +772,7 @@ export class Promise<Value> implements Thenable<Value> {
      * A shortcut of `Promise.then(() => value)`.
      * @return Return the value itself if it's an instanceof ThenFail Promise.
      */
-    static resolve<Value>(value: Promise<Value>|Thenable<Value>|Value): Promise<Value> {
+    static resolve<Value>(value: ThenableOrValue<Value>): Promise<Value> {
         if (value instanceof Promise) {
             return value;
         } else {
@@ -815,7 +796,7 @@ export class Promise<Value> implements Thenable<Value> {
     /**
      * Alias of `Promise.resolve`.
      */
-    static when<Value>(value: Promise<Value>|Thenable<Value>|Value): Promise<Value> {
+    static when<Value>(value: ThenableOrValue<Value>): Promise<Value> {
         return Promise.resolve(value);
     }
     
@@ -846,7 +827,7 @@ export class Promise<Value> implements Thenable<Value> {
      *  2. with the reason of the first rejection as its reason.
      *  3. after all values are either fulfilled or rejected.
      */
-    static all<Value>(values: (Promise<Value>|Thenable<Value>|Value)[]): Promise<Value[]> {
+    static all<Value>(values: (ThenableOrValue<Value>)[]): Promise<Value[]> {
         if (!values.length) {
             return Promise.resolve([]);
         }
@@ -963,6 +944,55 @@ export class Promise<Value> implements Thenable<Value> {
                 });
         }
     }
+
+    /**
+    * Use a disposable resource and dispose it after been used.
+    */
+    static using<Resource, Return>(disposable: Thenable<Disposable<Resource>>|Disposable<Resource>, handler: OnFulfilledHandler<Resource, Return>): Promise<Return> {
+        let resolvedDisposable: Disposable<Resource>;
+        
+        let promise = Promise
+            .when(disposable)
+            .then(disposable => {
+                resolvedDisposable = disposable;
+                return handler(disposable.resource);
+            });
+        
+        let disposed = false;
+        
+        function dispose(): void {
+            if (!disposed) {
+                // Change the value of `disposed` first to avoid exception in
+                // `resolvedDisposable.dispose()` causing `onrejected` handler been called
+                // again.
+                disposed = true;
+                resolvedDisposable.dispose(resolvedDisposable.resource);
+            }
+        }
+        
+        promise
+            .interruption(dispose)
+            .then(dispose, dispose);
+        
+        return promise;
+    }
+    
+    /**
+     * Invoke a Node style function that accepts the last argument as callback.
+     */
+    static invoke<Value>(fn: Function, ...args: any[]): Promise<Value> {
+        return new Promise<Value>((resolve, reject) => {
+            args = args.concat((error: any, value: Value) => {
+                if (error) {
+                    reject(error);
+                } else {
+                    resolve(value);
+                }
+            });
+            
+            fn.apply(undefined, args);
+        });
+    }
     
     /**
      * (fake statement) This getter will always throw a break signal that interrupts the promises chain.
@@ -1022,7 +1052,7 @@ export default Promise;
 //////////////////
 
 export interface PromiseLockHandler<Return> {
-    (): Promise<Return>|Thenable<Return>|Return;
+    (): ThenableOrValue<Return>;
 }
 
 export class PromiseLock {
@@ -1041,6 +1071,21 @@ export class PromiseLock {
     }
 }
 
+///////////
+// Retry //
+///////////
+
+export interface RetryCallback<Return> {
+    (lastReason: any, attemptIndex: number): ThenableOrValue<Return>;
+}
+
+export interface RetryOptions {
+    /** Try limit times (defaults to 3). */
+    limit?: number;
+    /** Interval between two tries (defaults to 0). */
+    interval?: number;
+}
+
 ////////////////
 // Disposable //
 ////////////////
@@ -1054,34 +1099,5 @@ export interface Disposable<Resource> {
     dispose: Disposer<Resource>;
 }
 
-/**
- * Use a disposable resource and dispose it after been used.
- */
-export function using<Resource, Return>(disposable: Thenable<Disposable<Resource>>|Disposable<Resource>, handler: OnFulfilledHandler<Resource, Return>): Promise<Return> {
-    let resolvedDisposable: Disposable<Resource>;
-    
-    let promise = Promise
-        .when(disposable)
-        .then(disposable => {
-            resolvedDisposable = disposable;
-            return handler(disposable.resource);
-        });
-    
-    let disposed = false;
-    
-    function dispose(): void {
-        if (!disposed) {
-            // Change the value of `disposed` first to avoid exception in
-            // `resolvedDisposable.dispose()` causing `onrejected` handler been called
-            // again.
-            disposed = true;
-            resolvedDisposable.dispose(resolvedDisposable.resource);
-        }
-    }
-    
-    promise
-        .interruption(dispose)
-        .then(dispose, dispose);
-    
-    return promise;
-}
+export const using: typeof Promise.using = Promise.using;
+export const invoke: typeof Promise.invoke = Promise.invoke;

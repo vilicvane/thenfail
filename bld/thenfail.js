@@ -9,8 +9,7 @@
 var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
-    __.prototype = b.prototype;
-    d.prototype = new __();
+    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
 (function (deps, factory) {
     if (typeof module === 'object' && typeof module.exports === 'object') {
@@ -81,19 +80,18 @@ var __extends = (this && this.__extends) || function (d, b) {
         State[State["interrupted"] = 3] = "interrupted";
     })(exports.State || (exports.State = {}));
     var State = exports.State;
-    var _CustomError;
-    (function (_CustomError) {
-        var TimeoutError = (function (_super) {
-            __extends(TimeoutError, _super);
-            function TimeoutError() {
-                _super.apply(this, arguments);
-                this.name = 'TimeoutError';
-            }
-            return TimeoutError;
-        })(Error);
-        _CustomError.TimeoutError = TimeoutError;
-    })(_CustomError = exports._CustomError || (exports._CustomError = {}));
-    exports.TimeoutError = _CustomError.TimeoutError;
+    /**
+     * TimeoutError class.
+     */
+    var TimeoutError = (function (_super) {
+        __extends(TimeoutError, _super);
+        function TimeoutError() {
+            _super.apply(this, arguments);
+            this.name = 'TimeoutError';
+        }
+        return TimeoutError;
+    })(Error);
+    exports.TimeoutError = TimeoutError;
     /**
      * The signal objects for interrupting promises context.
      */
@@ -438,7 +436,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             this._context._enclosed = true;
             setTimeout(function () {
                 if (_this._state === 0 /* pending */) {
-                    _this._relay(2 /* rejected */, new exports.TimeoutError());
+                    _this._relay(2 /* rejected */, new TimeoutError());
                     _this._context.disposeSubContexts();
                 }
             }, Math.floor(timeout) || 0);
@@ -810,6 +808,52 @@ var __extends = (this && this.__extends) || function (d, b) {
                 });
             }
         };
+        /**
+        * Use a disposable resource and dispose it after been used.
+        */
+        Promise.using = function (disposable, handler) {
+            var resolvedDisposable;
+            var promise = Promise
+                .when(disposable)
+                .then(function (disposable) {
+                resolvedDisposable = disposable;
+                return handler(disposable.resource);
+            });
+            var disposed = false;
+            function dispose() {
+                if (!disposed) {
+                    // Change the value of `disposed` first to avoid exception in
+                    // `resolvedDisposable.dispose()` causing `onrejected` handler been called
+                    // again.
+                    disposed = true;
+                    resolvedDisposable.dispose(resolvedDisposable.resource);
+                }
+            }
+            promise
+                .interruption(dispose)
+                .then(dispose, dispose);
+            return promise;
+        };
+        /**
+         * Invoke a Node style function that accepts the last argument as callback.
+         */
+        Promise.invoke = function (fn) {
+            var args = [];
+            for (var _i = 1; _i < arguments.length; _i++) {
+                args[_i - 1] = arguments[_i];
+            }
+            return new Promise(function (resolve, reject) {
+                args = args.concat(function (error, value) {
+                    if (error) {
+                        reject(error);
+                    }
+                    else {
+                        resolve(value);
+                    }
+                });
+                fn.apply(undefined, args);
+            });
+        };
         Object.defineProperty(Promise, "break", {
             /**
              * (fake statement) This getter will always throw a break signal that interrupts the promises chain.
@@ -875,6 +919,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         return Promise;
     })();
     exports.Promise = Promise;
+    Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = Promise;
     var PromiseLock = (function () {
         function PromiseLock() {
@@ -894,32 +939,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         return PromiseLock;
     })();
     exports.PromiseLock = PromiseLock;
-    /**
-     * Use a disposable resource and dispose it after been used.
-     */
-    function using(disposable, handler) {
-        var resolvedDisposable;
-        var promise = Promise
-            .when(disposable)
-            .then(function (disposable) {
-            resolvedDisposable = disposable;
-            return handler(disposable.resource);
-        });
-        var disposed = false;
-        function dispose() {
-            if (!disposed) {
-                // Change the value of `disposed` first to avoid exception in
-                // `resolvedDisposable.dispose()` causing `onrejected` handler been called
-                // again.
-                disposed = true;
-                resolvedDisposable.dispose(resolvedDisposable.resource);
-            }
-        }
-        promise
-            .interruption(dispose)
-            .then(dispose, dispose);
-        return promise;
-    }
-    exports.using = using;
+    exports.using = Promise.using;
+    exports.invoke = Promise.invoke;
 });
 //# sourceMappingURL=thenfail.js.map
