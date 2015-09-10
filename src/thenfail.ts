@@ -19,43 +19,27 @@ export type ThenableOrValue<Value> = Promise<Value>|Thenable<Value>|Value;
  * Promise like object.
  */
 export interface Thenable<Value> {
-    then<Return>(onfulfilled: (value: Value) => ThenableOrValue<Return>, onrejected?: (reason: any) => any): Thenable<Return>;
+    then<Return>(onfulfilled: (value: Value) => ThenableOrValue<Return>, onrejected: (reason: any) => any): Thenable<Return>;
 }
 
-export interface Resolver<Value> {
-    (
-        resolve: (value?: ThenableOrValue<Value>) => void,
-        reject: (reason: any) => void
-    ): void;
-}
+export type Resolver<Value> = (
+    resolve: (value?: ThenableOrValue<Value>) => void,
+    reject: (reason: any) => void
+) => void;
 
-export interface OnFulfilledHandler<Value, Return> {
-    (value: Value): ThenableOrValue<Return>;
-}
+export type OnFulfilledHandler<Value, Return> = (value: Value) => ThenableOrValue<Return>;
 
-export interface OnRejectedHandler<Return> {
-    (reason: any): ThenableOrValue<Return>;
-}
+export type OnRejectedHandler<Return> = (reason: any) => ThenableOrValue<Return>;
 
-export interface OnAnyHandler<Return> {
-    (valueOrReason: any): ThenableOrValue<Return>;
-}
+export type OnAnyHandler<Return> = (valueOrReason: any) => ThenableOrValue<Return>;
 
-export interface OnInterruptedHandler {
-    (): void;
-}
+export type OnInterruptedHandler = () => void;
 
-export interface NodeStyleCallback<Value> {
-    (error: any, value: Value): void;
-}
+export type NodeStyleCallback<Value> = (error: any, value: Value) => void;
 
-export interface MapCallback<Value, Return> {
-    (value: Value, index: number, array: Value[]): ThenableOrValue<Return>;
-}
+export type MapCallback<Value, Return> = (value: Value, index: number, array: Value[]) => ThenableOrValue<Return>;
 
-export interface EachCallback<Value> {
-    (value: Value, index: number, array: Value[]): Promise<boolean|void>|Thenable<boolean|void>|boolean|void;
-}
+export type EachCallback<Value> = (value: Value, index: number, array: Value[]) => ThenableOrValue<boolean|void>;
 
 export class Context {
     _disposed = false;
@@ -1051,9 +1035,7 @@ export default Promise;
 // Promise Lock //
 //////////////////
 
-export interface PromiseLockHandler<Return> {
-    (): ThenableOrValue<Return>;
-}
+export type PromiseLockHandler<Return> = () => ThenableOrValue<Return>;
 
 export class PromiseLock {
     private _promise = Promise.void;
@@ -1075,9 +1057,7 @@ export class PromiseLock {
 // Retry //
 ///////////
 
-export interface RetryCallback<Return> {
-    (lastReason: any, attemptIndex: number): ThenableOrValue<Return>;
-}
+export type RetryCallback<Return> = (lastReason: any, attemptIndex: number) => ThenableOrValue<Return>;
 
 export interface RetryOptions {
     /** Try limit times (defaults to 3). */
@@ -1090,9 +1070,7 @@ export interface RetryOptions {
 // Disposable //
 ////////////////
 
-export interface Disposer<Resource> {
-    (resource: Resource): void;
-}
+export type Disposer<Resource> = (resource: Resource) => void;
 
 export interface Disposable<Resource> {
     resource: Resource;
