@@ -24,6 +24,8 @@ and maybe the ability to `await` an `async` operation in the future (ES7 and Typ
 npm install thenfail --save
 ```
 
+If you are using TypeScript, ThenFail requires version 1.6 to compile correctly.
+
 ## Create a promise from the scratch
 
 My personal promise experience began with [Q](https://github.com/kriskowal/q/) (a popular Promises/A+ implementation).
@@ -35,13 +37,6 @@ Firstly, let's import ThenFail:
 
 ```ts
 import Promise from 'thenfail';
-
-// Actually now we still need to use relative path instead of package name
-// for TypeScript to correctly load declaration files:
-// import Promise from './node_modules/thenfail/bld/thenfail';
-
-// In TypeScript 1.6, better module resolution logic would be applied and
-// things would eventually get smooth.
 ```
 
 Then let's follow the ES6 standard:
