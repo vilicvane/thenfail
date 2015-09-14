@@ -56,7 +56,8 @@ describe('Feature: break promises chain', function () {
     });
     
     it('Should only break enclosed part', function (done) {
-        var promise = Promise
+        Promise
+            .resolve('abc')
             .then(function () {
                 Promise.break;
             })
@@ -74,7 +75,8 @@ describe('Feature: break promises chain', function () {
     });
     
     it('Should break enclosed part with onrejected handler', function (done) {
-        var promise = Promise
+        Promise
+            .resolve('abc')
             .then(function () {
                 Promise.break;
             })
@@ -93,26 +95,94 @@ describe('Feature: break promises chain', function () {
             });
     });
     
-    it('Should only break current chain', function (done) {
-        var str = '';
+    context('Should only break current chain', function () {
+        it('Break in the last nested then', function (done) {
+            var str = '';
+            
+            Promise
+                .then(function () {
+                    return Promise
+                        .void
+                        .then(function () {
+                            Promise.break;
+                        });
+                })
+                .then(function () {
+                    str += 'b';
+                });
+            
+            setTimeout(function () {
+                Assert.equal(str, 'b');
+                done();
+            }, 10);
+        });
         
-        var promise = Promise
-            .then(function () {
-                return Promise
-                    .then(function () {
-                        Promise.break;
-                    })
-                    .then(function () {
-                        str += 'a';
-                    });
-            })
-            .then(function () {
-                str += 'b';
-            });
+        it('Break but not in the last nested then', function (done) {
+            var str = '';
+            
+            Promise
+                .then(function () {
+                    return Promise
+                        .then(function () {
+                            Promise.break;
+                        })
+                        .then(function () {
+                            str += 'a';
+                        });
+                })
+                .then(function () {
+                    str += 'b';
+                });
+            
+            setTimeout(function () {
+                Assert.equal(str, 'b');
+                done();
+            }, 10);
+        });
         
-        setTimeout(function () {
-            Assert.equal(str, 'b');
-            done();
-        }, 10);
+        it('Asynchronously break in the last nested then', function (done) {
+            var str = '';
+            
+            Promise
+                .then(function () {
+                    return Promise
+                        .void
+                        .then(function () {
+                            return Promise.void.break;
+                        });
+                })
+                .then(function () {
+                    str += 'b';
+                });
+            
+            setTimeout(function () {
+                Assert.equal(str, 'b');
+                done();
+            }, 10);
+        });
+        
+        it('Asynchronously break but not in the last nested then', function (done) {
+            var str = '';
+            
+            Promise
+                .then(function () {
+                    return Promise
+                        .then(function () {
+                            return Promise.void.break;
+                        })
+                        .then(function () {
+                            str += 'a';
+                        });
+                })
+                .then(function () {
+                    str += 'b';
+                });
+            
+            setTimeout(function () {
+                Assert.equal(str, 'b');
+                done();
+            }, 10);
+        });
     });
+    
 });

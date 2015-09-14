@@ -32,10 +32,12 @@ describe('Feature: state', function () {
     });
     
     context('Interrupted promises', function () {
-        it('immediately break', function (done) {
+        it('Synchronously break', function (done) {
             var promiseA = Promise
                 .void
-                .break;
+                .then(function () {
+                    Promise.break;
+                });
             
             var promiseB = promiseA.then(function () {
                 // never run
@@ -48,18 +50,84 @@ describe('Feature: state', function () {
             }, 0);
         });
         
-        it('immediately break from nested promise', function (done) {
-            var promise = Promise
-                .then(function () {
-                    return Promise
-                        .void
-                        .break
-                        .then(function () { });
-                })
-                .then(function () { });
+        it('Synchronously break in the last nested chain', function (done) {
+            var promise = Promise.then(function () {
+                return Promise
+                    .void
+                    .then(function () {
+                        Promise.break;
+                    });
+            });
             
             setTimeout(function () {
                 Assert(promise.fulfilled);
+                done();
+            }, 0);
+        });
+        
+        it('Synchronously break but not in the last nested chain', function (done) {
+            var promiseA;
+            var promiseB;
+            
+            promiseA = Promise.then(function () {
+                promiseB = Promise
+                    .then(function () {
+                        Promise.break;
+                    })
+                    .then(function () { });
+            });
+            
+            setTimeout(function () {
+                Assert(promiseA.fulfilled);
+                Assert(promiseB.interrupted);
+                done();
+            }, 0);
+        });
+        
+        it('Asynchronously break', function (done) {
+            var promiseA = Promise.then(function () {
+                return Promise.void.break;
+            });
+            
+            var promiseB = promiseA.then(function () {
+                // never run
+            });
+            
+            setTimeout(function () {
+                Assert(promiseA.fulfilled);
+                Assert(promiseB.interrupted);
+                done();
+            }, 0);
+        });
+        
+        it('Asynchronously break in the last nested chain', function (done) {
+            var promise = Promise.then(function () {
+                return Promise.then(function () {
+                    return Promise.void.break;
+                });
+            });
+            
+            setTimeout(function () {
+                Assert(promise.fulfilled);
+                done();
+            }, 0);
+        });
+        
+        it('Asynchronously break but not in the last nested chain', function (done) {
+            var promiseA;
+            var promiseB;
+            
+            promiseA = Promise.then(function () {
+                promiseB = Promise
+                    .then(function () {
+                        return Promise.void.break;
+                    })
+                    .then(function () { });
+            });
+            
+            setTimeout(function () {
+                Assert(promiseA.fulfilled);
+                Assert(promiseB.interrupted);
                 done();
             }, 0);
         });

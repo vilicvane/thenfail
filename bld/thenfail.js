@@ -244,6 +244,7 @@ var __extends = (this && this.__extends) || function (d, b) {
          * Set the state of current promise and relay it to next promises.
          */
         Promise.prototype._relay = function (state, valueOrReason) {
+            var _this = this;
             if (this._state !== 0 /* pending */) {
                 return;
             }
@@ -294,14 +295,20 @@ var __extends = (this && this.__extends) || function (d, b) {
                         }
                     }
                 }
-                relayState = valueOrReason === PRE_BREAK_SIGNAL ? 3 /* interrupted */ : 1 /* fulfilled */;
+                relayState = 1 /* fulfilled */;
+                if (valueOrReason === PRE_BREAK_SIGNAL) {
+                    valueOrReason = BREAK_SIGNAL;
+                }
+                else {
+                    valueOrReason = undefined;
+                }
                 if (this._handledPromise) {
-                    this._handledPromise._relay(relayState);
+                    this._handledPromise._relay(relayState, valueOrReason);
                 }
                 else if (this._handledPromises) {
                     for (var _b = 0, _c = this._handledPromises; _b < _c.length; _b++) {
                         var promise = _c[_b];
-                        promise._relay(relayState);
+                        promise._relay(relayState, valueOrReason);
                     }
                 }
             }
@@ -326,11 +333,13 @@ var __extends = (this && this.__extends) || function (d, b) {
                 }
             }
             if (state === 2 /* rejected */) {
-                var relayed = !!(this._chainedPromise || this._chainedPromises || this._handledPromise || this._handledPromises);
-                if (!exports.options.disableUnrelayedRejectionWarning && !relayed) {
-                    var error = valueOrReason && (valueOrReason.stack || valueOrReason.message) || valueOrReason;
-                    console.warn("An unrelayed rejection happens:\n" + error);
-                }
+                utils_1.asap(function () {
+                    var relayed = !!(_this._chainedPromise || _this._chainedPromises || _this._handledPromise || _this._handledPromises);
+                    if (!exports.options.disableUnrelayedRejectionWarning && !relayed) {
+                        var error = valueOrReason && (valueOrReason.stack || valueOrReason.message) || valueOrReason;
+                        console.warn("An unrelayed rejection happens:\n" + error);
+                    }
+                });
             }
             if (this._onPreviousFulfilled) {
                 this._onPreviousFulfilled = undefined;
@@ -777,6 +786,32 @@ var __extends = (this && this.__extends) || function (d, b) {
                 .enclose()
                 .then(function (completed) { return !!completed; });
         };
+        /**
+         * Pass the last result to the same callback on and on.
+         */
+        Promise.waterfall = function (values, initialResult, callback) {
+            if (!values.length) {
+                return Promise.resolve(initialResult);
+            }
+            var lastResult = initialResult;
+            return Promise
+                .each(values, function (value, index, array) {
+                var callbackPromise = Promise
+                    .then(function () { return callback(value, lastResult, index, array); })
+                    .then(function (result) { return result; });
+                return callbackPromise
+                    .enclose()
+                    .then(function (result) {
+                    if (callbackPromise.interrupted) {
+                        return false;
+                    }
+                    else {
+                        lastResult = result;
+                    }
+                });
+            })
+                .then(function () { return lastResult; });
+        };
         Promise.retry = function (options, callback) {
             if (options === void 0) { options = {}; }
             if (callback === undefined &&
@@ -876,6 +911,22 @@ var __extends = (this && this.__extends) || function (d, b) {
              */
             get: function () {
                 throw BREAK_SIGNAL;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(Promise, "breakSignal", {
+            /** (get) The break signal. */
+            get: function () {
+                return BREAK_SIGNAL;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(Promise, "preBreakSignal", {
+            /** (get) The pre-break signal. */
+            get: function () {
+                return PRE_BREAK_SIGNAL;
             },
             enumerable: true,
             configurable: true

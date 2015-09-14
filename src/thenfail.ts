@@ -41,6 +41,8 @@ export type MapCallback<Value, Return> = (value: Value, index: number, array: Va
 
 export type EachCallback<Value> = (value: Value, index: number, array: Value[]) => ThenableOrValue<boolean|void>;
 
+export type WaterfallCallback<Value, Result> = (value: Value, result: Result, index: number, array: Value[]) => ThenableOrValue<Result>;
+
 export class Context {
     _disposed = false;
     _enclosed = false;
@@ -352,13 +354,19 @@ export class Promise<Value> implements Thenable<Value> {
                 }
             }
             
-            relayState = valueOrReason === PRE_BREAK_SIGNAL ? State.interrupted : State.fulfilled;
+            relayState = State.fulfilled;
+            
+            if (valueOrReason === PRE_BREAK_SIGNAL) {
+                valueOrReason = BREAK_SIGNAL;
+            } else {
+                valueOrReason = undefined;
+            }
             
             if (this._handledPromise) {
-                this._handledPromise._relay(relayState);
+                this._handledPromise._relay(relayState, valueOrReason);
             } else if (this._handledPromises) {
                 for (let promise of this._handledPromises) {
-                    promise._relay(relayState);
+                    promise._relay(relayState, valueOrReason);
                 }
             }
         } else {
@@ -380,12 +388,14 @@ export class Promise<Value> implements Thenable<Value> {
         }
         
         if (state === State.rejected) {
-            let relayed = !!(this._chainedPromise || this._chainedPromises || this._handledPromise || this._handledPromises);
-        
-            if (!options.disableUnrelayedRejectionWarning && !relayed) {
-                let error = valueOrReason && (valueOrReason.stack || valueOrReason.message) || valueOrReason;
-                console.warn(`An unrelayed rejection happens:\n${error}`);
-            }
+            asap(() => {
+                let relayed = !!(this._chainedPromise || this._chainedPromises || this._handledPromise || this._handledPromises);
+            
+                if (!options.disableUnrelayedRejectionWarning && !relayed) {
+                    let error = valueOrReason && (valueOrReason.stack || valueOrReason.message) || valueOrReason;
+                    console.warn(`An unrelayed rejection happens:\n${error}`);
+                }
+            });
         }
         
         if (this._onPreviousFulfilled) {
@@ -681,7 +691,7 @@ export class Promise<Value> implements Thenable<Value> {
      * (get) A shortcut of `promise.then(() => { Promise.break; })`.
      * See https://github.com/vilic/thenfail# for more information.
      */
-    get break(): Promise<void> {
+    get break(): Promise<any> {
         return this.then(() => {
             throw PRE_BREAK_SIGNAL;
         });
@@ -884,6 +894,35 @@ export class Promise<Value> implements Thenable<Value> {
     }
     
     /**
+     * Pass the last result to the same callback on and on.
+     */
+    static waterfall<Value, Result>(values: Value[], initialResult: Result, callback: WaterfallCallback<Value, Result>): Promise<Result> {
+        if (!values.length) {
+            return Promise.resolve(initialResult);
+        }
+        
+        let lastResult = initialResult;
+        
+        return Promise
+            .each(values, (value, index, array) => {
+                let callbackPromise = Promise
+                    .then(() => callback(value, lastResult, index, array))
+                    .then(result => result);
+                
+                return callbackPromise
+                    .enclose()
+                    .then(result => {
+                        if (callbackPromise.interrupted) {
+                            return false;
+                        } else {
+                            lastResult = result;
+                        }
+                    });
+            })
+            .then(() => lastResult);
+    }
+    
+    /**
      * Try a process for several times.
      */
     static retry<Return>(callback: RetryCallback<Return>): Promise<Return>;
@@ -999,6 +1038,16 @@ export class Promise<Value> implements Thenable<Value> {
      */
     static get break(): void {
         throw BREAK_SIGNAL;
+    }
+    
+    /** (get) The break signal. */
+    static get breakSignal(): any {
+        return BREAK_SIGNAL;
+    }
+    
+    /** (get) The pre-break signal. */
+    static get preBreakSignal(): any {
+        return PRE_BREAK_SIGNAL;
     }
     
     /**

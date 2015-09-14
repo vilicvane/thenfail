@@ -13,6 +13,7 @@ export declare type OnInterruptedHandler = () => void;
 export declare type NodeStyleCallback<Value> = (error: any, value: Value) => void;
 export declare type MapCallback<Value, Return> = (value: Value, index: number, array: Value[]) => ThenableOrValue<Return>;
 export declare type EachCallback<Value> = (value: Value, index: number, array: Value[]) => ThenableOrValue<boolean | void>;
+export declare type WaterfallCallback<Value, Result> = (value: Value, result: Result, index: number, array: Value[]) => ThenableOrValue<Result>;
 export declare class Context {
     _disposed: boolean;
     _enclosed: boolean;
@@ -207,7 +208,7 @@ export declare class Promise<Value> implements Thenable<Value> {
      * (get) A shortcut of `promise.then(() => { Promise.break; })`.
      * See https://github.com/vilic/thenfail# for more information.
      */
-    break: Promise<void>;
+    break: Promise<any>;
     /**
      * (get) A promise that will eventually been fulfilled with value `undefined`.
      */
@@ -286,6 +287,10 @@ export declare class Promise<Value> implements Thenable<Value> {
      */
     static each<Value>(values: Value[], callback: EachCallback<Value>): Promise<boolean>;
     /**
+     * Pass the last result to the same callback on and on.
+     */
+    static waterfall<Value, Result>(values: Value[], initialResult: Result, callback: WaterfallCallback<Value, Result>): Promise<Result>;
+    /**
      * Try a process for several times.
      */
     static retry<Return>(callback: RetryCallback<Return>): Promise<Return>;
@@ -318,6 +323,10 @@ export declare class Promise<Value> implements Thenable<Value> {
      *      });
      */
     static break: void;
+    /** (get) The break signal. */
+    static breakSignal: any;
+    /** (get) The pre-break signal. */
+    static preBreakSignal: any;
     /**
      * (get) A promise that has already been fulfilled with value `undefined`.
      */
