@@ -769,10 +769,6 @@ var __extends = (this && this.__extends) || function (d, b) {
          * Return `false` or a promise that will eventually be fulfilled with `false` to interrupt iteration.
          */
         Promise.each = function (values, callback) {
-            if (!values.length) {
-                return Promise.true;
-            }
-            var remaining = values.length;
             return values
                 .reduce(function (promise, value, index, values) {
                 return promise.then(function (result) {
@@ -790,9 +786,6 @@ var __extends = (this && this.__extends) || function (d, b) {
          * Pass the last result to the same callback on and on.
          */
         Promise.waterfall = function (values, initialResult, callback) {
-            if (!values.length) {
-                return Promise.resolve(initialResult);
-            }
             var lastResult = initialResult;
             return Promise
                 .each(values, function (value, index, array) {

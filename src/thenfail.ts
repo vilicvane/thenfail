@@ -872,12 +872,6 @@ export class Promise<Value> implements Thenable<Value> {
      * Return `false` or a promise that will eventually be fulfilled with `false` to interrupt iteration.
      */
     static each<Value>(values: Value[], callback: EachCallback<Value>): Promise<boolean> {
-        if (!values.length) {
-            return Promise.true;
-        }
-        
-        let remaining = values.length;
-        
         return values
             .reduce((promise, value, index, values) => {
                 return promise.then((result) => {
@@ -897,10 +891,6 @@ export class Promise<Value> implements Thenable<Value> {
      * Pass the last result to the same callback on and on.
      */
     static waterfall<Value, Result>(values: Value[], initialResult: Result, callback: WaterfallCallback<Value, Result>): Promise<Result> {
-        if (!values.length) {
-            return Promise.resolve(initialResult);
-        }
-        
         let lastResult = initialResult;
         
         return Promise
@@ -967,7 +957,7 @@ export class Promise<Value> implements Thenable<Value> {
                 });
         }
     }
-
+    
     /**
     * Use a disposable resource and dispose it after been used.
     */
