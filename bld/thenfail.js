@@ -332,36 +332,36 @@ var __extends = (this && this.__extends) || function (d, b) {
                     }
                 }
             }
-            if (state === 2 /* rejected */) {
-                utils_1.asap(function () {
+            utils_1.asap(function () {
+                if (state === 2 /* rejected */) {
                     var relayed = !!(_this._chainedPromise || _this._chainedPromises || _this._handledPromise || _this._handledPromises);
                     if (!exports.options.disableUnrelayedRejectionWarning && !relayed) {
                         var error = valueOrReason && (valueOrReason.stack || valueOrReason.message) || valueOrReason;
                         console.warn("An unrelayed rejection happens:\n" + error);
                     }
-                });
-            }
-            if (this._onPreviousFulfilled) {
-                this._onPreviousFulfilled = undefined;
-            }
-            if (this._onPreviousRejected) {
-                this._onPreviousRejected = undefined;
-            }
-            if (this._onPreviousInterrupted) {
-                this._onPreviousInterrupted = undefined;
-            }
-            if (this._chainedPromise) {
-                this._chainedPromise = undefined;
-            }
-            else {
-                this._chainedPromises = undefined;
-            }
-            if (this._handledPromise) {
-                this._handledPromise = undefined;
-            }
-            else {
-                this._handledPromises = undefined;
-            }
+                }
+                if (_this._onPreviousFulfilled) {
+                    _this._onPreviousFulfilled = undefined;
+                }
+                if (_this._onPreviousRejected) {
+                    _this._onPreviousRejected = undefined;
+                }
+                if (_this._onPreviousInterrupted) {
+                    _this._onPreviousInterrupted = undefined;
+                }
+                if (_this._chainedPromise) {
+                    _this._chainedPromise = undefined;
+                }
+                else {
+                    _this._chainedPromises = undefined;
+                }
+                if (_this._handledPromise) {
+                    _this._handledPromise = undefined;
+                }
+                else {
+                    _this._handledPromises = undefined;
+                }
+            });
         };
         Promise.prototype.then = function (onfulfilled, onrejected) {
             var promise = new Promise(this._context);

@@ -387,40 +387,40 @@ export class Promise<Value> implements Thenable<Value> {
             }
         }
         
-        if (state === State.rejected) {
-            asap(() => {
+        asap(() => {
+            if (state === State.rejected) {
                 let relayed = !!(this._chainedPromise || this._chainedPromises || this._handledPromise || this._handledPromises);
-            
+                
                 if (!options.disableUnrelayedRejectionWarning && !relayed) {
                     let error = valueOrReason && (valueOrReason.stack || valueOrReason.message) || valueOrReason;
                     console.warn(`An unrelayed rejection happens:\n${error}`);
                 }
-            });
-        }
-        
-        if (this._onPreviousFulfilled) {
-            this._onPreviousFulfilled = undefined;
-        }
-        
-        if (this._onPreviousRejected) {
-            this._onPreviousRejected = undefined;
-        }
-        
-        if (this._onPreviousInterrupted) {
-            this._onPreviousInterrupted = undefined;
-        }
-        
-        if (this._chainedPromise) {
-            this._chainedPromise = undefined;
-        } else {
-            this._chainedPromises = undefined;
-        }
-        
-        if (this._handledPromise) {
-            this._handledPromise = undefined;
-        } else {
-            this._handledPromises = undefined;
-        }
+            }
+    
+            if (this._onPreviousFulfilled) {
+                this._onPreviousFulfilled = undefined;
+            }
+            
+            if (this._onPreviousRejected) {
+                this._onPreviousRejected = undefined;
+            }
+            
+            if (this._onPreviousInterrupted) {
+                this._onPreviousInterrupted = undefined;
+            }
+            
+            if (this._chainedPromise) {
+                this._chainedPromise = undefined;
+            } else {
+                this._chainedPromises = undefined;
+            }
+            
+            if (this._handledPromise) {
+                this._handledPromise = undefined;
+            } else {
+                this._handledPromises = undefined;
+            }
+        });
     }
     
     /**
