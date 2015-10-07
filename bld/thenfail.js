@@ -73,13 +73,13 @@ var __extends = (this && this.__extends) || function (d, b) {
     /**
      * Possible states of a promise.
      */
+    var State;
     (function (State) {
         State[State["pending"] = 0] = "pending";
         State[State["fulfilled"] = 1] = "fulfilled";
         State[State["rejected"] = 2] = "rejected";
         State[State["interrupted"] = 3] = "interrupted";
-    })(exports.State || (exports.State = {}));
-    var State = exports.State;
+    })(State || (State = {}));
     /**
      * TimeoutError class.
      */
@@ -111,7 +111,12 @@ var __extends = (this && this.__extends) || function (d, b) {
     var Promise = (function () {
         function Promise(resolverOrContext) {
             var _this = this;
+            /** Current state of this promise. */
             this._state = 0 /* pending */;
+            /**
+             * Indicates whether `onfulfilled` or `onrejected` handler has been called
+             * but the resolved value has not become fulfilled yet.
+             */
             this._running = false;
             if (resolverOrContext instanceof Context && !resolverOrContext._enclosed) {
                 this._context = resolverOrContext;
@@ -389,8 +394,8 @@ var __extends = (this && this.__extends) || function (d, b) {
             return promise;
         };
         /**
-         * Resolve this promise with a value or thenable.
-         * @param value A normal value, or a promise/thenable.
+         * Resolve the promise with a value or thenable.
+         * @param value The value to fulfill or thenable to resolve.
          */
         Promise.prototype.resolve = function (value) {
             var _this = this;
@@ -398,13 +403,19 @@ var __extends = (this && this.__extends) || function (d, b) {
         };
         /**
          * Reject this promise with a reason.
+         * @param reason Rejection reason.
          */
         Promise.prototype.reject = function (reason) {
             this._grab(2 /* rejected */, reason);
         };
         /**
-         * Add an interruption handler. This handler will only be invoked if previous
-         * onfulfilled/onrejected handler has run and been interrupted.
+         * Set up the interruption handler of the promise.
+         * An interruption handler will be called if either the `onfulfilled`
+         * or `onrejected` handler of the promise has been called but
+         * interrupted for some reason
+         * (by break signal or the canceling of the context).
+         * @param oninerrupted Interruption handler.
+         * @return Current promise.
          */
         Promise.prototype.interruption = function (oninterrupted) {
             if (this._state === 0 /* pending */) {
@@ -422,13 +433,18 @@ var __extends = (this && this.__extends) || function (d, b) {
         };
         /**
          * Enclose current promise context.
+         * @return Current promise.
          */
         Promise.prototype.enclose = function () {
             this._context._enclosed = true;
             return this;
         };
         /**
-         * Delay a period of time (milliseconds).
+         * Create a promise that will be fulfilled in given time after
+         * its previous promise becomes fulfilled.
+         * The fulfilled value will be relayed.
+         * @param timeout Timeout in milliseconds.
+         * @return Current promise.
          */
         Promise.prototype.delay = function (timeout) {
             return this.then(function (value) {
@@ -438,7 +454,11 @@ var __extends = (this && this.__extends) || function (d, b) {
             });
         };
         /**
-         * Set a timeout of current promise context. This will enclose current promise context.
+         * Reject the promise with `TimeoutError` if it's still pending after
+         * timeout. The timer starts once this method is called
+         * (usually before the fulfillment of previous promise).
+         * @param timeout Tiemout in milliseconds.
+         * @return Current promise.
          */
         Promise.prototype.timeout = function (timeout) {
             var _this = this;
@@ -480,7 +500,8 @@ var __extends = (this && this.__extends) || function (d, b) {
         };
         /**
          * Create a disposable resource promise.
-         * @param disposer
+         * @param disposor A synchronous function to handle resource disposing.
+         * @return Created disposable resource promise.
          */
         Promise.prototype.disposable = function (disposer) {
             return this.then(function (resource) {
@@ -491,19 +512,11 @@ var __extends = (this && this.__extends) || function (d, b) {
             });
         };
         /**
-         * Handle `fulfilled` without change its original return value.
-         *
-         * Example:
-         *
-         *  promise
-         *      .resolved(123)
-         *      .tap(value => {
-         *          console.log(value); // 123
-         *          return Promise.delay(100);
-         *      })
-         *      .then(value => {
-         *          console.log(value); // 123
-         *      });
+         * Like `then` with only an `onfulfilled` handler, but will relay the
+         * previous fulfilled value instead of value returned by its own
+         * `onfulfilled` handler.
+         * @param onfulfilled Fulfillment handler.
+         * @return Created promise.
          */
         Promise.prototype.tap = function (onfulfilled) {
             var relayValue;
@@ -520,10 +533,10 @@ var __extends = (this && this.__extends) || function (d, b) {
         Promise.prototype.fail = function (onrejected) {
             return this.then(undefined, onrejected);
         };
-        Promise.prototype.catch = function (ErrorType, onrejected) {
+        Promise.prototype.catch = function (ReasonType, onrejected) {
             if (typeof onrejected === 'function') {
                 return this.then(undefined, function (reason) {
-                    if (reason instanceof ErrorType) {
+                    if (reason instanceof ReasonType) {
                         return onrejected(reason);
                     }
                     else {
@@ -532,25 +545,44 @@ var __extends = (this && this.__extends) || function (d, b) {
                 });
             }
             else {
-                onrejected = ErrorType;
+                onrejected = ReasonType;
                 return this.then(undefined, onrejected);
             }
         };
         /**
-         * A shortcut of `Promise.map`, assuming the fulfilled value of previous promise is a array.
+         * A shortcut of `Promise.map`, assuming the fulfilled value of
+         * previous promise is a array.
+         * @param callback Map callback.
+         * @return Created promise.
          */
         Promise.prototype.map = function (callback) {
             return this.then(function (values) { return Promise.map(values, callback); });
         };
         /**
-         * A shortcut of `Promise.each`, assuming the fulfilled value of previous promise is a array.
+         * A shortcut of `Promise.each`, assuming the fulfilled value of
+         * previous promise is a array.
+         * @param callback Each callback.
+         * @return Created promise.
          */
         Promise.prototype.each = function (callback) {
             return this.then(function (values) { return Promise.each(values, callback); });
         };
+        /**
+         * A shortcut of `Promise.waterfall`, take the fulfilled value of
+         * previous promise as initial result.
+         */
+        Promise.prototype.waterfall = function (values, callback) {
+            return this.then(function (initialResult) { return Promise.waterfall(values, initialResult, callback); });
+        };
         Promise.prototype.retry = function (options, callback) {
             return this.then(function () { return Promise.retry(options, callback); });
         };
+        /**
+         * Log the value specified or if not, the fulfilled value or rejection
+         * reason of current promise after the previous promise becomes settled.
+         * @param object Specified value to log.
+         * @return Current promise.
+         */
         Promise.prototype.log = function (object) {
             var promise = new Promise();
             this.handle(promise);
@@ -567,7 +599,8 @@ var __extends = (this && this.__extends) || function (d, b) {
             return this;
         };
         /**
-         * Call `this.then` with `onrejected` handler only, and throw the rejection error if any.
+         * Call `this.then` with `onrejected` handler only, and throw the
+         * rejection reason if any.
          */
         Promise.prototype.done = function () {
             this.then(undefined, function (reason) {
@@ -578,8 +611,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         };
         Object.defineProperty(Promise.prototype, "break", {
             /**
-             * (get) A shortcut of `promise.then(() => { Promise.break; })`.
-             * See https://github.com/vilic/thenfail# for more information.
+             * (get) A promise that will be rejected with a pre-break signal.
              */
             get: function () {
                 return this.then(function () {
@@ -591,7 +623,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         });
         Object.defineProperty(Promise.prototype, "void", {
             /**
-             * (get) A promise that will eventually been fulfilled with value `undefined`.
+             * (get) A promise that will eventually be fulfilled with `undefined`.
              */
             get: function () {
                 return this.then(function () { return undefined; });
@@ -601,7 +633,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         });
         Object.defineProperty(Promise.prototype, "true", {
             /**
-             * (get) A promise that will eventually been fulfilled with value `true`.
+             * (get) A promise that will eventually been fulfilled with `true`.
              */
             get: function () {
                 return this.then(function () { return true; });
@@ -611,7 +643,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         });
         Object.defineProperty(Promise.prototype, "false", {
             /**
-             * (get) A promise that will eventually been fulfilled with value `false`.
+             * (get) A promise that will eventually been fulfilled with `false`.
              */
             get: function () {
                 return this.then(function () { return false; });
@@ -631,7 +663,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         });
         Object.defineProperty(Promise.prototype, "pending", {
             /**
-             * (get) A boolean that indicates whether the current promise is pending.
+             * (get) A boolean that indicates whether the promise is pending.
              */
             get: function () {
                 return this._state === 0 /* pending */;
@@ -641,7 +673,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         });
         Object.defineProperty(Promise.prototype, "fulfilled", {
             /**
-             * (get) A boolean that indicates whether the current promise is fulfilled.
+             * (get) A boolean that indicates whether the promise is fulfilled.
              */
             get: function () {
                 return this._state === 1 /* fulfilled */;
@@ -651,7 +683,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         });
         Object.defineProperty(Promise.prototype, "rejected", {
             /**
-             * (get) A boolean that indicates whether the current promise is rejected.
+             * (get) A boolean that indicates whether the promise is rejected.
              */
             get: function () {
                 return this._state === 2 /* rejected */;
@@ -661,7 +693,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         });
         Object.defineProperty(Promise.prototype, "interrupted", {
             /**
-             * (get) A boolean that indicates whether the current promise is interrupted.
+             * (get) A boolean that indicates whether the promise is interrupted.
              */
             get: function () {
                 return this._state === 3 /* interrupted */;
@@ -672,13 +704,16 @@ var __extends = (this && this.__extends) || function (d, b) {
         // Static helpers
         /**
          * A shortcut of `Promise.void.then(onfulfilled)`.
+         * @param onfulfilled Fulfillment handler.
+         * @return Created promise.
          */
         Promise.then = function (onfulfilled) {
             return Promise.void.then(onfulfilled);
         };
         /**
-         * A shortcut of `Promise.then(() => value)`.
-         * @return Return the value itself if it's an instanceof ThenFail Promise.
+         * Resolve a value or thenable as a promise.
+         * @return The value itself if it's a ThenFail Promise,
+         *     otherwise the created promise.
          */
         Promise.resolve = function (value) {
             if (value instanceof Promise) {
@@ -702,7 +737,9 @@ var __extends = (this && this.__extends) || function (d, b) {
             return Promise.resolve(value);
         };
         /**
-         * Create a promise under given context.
+         * Create a promise with given context.
+         * @param context Promise context.
+         * @return Created promise.
          */
         Promise.context = function (context) {
             var promise = new Promise(context);
@@ -710,7 +747,10 @@ var __extends = (this && this.__extends) || function (d, b) {
             return promise;
         };
         /**
-         * Delay a period of time (milliseconds).
+         * Create a promise that will be fulfilled with `undefined` in given
+         * time.
+         * @param timeout Timeout in milliseconds.
+         * @return Created promise.
          */
         Promise.delay = function (timeout) {
             return new Promise(function (resolve) {
@@ -719,12 +759,14 @@ var __extends = (this && this.__extends) || function (d, b) {
         };
         /**
          * Create a promise that will be fulfilled:
-         *  1. when all values are fulfilled.
-         *  2. with the value of an array of fulfilled values.
+         *   1. when all values are fulfilled.
+         *   2. with the value of an array of fulfilled values.
          * And will be rejected:
-         *  1. if any of the values is rejected.
-         *  2. with the reason of the first rejection as its reason.
-         *  3. after all values are either fulfilled or rejected.
+         *   1. if any of the values is rejected.
+         *   2. with the reason of the first rejection as its reason.
+         *   3. after all values are either fulfilled or rejected.
+         * @param values Values or thenables.
+         * @return Created promise.
          */
         Promise.all = function (values) {
             if (!values.length) {
@@ -759,14 +801,22 @@ var __extends = (this && this.__extends) || function (d, b) {
             return resultsPromise;
         };
         /**
-         * A promise version of `array.map`.
+         * A promise version of `Array.prototype.map`.
+         * @param values Values to map.
+         * @param callback Map callback.
+         * @return Created promise.
          */
         Promise.map = function (values, callback) {
             return Promise.all(values.map(callback));
         };
         /**
-         * Iterate elements in an array one by one.
-         * Return `false` or a promise that will eventually be fulfilled with `false` to interrupt iteration.
+         * (breakable) Iterate elements in an array one by one.
+         * Return `false` or a promise that will eventually be fulfilled with
+         * `false` to interrupt iteration.
+         * @param values Values to iterate.
+         * @param callback Each callback.
+         * @return A promise that will be fulfiled with a boolean which
+         *     indicates whether the iteration completed without interruption.
          */
         Promise.each = function (values, callback) {
             return values
@@ -783,7 +833,11 @@ var __extends = (this && this.__extends) || function (d, b) {
                 .then(function (completed) { return !!completed; });
         };
         /**
-         * Pass the last result to the same callback on and on.
+         * (breakable) Pass the last result to the same callback with pre-set values.
+         * @param values Pre-set values that will be passed to the callback one
+         *     by one.
+         * @param initialResult The initial result for the very first call.
+         * @param callback Waterfall callback.
          */
         Promise.waterfall = function (values, initialResult, callback) {
             var lastResult = initialResult;
@@ -837,8 +891,12 @@ var __extends = (this && this.__extends) || function (d, b) {
             }
         };
         /**
-        * Use a disposable resource and dispose it after been used.
-        */
+         * Use a disposable resource and dispose it after been used.
+         * @param disposable The disposable resource or a thenable of
+         *     disposable resource.
+         * @param handler Using handler.
+         * @return Created promise.
+         */
         Promise.using = function (disposable, handler) {
             var resolvedDisposable;
             var promise = Promise
@@ -863,7 +921,11 @@ var __extends = (this && this.__extends) || function (d, b) {
             return promise;
         };
         /**
-         * Invoke a Node style function that accepts the last argument as callback.
+         * Invoke a Node style asynchronous function that accepts the last
+         * argument as callback.
+         * @param fn Node style asynchronous function.
+         * @param args Arguments.
+         * @return Created promise.
          */
         Promise.invoke = function (fn) {
             var args = [];
@@ -926,7 +988,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         });
         Object.defineProperty(Promise, "void", {
             /**
-             * (get) A promise that has already been fulfilled with value `undefined`.
+             * (get) A promise that has already been fulfilled with `undefined`.
              */
             get: function () {
                 var promise = new Promise();
@@ -938,7 +1000,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         });
         Object.defineProperty(Promise, "true", {
             /**
-             * (get) A promise that has already been fulfilled with value `true`.
+             * (get) A promise that has already been fulfilled with `true`.
              */
             get: function () {
                 var promise = new Promise();
@@ -950,7 +1012,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         });
         Object.defineProperty(Promise, "false", {
             /**
-             * (get) A promise that has already been fulfilled with value `false`.
+             * (get) A promise that has already been fulfilled with `false`.
              */
             get: function () {
                 var promise = new Promise();
@@ -965,13 +1027,20 @@ var __extends = (this && this.__extends) || function (d, b) {
     exports.Promise = Promise;
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = Promise;
+    /**
+     * Promise lock is a useful helper that can act as a simple task queue.
+     */
     var PromiseLock = (function () {
         function PromiseLock() {
             this._promise = Promise.void;
         }
         /**
-         * handler will be called once this promise lock is unlocked, and it will be
-         * locked again until the value returned by handler is fulfilled.
+         * handler will be called once this promise lock is unlocked, and it
+         * will be locked again until the value returned by handler is
+         * fulfilled.
+         * @param handler Promise lock handler.
+         * @return Created promise, will be fulfilled once the return value of
+         *     lock handler gets fulfilled.
          */
         PromiseLock.prototype.lock = function (handler) {
             var promise = this._promise.then(handler);

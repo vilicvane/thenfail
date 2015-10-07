@@ -13,7 +13,7 @@ import { asap } from './utils';
 // Promise //
 /////////////
 
-export type ThenableOrValue<Value> = Promise<Value>|Thenable<Value>|Value;
+export type ThenableOrValue<Value> = Promise<Value> | Thenable<Value> | Value;
 
 /**
  * Promise like object.
@@ -39,7 +39,7 @@ export type NodeStyleCallback<Value> = (error: any, value: Value) => void;
 
 export type MapCallback<Value, Return> = (value: Value, index: number, array: Value[]) => ThenableOrValue<Return>;
 
-export type EachCallback<Value> = (value: Value, index: number, array: Value[]) => ThenableOrValue<boolean|void>;
+export type EachCallback<Value> = (value: Value, index: number, array: Value[]) => ThenableOrValue<boolean | void>;
 
 export type WaterfallCallback<Value, Result> = (value: Value, result: Result, index: number, array: Value[]) => ThenableOrValue<Result>;
 
@@ -91,7 +91,7 @@ export class Context {
 /**
  * Possible states of a promise.
  */
-export const enum State {
+const enum State {
     pending,
     fulfilled,
     rejected,
@@ -125,20 +125,31 @@ export let options = {
 //  3. Relay the new state to next runners.
 
 export class Promise<Value> implements Thenable<Value> {
+    /** Current state of this promise. */
     private _state = State.pending;
+    /**
+     * Indicates whether `onfulfilled` or `onrejected` handler has been called
+     * but the resolved value has not become fulfilled yet.
+     */
     private _running = false;
+    /** The fulfilled value or rejected reason associated with this promise. */
     private _valueOrReason: any;
-
+    /** Context of this promise. */
     private _context: Context;
 
     /** 
-     * Next promises in the chain.
+     * Next promise in the chain.
+     * Avoid using an array if not necessary due to performance issue,
+     * the same way applies to `_handledPromise(s)`.
+     * If `_chainedPromise` is not undefined, `_chainedPromises` must be undefined.
+     * Vice versa.
      */
     private _chainedPromise: Promise<any>;
+    /** Next promises in the chain. */
     private _chainedPromises: Promise<any>[];
 
     /** 
-     * Promises that will share the same state (and value/reason).
+     * Promise that will share the same state (and value/reason).
      * 
      * Example:
      *  
@@ -151,6 +162,7 @@ export class Promise<Value> implements Thenable<Value> {
      *  And `promiseA` will then be in here.
      */
     private _handledPromise: Promise<Value>;
+    /** Promises that will share the same state (and value/reason). */
     private _handledPromises: Promise<Value>[];
     
     private _onPreviousFulfilled: OnFulfilledHandler<any, Value>;
@@ -163,7 +175,7 @@ export class Promise<Value> implements Thenable<Value> {
     constructor();
     constructor(resolver: Resolver<Value>);
     constructor(context: Context);
-    constructor(resolverOrContext?: Resolver<Value>|Context) {
+    constructor(resolverOrContext?: Resolver<Value> | Context) {
         if (resolverOrContext instanceof Context && !resolverOrContext._enclosed) {
             this._context = resolverOrContext;
         } else {
@@ -424,8 +436,11 @@ export class Promise<Value> implements Thenable<Value> {
     }
     
     /**
-     * The `then` method that follows Promises/A+ specifications <https://promisesaplus.com>.
-     * To learn how to use promise, please check out <https://github.com/vilic/thenfail>.
+     * The `then` method that follows
+     * [Promises/A+ specifications](https://promisesaplus.com).
+     * @param onfulfilled Fulfillment handler.
+     * @param onrejected Rejection handler.
+     * @return Created promise.
      */
     then<Return>(onfulfilled: OnFulfilledHandler<Value, Return>, onrejected?: OnRejectedHandler<Return>): Promise<Return>;
     then(onfulfilled: void, onrejected: OnRejectedHandler<Value>): Promise<Value>;
@@ -457,8 +472,8 @@ export class Promise<Value> implements Thenable<Value> {
     }
     
     /**
-     * Resolve this promise with a value or thenable.
-     * @param value A normal value, or a promise/thenable.
+     * Resolve the promise with a value or thenable.
+     * @param value The value to fulfill or thenable to resolve.
      */
     resolve(value?: ThenableOrValue<Value>): void {
         this._unpack(value, (state, valueOrReason) => this._grab(state, valueOrReason));
@@ -466,14 +481,20 @@ export class Promise<Value> implements Thenable<Value> {
     
     /**
      * Reject this promise with a reason.
+     * @param reason Rejection reason.
      */
     reject(reason: any): void {
         this._grab(State.rejected, reason);
     }
     
     /**
-     * Add an interruption handler. This handler will only be invoked if previous
-     * onfulfilled/onrejected handler has run and been interrupted.
+     * Set up the interruption handler of the promise.
+     * An interruption handler will be called if either the `onfulfilled`
+     * or `onrejected` handler of the promise has been called but
+     * interrupted for some reason
+     * (by break signal or the canceling of the context).
+     * @param oninerrupted Interruption handler.
+     * @return Current promise.
      */
     interruption(oninterrupted: OnInterruptedHandler): Promise<Value> {
         if (this._state === State.pending) {
@@ -493,6 +514,7 @@ export class Promise<Value> implements Thenable<Value> {
     
     /**
      * Enclose current promise context.
+     * @return Current promise.
      */
     enclose(): Promise<Value> {
         this._context._enclosed = true;
@@ -500,7 +522,11 @@ export class Promise<Value> implements Thenable<Value> {
     }
     
     /**
-     * Delay a period of time (milliseconds).
+     * Create a promise that will be fulfilled in given time after
+     * its previous promise becomes fulfilled.
+     * The fulfilled value will be relayed.
+     * @param timeout Timeout in milliseconds.
+     * @return Current promise.
      */
     delay(timeout: number): Promise<Value> {
         return this.then(value => {
@@ -511,7 +537,11 @@ export class Promise<Value> implements Thenable<Value> {
     }
     
     /**
-     * Set a timeout of current promise context. This will enclose current promise context.
+     * Reject the promise with `TimeoutError` if it's still pending after
+     * timeout. The timer starts once this method is called
+     * (usually before the fulfillment of previous promise).
+     * @param timeout Tiemout in milliseconds.
+     * @return Current promise.
      */
     timeout(timeout: number): Promise<Value> {
         this._context._enclosed = true;
@@ -527,12 +557,18 @@ export class Promise<Value> implements Thenable<Value> {
     }
     
     /**
-     * Handle another promise with the same state (and value/reason) of the current one.
+     * Handle another promise or node style callback with the value or
+     * reason of current promise.
+     * @param promise A promise with the same type as current promise.
      * @return Current promise.
      */
     handle(promise: Promise<Value>): Promise<Value>;
+    /**
+     * @param callback Node style callback.
+     * @return Current promise.
+     */
     handle(callback: NodeStyleCallback<Value>): Promise<Value>;
-    handle(promiseOrCallback: Promise<Value>|NodeStyleCallback<Value>): Promise<Value> {
+    handle(promiseOrCallback: Promise<Value> | NodeStyleCallback<Value>): Promise<Value> {
         if (promiseOrCallback instanceof Promise) {
             if (this._state === State.pending) {
                 if (this._handledPromise) {
@@ -562,7 +598,8 @@ export class Promise<Value> implements Thenable<Value> {
     
     /**
      * Create a disposable resource promise.
-     * @param disposer 
+     * @param disposor A synchronous function to handle resource disposing.
+     * @return Created disposable resource promise.
      */
     disposable(disposer: Disposer<Value>): Promise<Disposable<Value>> {
         return this.then(resource => {
@@ -574,19 +611,11 @@ export class Promise<Value> implements Thenable<Value> {
     }
     
     /**
-     * Handle `fulfilled` without change its original return value.
-     * 
-     * Example:
-     * 
-     *  promise
-     *      .resolved(123)
-     *      .tap(value => {
-     *          console.log(value); // 123
-     *          return Promise.delay(100);
-     *      })
-     *      .then(value => {
-     *          console.log(value); // 123
-     *      });
+     * Like `then` with only an `onfulfilled` handler, but will relay the
+     * previous fulfilled value instead of value returned by its own
+     * `onfulfilled` handler.
+     * @param onfulfilled Fulfillment handler.
+     * @return Created promise.
      */
     tap(onfulfilled: OnFulfilledHandler<Value, void>): Promise<Value> {
         let relayValue: Value;
@@ -606,37 +635,58 @@ export class Promise<Value> implements Thenable<Value> {
     }
 
     /**
-     * Catch specific type of error if specified. Otherwise it the same like `promise.fail`.
+     * Like `fail` but can specify type of reason to catch.
+     * @param onrejected Rejection handler.
+     * @return Created promise.
      */
     catch(onrejected: OnRejectedHandler<Value>): Promise<Value>;
-    catch(ErrorType: Function, onrejected: OnRejectedHandler<Value>): Promise<Value>;
-    catch(ErrorType: Function|OnRejectedHandler<Value>, onrejected?: OnRejectedHandler<Value>): Promise<Value> {
+    /**
+     * @param ReasonType Type of reasons to catch.
+     * @param onrejected Rejection handler.
+     * @return Created promise.
+     */
+    catch(ReasonType: Function, onrejected: OnRejectedHandler<Value>): Promise<Value>;
+    catch(ReasonType: Function | OnRejectedHandler<Value>, onrejected?: OnRejectedHandler<Value>): Promise<Value> {
         if (typeof onrejected === 'function') {
             return this.then<Value>(undefined, reason => {
-                if (reason instanceof ErrorType) {
+                if (reason instanceof ReasonType) {
                     return onrejected(reason);
                 } else {
                     throw reason;
                 }
             });
         } else {
-            onrejected = <OnRejectedHandler<Value>>ErrorType;
+            onrejected = <OnRejectedHandler<Value>>ReasonType;
             return this.then<Value>(undefined, onrejected);
         }
     }
     
     /**
-     * A shortcut of `Promise.map`, assuming the fulfilled value of previous promise is a array.
+     * A shortcut of `Promise.map`, assuming the fulfilled value of 
+     * previous promise is a array.
+     * @param callback Map callback.
+     * @return Created promise.
      */
     map<Value>(callback: MapCallback<any, Value>): Promise<Value[]> {
         return this.then((values: any) => Promise.map(values, callback));
     }
     
     /**
-     * A shortcut of `Promise.each`, assuming the fulfilled value of previous promise is a array.
+     * A shortcut of `Promise.each`, assuming the fulfilled value of
+     * previous promise is a array.
+     * @param callback Each callback.
+     * @return Created promise.
      */
     each<Value>(callback: EachCallback<Value>): Promise<boolean> {
         return this.then((values: any) => Promise.each(values, callback));
+    }
+    
+    /**
+     * A shortcut of `Promise.waterfall`, take the fulfilled value of
+     * previous promise as initial result.
+     */
+    waterfall<ViaValue>(values: ViaValue[], callback: WaterfallCallback<ViaValue, Value>): Promise<Value> {
+        return this.then(initialResult => Promise.waterfall(values, initialResult, callback));
     }
     
     /**
@@ -649,15 +699,11 @@ export class Promise<Value> implements Thenable<Value> {
     }
     
     /**
-     * Log fulfilled value or rejected reason of current promise.
+     * Log the value specified or if not, the fulfilled value or rejection
+     * reason of current promise after the previous promise becomes settled.
+     * @param object Specified value to log.
      * @return Current promise.
      */
-    log(): Promise<Value>;
-    /**
-     * Log given value or rejected reason of current promise.
-     * @return Current promise.
-     */
-    log(object: any): Promise<Value>;
     log(object?: any): Promise<Value> {
         let promise = new Promise<Value>();
         
@@ -677,7 +723,8 @@ export class Promise<Value> implements Thenable<Value> {
     }
     
     /**
-     * Call `this.then` with `onrejected` handler only, and throw the rejection error if any.
+     * Call `this.then` with `onrejected` handler only, and throw the
+     * rejection reason if any.
      */
     done(): void {
         this.then(undefined, reason => {
@@ -688,8 +735,7 @@ export class Promise<Value> implements Thenable<Value> {
     }
     
     /**
-     * (get) A shortcut of `promise.then(() => { Promise.break; })`.
-     * See https://github.com/vilic/thenfail# for more information.
+     * (get) A promise that will be rejected with a pre-break signal.
      */
     get break(): Promise<any> {
         return this.then(() => {
@@ -698,21 +744,21 @@ export class Promise<Value> implements Thenable<Value> {
     }
     
     /**
-     * (get) A promise that will eventually been fulfilled with value `undefined`.
+     * (get) A promise that will eventually be fulfilled with `undefined`.
      */
     get void(): Promise<void> {
         return this.then(() => undefined);
     }
     
     /**
-     * (get) A promise that will eventually been fulfilled with value `true`.
+     * (get) A promise that will eventually been fulfilled with `true`.
      */
     get true(): Promise<boolean> {
         return this.then(() => true);
     }
     
     /**
-     * (get) A promise that will eventually been fulfilled with value `false`.
+     * (get) A promise that will eventually been fulfilled with `false`.
      */
     get false(): Promise<boolean> {
         return this.then(() => false);
@@ -726,28 +772,28 @@ export class Promise<Value> implements Thenable<Value> {
     }
     
     /**
-     * (get) A boolean that indicates whether the current promise is pending.
+     * (get) A boolean that indicates whether the promise is pending.
      */
     get pending(): boolean {
         return this._state === State.pending;
     }
     
     /**
-     * (get) A boolean that indicates whether the current promise is fulfilled.
+     * (get) A boolean that indicates whether the promise is fulfilled.
      */
     get fulfilled(): boolean {
         return this._state === State.fulfilled;
     }
     
     /**
-     * (get) A boolean that indicates whether the current promise is rejected.
+     * (get) A boolean that indicates whether the promise is rejected.
      */
     get rejected(): boolean {
         return this._state === State.rejected;
     }
     
     /**
-     * (get) A boolean that indicates whether the current promise is interrupted.
+     * (get) A boolean that indicates whether the promise is interrupted.
      */
     get interrupted(): boolean {
         return this._state === State.interrupted;
@@ -757,14 +803,17 @@ export class Promise<Value> implements Thenable<Value> {
     
     /**
      * A shortcut of `Promise.void.then(onfulfilled)`.
+     * @param onfulfilled Fulfillment handler.
+     * @return Created promise.
      */
     static then<Value>(onfulfilled: OnFulfilledHandler<void, Value>): Promise<Value> {
         return Promise.void.then(onfulfilled);
     }
     
     /**
-     * A shortcut of `Promise.then(() => value)`.
-     * @return Return the value itself if it's an instanceof ThenFail Promise.
+     * Resolve a value or thenable as a promise.
+     * @return The value itself if it's a ThenFail Promise,
+     *     otherwise the created promise.
      */
     static resolve<Value>(value: ThenableOrValue<Value>): Promise<Value> {
         if (value instanceof Promise) {
@@ -777,9 +826,15 @@ export class Promise<Value> implements Thenable<Value> {
     }
     
     /**
-     * A shortcut of `Promise.then(() => { throw reason; })`.
+     * Create a promise rejected by specified reason.
+     * @param reason Rejection reason.
+     * @return Created promise.
      */
     static reject(reason: any): Promise<void>;
+    /**
+     * @param reason Rejection reason.
+     * @return Created promise.
+     */
     static reject<Value>(reason: any): Promise<Value>;
     static reject<Value>(reason: any): Promise<Value> {
         let promise = new Promise<Value>();
@@ -795,7 +850,9 @@ export class Promise<Value> implements Thenable<Value> {
     }
     
     /**
-     * Create a promise under given context.
+     * Create a promise with given context.
+     * @param context Promise context.
+     * @return Created promise.
      */
     static context(context: Context): Promise<void> {
         let promise = new Promise<void>(context);
@@ -804,7 +861,10 @@ export class Promise<Value> implements Thenable<Value> {
     }
     
     /**
-     * Delay a period of time (milliseconds).
+     * Create a promise that will be fulfilled with `undefined` in given
+     * time.
+     * @param timeout Timeout in milliseconds.
+     * @return Created promise.
      */
     static delay(timeout: number): Promise<void> {
         return new Promise<void>(resolve => {
@@ -814,12 +874,14 @@ export class Promise<Value> implements Thenable<Value> {
     
     /**
      * Create a promise that will be fulfilled:
-     *  1. when all values are fulfilled.
-     *  2. with the value of an array of fulfilled values.
+     *   1. when all values are fulfilled.
+     *   2. with the value of an array of fulfilled values.
      * And will be rejected:
-     *  1. if any of the values is rejected.
-     *  2. with the reason of the first rejection as its reason.
-     *  3. after all values are either fulfilled or rejected.
+     *   1. if any of the values is rejected.
+     *   2. with the reason of the first rejection as its reason.
+     *   3. after all values are either fulfilled or rejected.
+     * @param values Values or thenables.
+     * @return Created promise.
      */
     static all<Value>(values: (ThenableOrValue<Value>)[]): Promise<Value[]> {
         if (!values.length) {
@@ -861,15 +923,23 @@ export class Promise<Value> implements Thenable<Value> {
     }
     
     /**
-     * A promise version of `array.map`.
+     * A promise version of `Array.prototype.map`.
+     * @param values Values to map.
+     * @param callback Map callback.
+     * @return Created promise.
      */
     static map<Value, Return>(values: Value[], callback: MapCallback<Value, Return>): Promise<Return[]> {
         return Promise.all(values.map(callback));
     }
     
     /**
-     * Iterate elements in an array one by one.
-     * Return `false` or a promise that will eventually be fulfilled with `false` to interrupt iteration.
+     * (breakable) Iterate elements in an array one by one.
+     * Return `false` or a promise that will eventually be fulfilled with
+     * `false` to interrupt iteration.
+     * @param values Values to iterate.
+     * @param callback Each callback.
+     * @return A promise that will be fulfiled with a boolean which
+     *     indicates whether the iteration completed without interruption.
      */
     static each<Value>(values: Value[], callback: EachCallback<Value>): Promise<boolean> {
         return values
@@ -881,14 +951,18 @@ export class Promise<Value> implements Thenable<Value> {
                     
                     return callback(value, index, values);
                 });
-            }, Promise.resolve<boolean|void>(undefined))
+            }, Promise.resolve<boolean | void>(undefined))
             .then(() => true)
             .enclose()
             .then(completed => !!completed);
     }
     
     /**
-     * Pass the last result to the same callback on and on.
+     * (breakable) Pass the last result to the same callback with pre-set values.
+     * @param values Pre-set values that will be passed to the callback one
+     *     by one.
+     * @param initialResult The initial result for the very first call.
+     * @param callback Waterfall callback.
      */
     static waterfall<Value, Result>(values: Value[], initialResult: Result, callback: WaterfallCallback<Value, Result>): Promise<Result> {
         let lastResult = initialResult;
@@ -913,9 +987,16 @@ export class Promise<Value> implements Thenable<Value> {
     }
     
     /**
-     * Try a process for several times.
+     * Retry the process in the callback for several times.
+     * @param callback Retry callback.
+     * @return Created promise.
      */
     static retry<Return>(callback: RetryCallback<Return>): Promise<Return>;
+    /**
+     * @param options Retry options.
+     * @param callback Retry callback.
+     * @return Created promise.
+     */
     static retry<Return>(options: RetryOptions, callback: RetryCallback<Return>): Promise<Return>;
     static retry<Return>(options: RetryOptions = {}, callback?: RetryCallback<Return>): Promise<Return> {
         if (
@@ -959,9 +1040,13 @@ export class Promise<Value> implements Thenable<Value> {
     }
     
     /**
-    * Use a disposable resource and dispose it after been used.
-    */
-    static using<Resource, Return>(disposable: Thenable<Disposable<Resource>>|Disposable<Resource>, handler: OnFulfilledHandler<Resource, Return>): Promise<Return> {
+     * Use a disposable resource and dispose it after been used.
+     * @param disposable The disposable resource or a thenable of
+     *     disposable resource.
+     * @param handler Using handler.
+     * @return Created promise.
+     */
+    static using<Resource, Return>(disposable: ThenableOrValue<Disposable<Resource>>, handler: OnFulfilledHandler<Resource, Return>): Promise<Return> {
         let resolvedDisposable: Disposable<Resource>;
         
         let promise = Promise
@@ -991,11 +1076,15 @@ export class Promise<Value> implements Thenable<Value> {
     }
     
     /**
-     * Invoke a Node style function that accepts the last argument as callback.
+     * Invoke a Node style asynchronous function that accepts the last
+     * argument as callback.
+     * @param fn Node style asynchronous function.
+     * @param args Arguments.
+     * @return Created promise.
      */
-    static invoke<Value>(fn: Function, ...args: any[]): Promise<Value> {
-        return new Promise<Value>((resolve, reject) => {
-            args = args.concat((error: any, value: Value) => {
+    static invoke<Return>(fn: Function, ...args: any[]): Promise<Return> {
+        return new Promise<Return>((resolve, reject) => {
+            args = args.concat((error: any, value: Return) => {
                 if (error) {
                     reject(error);
                 } else {
@@ -1041,7 +1130,7 @@ export class Promise<Value> implements Thenable<Value> {
     }
     
     /**
-     * (get) A promise that has already been fulfilled with value `undefined`.
+     * (get) A promise that has already been fulfilled with `undefined`.
      */
     static get void(): Promise<void> {
         let promise = new Promise<void>();
@@ -1050,7 +1139,7 @@ export class Promise<Value> implements Thenable<Value> {
     }
     
     /**
-     * (get) A promise that has already been fulfilled with value `true`.
+     * (get) A promise that has already been fulfilled with `true`.
      */
     static get true(): Promise<boolean> {
         let promise = new Promise<boolean>();
@@ -1059,7 +1148,7 @@ export class Promise<Value> implements Thenable<Value> {
     }
     
     /**
-     * (get) A promise that has already been fulfilled with value `false`.
+     * (get) A promise that has already been fulfilled with `false`.
      */
     static get false(): Promise<boolean> {
         let promise = new Promise<boolean>();
@@ -1076,12 +1165,19 @@ export default Promise;
 
 export type PromiseLockHandler<Return> = () => ThenableOrValue<Return>;
 
+/**
+ * Promise lock is a useful helper that can act as a simple task queue.
+ */
 export class PromiseLock {
     private _promise = Promise.void;
 
     /**
-     * handler will be called once this promise lock is unlocked, and it will be
-     * locked again until the value returned by handler is fulfilled.
+     * handler will be called once this promise lock is unlocked, and it
+     * will be locked again until the value returned by handler is
+     * fulfilled.
+     * @param handler Promise lock handler.
+     * @return Created promise, will be fulfilled once the return value of
+     *     lock handler gets fulfilled.
      */
     lock<Return>(handler: PromiseLockHandler<Return>): Promise<Return> {
         let promise = this._promise.then(handler);

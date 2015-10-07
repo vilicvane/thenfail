@@ -11,6 +11,10 @@ Core features and changes in v0.3:
 + Optimized for better performance.
 + Control flow tools like context and `Promise.break`.
 
+## API references
+
+[ThenFail v0.3 API references](./docs/api-references.md)
+
 ## What is promise
 
 Promise is a pattern for handling asynchronous operations.
@@ -239,11 +243,6 @@ page.on('unload', () => {
 As what you might guess, The `enclose` method we mentioned before can mark current context as enclosed,
 and no longer accept new promises being under the same context.
 Which means a new context will be created when the `then` method is called.
-
-## API references
-
-So far there's no API references available, but all methods and public properties are commented using `/** ... */`.
-If you are using TypeScript, it should be easy enough for you to get started.
 
 ## License
 
