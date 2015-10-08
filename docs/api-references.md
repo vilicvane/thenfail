@@ -24,7 +24,7 @@ A _thenable_ in the references means any other implementation that might act som
 
 ## Classes
 
-### Promise<Value>
+### Promise&lt;Value&gt;
 
 The Promises/A+ implementation with many useful helpers.
 
