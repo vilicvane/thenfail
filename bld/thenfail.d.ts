@@ -195,7 +195,7 @@ export declare class Promise<Value> implements Thenable<Value> {
      * @param onfulfilled Handler that takes the spread arguments.
      * @return Created promise.
      */
-    spread(onfulfilled: OnFulfilledSpreadHandler<Value>): Promise<Value>;
+    spread<Return>(onfulfilled: OnFulfilledSpreadHandler<Return>): Promise<Return>;
     /**
      * A shortcut of `promise.then(undefined, onrejected)`.
      */
