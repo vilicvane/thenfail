@@ -11,14 +11,14 @@ var __extends = (this && this.__extends) || function (d, b) {
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
-(function (deps, factory) {
+(function (factory) {
     if (typeof module === 'object' && typeof module.exports === 'object') {
         var v = factory(require, exports); if (v !== undefined) module.exports = v;
     }
     else if (typeof define === 'function' && define.amd) {
-        define(deps, factory);
+        define(["require", "exports", './utils'], factory);
     }
-})(["require", "exports", './utils'], function (require, exports) {
+})(function (require, exports) {
     var utils_1 = require('./utils');
     var Context = (function () {
         function Context() {
@@ -526,6 +526,14 @@ var __extends = (this && this.__extends) || function (d, b) {
                 return onfulfilled(value);
             })
                 .then(function () { return relayValue; });
+        };
+        /**
+         * Spread a fulfilled array-like value as arguments of the given handler.
+         * @param onfulfilled Handler that takes the spread arguments.
+         * @return Created promise.
+         */
+        Promise.prototype.spread = function (onfulfilled) {
+            return this.then(function (value) { return onfulfilled.apply(undefined, value); });
         };
         /**
          * A shortcut of `promise.then(undefined, onrejected)`.

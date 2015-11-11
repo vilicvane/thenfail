@@ -29,6 +29,8 @@ export type Resolver<Value> = (
 
 export type OnFulfilledHandler<Value, Return> = (value: Value) => ThenableOrValue<Return>;
 
+export type OnFulfilledSpreadHandler<Return> = (...values: any[]) => ThenableOrValue<Return>;
+
 export type OnRejectedHandler<Return> = (reason: any) => ThenableOrValue<Return>;
 
 export type OnAnyHandler<Return> = (valueOrReason: any) => ThenableOrValue<Return>;
@@ -625,6 +627,15 @@ export class Promise<Value> implements Thenable<Value> {
                 return onfulfilled(value);
             })
             .then(() => relayValue);
+    }
+    
+    /**
+     * Spread a fulfilled array-like value as arguments of the given handler.
+     * @param onfulfilled Handler that takes the spread arguments.
+     * @return Created promise.
+     */
+    spread(onfulfilled: OnFulfilledSpreadHandler<Value>): Promise<Value> {
+        return this.then(value => onfulfilled.apply(undefined, value));
     }
 
     /**

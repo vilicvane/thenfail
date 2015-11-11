@@ -7,6 +7,7 @@ export interface Thenable<Value> {
 }
 export declare type Resolver<Value> = (resolve: (value?: ThenableOrValue<Value>) => void, reject: (reason: any) => void) => void;
 export declare type OnFulfilledHandler<Value, Return> = (value: Value) => ThenableOrValue<Return>;
+export declare type OnFulfilledSpreadHandler<Return> = (...values: any[]) => ThenableOrValue<Return>;
 export declare type OnRejectedHandler<Return> = (reason: any) => ThenableOrValue<Return>;
 export declare type OnAnyHandler<Return> = (valueOrReason: any) => ThenableOrValue<Return>;
 export declare type OnInterruptedHandler = () => void;
@@ -189,6 +190,12 @@ export declare class Promise<Value> implements Thenable<Value> {
      * @return Created promise.
      */
     tap(onfulfilled: OnFulfilledHandler<Value, void>): Promise<Value>;
+    /**
+     * Spread a fulfilled array-like value as arguments of the given handler.
+     * @param onfulfilled Handler that takes the spread arguments.
+     * @return Created promise.
+     */
+    spread(onfulfilled: OnFulfilledSpreadHandler<Value>): Promise<Value>;
     /**
      * A shortcut of `promise.then(undefined, onrejected)`.
      */

@@ -171,6 +171,17 @@ tap(onfulfilled: (value: Value) => Thenable<void> | void): Promise<Value>;
 - **onfulfilled:** Fulfillment handler.
 - **return:** Created promise.
 
+##### Promise#spread()
+
+Spread a fulfilled array-like value as arguments of the given handler.
+
+```ts
+spread(onfulfilled: (...values: any[]) => Thenable<Return> | Return): Promise<Return>;
+```
+
+- **onfulfilled:** Handler that takes the spread arguments.
+- **return:** Created promise.
+
 ##### Promise#fail()
 
 A shortcut of `promise.then(undefined, onrejected)`.
