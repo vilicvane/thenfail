@@ -1,20 +1,14 @@
-export declare type ThenableOrValue<Value> = Promise<Value> | Thenable<Value> | Value;
-/**
- * Promise like object.
- */
-export interface Thenable<Value> {
-    then<Return>(onfulfilled: (value: Value) => ThenableOrValue<Return>, onrejected: (reason: any) => any): Thenable<Return>;
-}
-export declare type Resolver<Value> = (resolve: (value?: ThenableOrValue<Value>) => void, reject: (reason: any) => void) => void;
-export declare type OnFulfilledHandler<Value, Return> = (value: Value) => ThenableOrValue<Return>;
-export declare type OnFulfilledSpreadHandler<Return> = (...values: any[]) => ThenableOrValue<Return>;
-export declare type OnRejectedHandler<Return> = (reason: any) => ThenableOrValue<Return>;
-export declare type OnAnyHandler<Return> = (valueOrReason: any) => ThenableOrValue<Return>;
+export declare type Resolvable<T> = PromiseLike<T> | T;
+export declare type Resolver<T> = (resolve: (value?: Resolvable<T>) => void, reject: (reason: any) => void) => void;
+export declare type OnFulfilledHandler<T, TResult> = (value: T) => Resolvable<TResult>;
+export declare type OnFulfilledSpreadHandler<TResult> = (...values: any[]) => Resolvable<TResult>;
+export declare type OnRejectedHandler<TResult> = (reason: any) => Resolvable<TResult>;
+export declare type OnAnyHandler<TResult> = (valueOrReason: any) => Resolvable<TResult>;
 export declare type OnInterruptedHandler = () => void;
-export declare type NodeStyleCallback<Value> = (error: any, value: Value) => void;
-export declare type MapCallback<Value, Return> = (value: Value, index: number, array: Value[]) => ThenableOrValue<Return>;
-export declare type EachCallback<Value> = (value: Value, index: number, array: Value[]) => ThenableOrValue<boolean | void>;
-export declare type WaterfallCallback<Value, Result> = (value: Value, result: Result, index: number, array: Value[]) => ThenableOrValue<Result>;
+export declare type NodeStyleCallback<T> = (error: any, value: T) => void;
+export declare type MapCallback<T, TResult> = (value: T, index: number, array: T[]) => Resolvable<TResult>;
+export declare type EachCallback<T> = (value: T, index: number, array: T[]) => Resolvable<boolean | void>;
+export declare type WaterfallCallback<T, TResult> = (value: T, result: TResult, index: number, array: T[]) => Resolvable<TResult>;
 export declare class Context {
     _disposed: boolean;
     _enclosed: boolean;
@@ -51,7 +45,7 @@ export declare class TimeoutError extends Error {
 export declare let options: {
     disableUnrelayedRejectionWarning: boolean;
 };
-export declare class Promise<Value> implements Thenable<Value> {
+export declare class Promise<T> implements PromiseLike<T> {
     /** Current state of this promise. */
     private _state;
     /**
@@ -96,16 +90,16 @@ export declare class Promise<Value> implements Thenable<Value> {
      * Promise constructor.
      */
     constructor();
-    constructor(resolver: Resolver<Value>);
+    constructor(resolver: Resolver<T>);
     constructor(context: Context);
     /**
      * Get the state from previous promise in chain.
      */
-    private _grab(previousState, previousValueOrReason?);
+    private _grab(previousState, previousTOrReason?);
     /**
      * Invoke `onfulfilled` or `onrejected` handlers.
      */
-    private _run(handler, previousValueOrReason);
+    private _run(handler, previousTOrReason);
     /**
      * The resolve process defined in Promises/A+ specifications.
      */
@@ -121,13 +115,12 @@ export declare class Promise<Value> implements Thenable<Value> {
      * @param onrejected Rejection handler.
      * @return Created promise.
      */
-    then<Return>(onfulfilled: OnFulfilledHandler<Value, Return>, onrejected?: OnRejectedHandler<Return>): Promise<Return>;
-    then(onfulfilled: void, onrejected: OnRejectedHandler<Value>): Promise<Value>;
+    then<TResult>(onfulfilled: OnFulfilledHandler<T, TResult>, onrejected?: OnRejectedHandler<TResult>): Promise<TResult>;
     /**
      * Resolve the promise with a value or thenable.
-     * @param value The value to fulfill or thenable to resolve.
+     * @param resolvable The value to fulfill or thenable to resolve.
      */
-    resolve(value?: ThenableOrValue<Value>): void;
+    resolve(resolvable?: Resolvable<T>): void;
     /**
      * Reject this promise with a reason.
      * @param reason Rejection reason.
@@ -142,12 +135,12 @@ export declare class Promise<Value> implements Thenable<Value> {
      * @param oninerrupted Interruption handler.
      * @return Current promise.
      */
-    interruption(oninterrupted: OnInterruptedHandler): Promise<Value>;
+    interruption(oninterrupted: OnInterruptedHandler): Promise<T>;
     /**
      * Enclose current promise context.
      * @return Current promise.
      */
-    enclose(): Promise<Value>;
+    enclose(): Promise<T>;
     /**
      * Create a promise that will be fulfilled in given time after
      * its previous promise becomes fulfilled.
@@ -155,7 +148,7 @@ export declare class Promise<Value> implements Thenable<Value> {
      * @param timeout Timeout in milliseconds.
      * @return Current promise.
      */
-    delay(timeout: number): Promise<Value>;
+    delay(timeout: number): Promise<T>;
     /**
      * Reject the promise with `TimeoutError` if it's still pending after
      * timeout. The timer starts once this method is called
@@ -163,25 +156,25 @@ export declare class Promise<Value> implements Thenable<Value> {
      * @param timeout Tiemout in milliseconds.
      * @return Current promise.
      */
-    timeout(timeout: number): Promise<Value>;
+    timeout(timeout: number): Promise<T>;
     /**
      * Handle another promise or node style callback with the value or
      * reason of current promise.
      * @param promise A promise with the same type as current promise.
      * @return Current promise.
      */
-    handle(promise: Promise<Value>): Promise<Value>;
+    handle(promise: Promise<T>): Promise<T>;
     /**
      * @param callback Node style callback.
      * @return Current promise.
      */
-    handle(callback: NodeStyleCallback<Value>): Promise<Value>;
+    handle(callback: NodeStyleCallback<T>): Promise<T>;
     /**
      * Create a disposable resource promise.
      * @param disposor A synchronous function to handle resource disposing.
      * @return Created disposable resource promise.
      */
-    disposable(disposer: Disposer<Value>): Promise<Disposable<Value>>;
+    disposable(disposer: Disposer<T>): Promise<Disposable<T>>;
     /**
      * Like `then` with only an `onfulfilled` handler, but will relay the
      * previous fulfilled value instead of value returned by its own
@@ -189,60 +182,60 @@ export declare class Promise<Value> implements Thenable<Value> {
      * @param onfulfilled Fulfillment handler.
      * @return Created promise.
      */
-    tap(onfulfilled: OnFulfilledHandler<Value, void>): Promise<Value>;
+    tap(onfulfilled: OnFulfilledHandler<T, void>): Promise<T>;
     /**
      * Spread a fulfilled array-like value as arguments of the given handler.
      * @param onfulfilled Handler that takes the spread arguments.
      * @return Created promise.
      */
-    spread<Return>(onfulfilled: OnFulfilledSpreadHandler<Return>): Promise<Return>;
+    spread<TResult>(onfulfilled: OnFulfilledSpreadHandler<TResult>): Promise<TResult>;
     /**
      * A shortcut of `promise.then(undefined, onrejected)`.
      */
-    fail(onrejected: OnRejectedHandler<Value>): Promise<Value>;
+    fail(onrejected: OnRejectedHandler<T>): Promise<T>;
     /**
      * Like `fail` but can specify type of reason to catch.
      * @param onrejected Rejection handler.
      * @return Created promise.
      */
-    catch(onrejected: OnRejectedHandler<Value>): Promise<Value>;
+    catch(onrejected: OnRejectedHandler<T>): Promise<T>;
     /**
      * @param ReasonType Type of reasons to catch.
      * @param onrejected Rejection handler.
      * @return Created promise.
      */
-    catch(ReasonType: Function, onrejected: OnRejectedHandler<Value>): Promise<Value>;
+    catch(ReasonType: Function, onrejected: OnRejectedHandler<T>): Promise<T>;
     /**
      * A shortcut of `Promise.map`, assuming the fulfilled value of
      * previous promise is a array.
      * @param callback Map callback.
      * @return Created promise.
      */
-    map<Value>(callback: MapCallback<any, Value>): Promise<Value[]>;
+    map<T>(callback: MapCallback<any, T>): Promise<T[]>;
     /**
      * A shortcut of `Promise.each`, assuming the fulfilled value of
      * previous promise is a array.
      * @param callback Each callback.
      * @return Created promise.
      */
-    each<Value>(callback: EachCallback<Value>): Promise<boolean>;
+    each<T>(callback: EachCallback<T>): Promise<boolean>;
     /**
      * A shortcut of `Promise.waterfall`, take the fulfilled value of
      * previous promise as initial result.
      */
-    waterfall<ViaValue>(values: ViaValue[], callback: WaterfallCallback<ViaValue, Value>): Promise<Value>;
+    waterfall<ViaT>(values: ViaT[], callback: WaterfallCallback<ViaT, T>): Promise<T>;
     /**
      * A shortcut of `Promise.retry`.
      */
-    retry<Return>(callback: RetryCallback<Return>): Promise<Return>;
-    retry<Return>(options: RetryOptions, callback: RetryCallback<Return>): Promise<Return>;
+    retry<TResult>(callback: RetryCallback<TResult>): Promise<TResult>;
+    retry<TResult>(options: RetryOptions, callback: RetryCallback<TResult>): Promise<TResult>;
     /**
      * Log the value specified or if not, the fulfilled value or rejection
      * reason of current promise after the previous promise becomes settled.
      * @param object Specified value to log.
      * @return Current promise.
      */
-    log(object?: any): Promise<Value>;
+    log(object?: any): Promise<T>;
     /**
      * Call `this.then` with `onrejected` handler only, and throw the
      * rejection reason if any.
@@ -289,13 +282,13 @@ export declare class Promise<Value> implements Thenable<Value> {
      * @param onfulfilled Fulfillment handler.
      * @return Created promise.
      */
-    static then<Value>(onfulfilled: OnFulfilledHandler<void, Value>): Promise<Value>;
+    static then<T>(onfulfilled: OnFulfilledHandler<void, T>): Promise<T>;
     /**
      * Resolve a value or thenable as a promise.
      * @return The value itself if it's a ThenFail Promise,
      *     otherwise the created promise.
      */
-    static resolve<Value>(value: ThenableOrValue<Value>): Promise<Value>;
+    static resolve<T>(resolvable: Resolvable<T>): Promise<T>;
     /**
      * Create a promise rejected by specified reason.
      * @param reason Rejection reason.
@@ -306,11 +299,11 @@ export declare class Promise<Value> implements Thenable<Value> {
      * @param reason Rejection reason.
      * @return Created promise.
      */
-    static reject<Value>(reason: any): Promise<Value>;
+    static reject<T>(reason: any): Promise<T>;
     /**
      * Alias of `Promise.resolve`.
      */
-    static when<Value>(value: ThenableOrValue<Value>): Promise<Value>;
+    static when<T>(value: Resolvable<T>): Promise<T>;
     /**
      * Create a promise with given context.
      * @param context Promise context.
@@ -326,33 +319,44 @@ export declare class Promise<Value> implements Thenable<Value> {
     static delay(timeout: number): Promise<void>;
     /**
      * Create a promise that will be fulfilled:
+     *
      *   1. when all values are fulfilled.
      *   2. with the value of an array of fulfilled values.
+     *
      * And will be rejected:
+     *
      *   1. if any of the values is rejected.
      *   2. with the reason of the first rejection as its reason.
      *   3. after all values are either fulfilled or rejected.
-     * @param values Values or thenables.
+     *
+     * @param resolvables Resolvables involved.
      * @return Created promise.
      */
-    static all<Value>(values: (ThenableOrValue<Value>)[]): Promise<Value[]>;
+    static all<T>(resolvables: Resolvable<T>[]): Promise<T[]>;
+    /**
+     * Create a promise that is settled the same way as the first passed promise to settle.
+     * It resolves or rejects, whichever happens first.
+     * @param resolvables Promises or values to race.
+     * @return Created promise.
+     */
+    static race<T>(resolvables: Resolvable<T>[]): Promise<T>;
     /**
      * A promise version of `Array.prototype.map`.
      * @param values Values to map.
      * @param callback Map callback.
      * @return Created promise.
      */
-    static map<Value, Return>(values: Value[], callback: MapCallback<Value, Return>): Promise<Return[]>;
+    static map<T, TResult>(values: T[], callback: MapCallback<T, TResult>): Promise<TResult[]>;
     /**
      * (breakable) Iterate elements in an array one by one.
-     * Return `false` or a promise that will eventually be fulfilled with
+     * TResult `false` or a promise that will eventually be fulfilled with
      * `false` to interrupt iteration.
      * @param values Values to iterate.
      * @param callback Each callback.
      * @return A promise that will be fulfiled with a boolean which
      *     indicates whether the iteration completed without interruption.
      */
-    static each<Value>(values: Value[], callback: EachCallback<Value>): Promise<boolean>;
+    static each<T>(values: T[], callback: EachCallback<T>): Promise<boolean>;
     /**
      * (breakable) Pass the last result to the same callback with pre-set values.
      * @param values Pre-set values that will be passed to the callback one
@@ -360,19 +364,19 @@ export declare class Promise<Value> implements Thenable<Value> {
      * @param initialResult The initial result for the very first call.
      * @param callback Waterfall callback.
      */
-    static waterfall<Value, Result>(values: Value[], initialResult: Result, callback: WaterfallCallback<Value, Result>): Promise<Result>;
+    static waterfall<T, Result>(values: T[], initialResult: Result, callback: WaterfallCallback<T, Result>): Promise<Result>;
     /**
      * Retry the process in the callback for several times.
      * @param callback Retry callback.
      * @return Created promise.
      */
-    static retry<Return>(callback: RetryCallback<Return>): Promise<Return>;
+    static retry<TResult>(callback: RetryCallback<TResult>): Promise<TResult>;
     /**
      * @param options Retry options.
      * @param callback Retry callback.
      * @return Created promise.
      */
-    static retry<Return>(options: RetryOptions, callback: RetryCallback<Return>): Promise<Return>;
+    static retry<TResult>(options: RetryOptions, callback: RetryCallback<TResult>): Promise<TResult>;
     /**
      * Use a disposable resource and dispose it after been used.
      * @param disposable The disposable resource or a thenable of
@@ -380,7 +384,7 @@ export declare class Promise<Value> implements Thenable<Value> {
      * @param handler Using handler.
      * @return Created promise.
      */
-    static using<Resource, Return>(disposable: ThenableOrValue<Disposable<Resource>>, handler: OnFulfilledHandler<Resource, Return>): Promise<Return>;
+    static using<Resource, TResult>(disposable: Resolvable<Disposable<Resource>>, handler: OnFulfilledHandler<Resource, TResult>): Promise<TResult>;
     /**
      * Invoke a Node style asynchronous function that accepts the last
      * argument as callback.
@@ -388,7 +392,7 @@ export declare class Promise<Value> implements Thenable<Value> {
      * @param args Arguments.
      * @return Created promise.
      */
-    static invoke<Return>(fn: Function, ...args: any[]): Promise<Return>;
+    static invoke<TResult>(fn: Function, ...args: any[]): Promise<TResult>;
     /**
      * (fake statement) This getter will always throw a break signal that interrupts the promises chain.
      *
@@ -427,7 +431,7 @@ export declare class Promise<Value> implements Thenable<Value> {
     static false: Promise<boolean>;
 }
 export default Promise;
-export declare type PromiseLockHandler<Return> = () => ThenableOrValue<Return>;
+export declare type PromiseLockHandler<TResult> = () => Resolvable<TResult>;
 /**
  * Promise lock is a useful helper that can act as a simple task queue.
  */
@@ -441,19 +445,19 @@ export declare class PromiseLock {
      * @return Created promise, will be fulfilled once the return value of
      *     lock handler gets fulfilled.
      */
-    lock<Return>(handler: PromiseLockHandler<Return>): Promise<Return>;
+    lock<TResult>(handler: PromiseLockHandler<TResult>): Promise<TResult>;
 }
-export declare type RetryCallback<Return> = (lastReason: any, attemptIndex: number) => ThenableOrValue<Return>;
+export declare type RetryCallback<TResult> = (lastReason: any, attemptIndex: number) => Resolvable<TResult>;
 export interface RetryOptions {
     /** Try limit times (defaults to 3). */
     limit?: number;
     /** Interval between two tries (defaults to 0). */
     interval?: number;
 }
-export declare type Disposer<Resource> = (resource: Resource) => void;
-export interface Disposable<Resource> {
-    resource: Resource;
-    dispose: Disposer<Resource>;
+export declare type Disposer<TResource> = (resource: TResource) => void;
+export interface Disposable<TResource> {
+    resource: TResource;
+    dispose: Disposer<TResource>;
 }
 export declare const using: typeof Promise.using;
 export declare const invoke: typeof Promise.invoke;

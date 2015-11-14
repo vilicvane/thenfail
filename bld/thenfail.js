@@ -136,7 +136,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         /**
          * Get the state from previous promise in chain.
          */
-        Promise.prototype._grab = function (previousState, previousValueOrReason) {
+        Promise.prototype._grab = function (previousState, previousTOrReason) {
             if (this._state !== 0 /* pending */) {
                 return;
             }
@@ -148,29 +148,29 @@ var __extends = (this && this.__extends) || function (d, b) {
                 handler = this._onPreviousRejected;
             }
             if (handler) {
-                this._run(handler, previousValueOrReason);
+                this._run(handler, previousTOrReason);
             }
             else {
-                this._relay(previousState, previousValueOrReason);
+                this._relay(previousState, previousTOrReason);
             }
         };
         /**
          * Invoke `onfulfilled` or `onrejected` handlers.
          */
-        Promise.prototype._run = function (handler, previousValueOrReason) {
+        Promise.prototype._run = function (handler, previousTOrReason) {
             var _this = this;
             this._running = true;
             utils_1.asap(function () {
-                var ret;
+                var resolvable;
                 try {
-                    ret = handler(previousValueOrReason);
+                    resolvable = handler(previousTOrReason);
                 }
                 catch (error) {
                     _this._relay(2 /* rejected */, error);
                     _this._running = false;
                     return;
                 }
-                _this._unpack(ret, function (state, valueOrReason) {
+                _this._unpack(resolvable, function (state, valueOrReason) {
                     _this._relay(state, valueOrReason);
                     _this._running = false;
                 });
@@ -368,6 +368,8 @@ var __extends = (this && this.__extends) || function (d, b) {
                 }
             });
         };
+        // https://github.com/Microsoft/TypeScript/issues/5667
+        // then(onfulfilled: void, onrejected?: OnRejectedHandler<T>): Promise<T>;
         Promise.prototype.then = function (onfulfilled, onrejected) {
             var promise = new Promise(this._context);
             if (typeof onfulfilled === 'function') {
@@ -395,11 +397,11 @@ var __extends = (this && this.__extends) || function (d, b) {
         };
         /**
          * Resolve the promise with a value or thenable.
-         * @param value The value to fulfill or thenable to resolve.
+         * @param resolvable The value to fulfill or thenable to resolve.
          */
-        Promise.prototype.resolve = function (value) {
+        Promise.prototype.resolve = function (resolvable) {
             var _this = this;
-            this._unpack(value, function (state, valueOrReason) { return _this._grab(state, valueOrReason); });
+            this._unpack(resolvable, function (state, valueOrReason) { return _this._grab(state, valueOrReason); });
         };
         /**
          * Reject this promise with a reason.
@@ -519,13 +521,13 @@ var __extends = (this && this.__extends) || function (d, b) {
          * @return Created promise.
          */
         Promise.prototype.tap = function (onfulfilled) {
-            var relayValue;
+            var relayT;
             return this
                 .then(function (value) {
-                relayValue = value;
+                relayT = value;
                 return onfulfilled(value);
             })
-                .then(function () { return relayValue; });
+                .then(function () { return relayT; });
         };
         /**
          * Spread a fulfilled array-like value as arguments of the given handler.
@@ -723,13 +725,13 @@ var __extends = (this && this.__extends) || function (d, b) {
          * @return The value itself if it's a ThenFail Promise,
          *     otherwise the created promise.
          */
-        Promise.resolve = function (value) {
-            if (value instanceof Promise) {
-                return value;
+        Promise.resolve = function (resolvable) {
+            if (resolvable instanceof Promise) {
+                return resolvable;
             }
             else {
                 var promise = new Promise();
-                promise.resolve(value);
+                promise.resolve(resolvable);
                 return promise;
             }
         };
@@ -767,26 +769,30 @@ var __extends = (this && this.__extends) || function (d, b) {
         };
         /**
          * Create a promise that will be fulfilled:
+         *
          *   1. when all values are fulfilled.
          *   2. with the value of an array of fulfilled values.
+         *
          * And will be rejected:
+         *
          *   1. if any of the values is rejected.
          *   2. with the reason of the first rejection as its reason.
          *   3. after all values are either fulfilled or rejected.
-         * @param values Values or thenables.
+         *
+         * @param resolvables Resolvables involved.
          * @return Created promise.
          */
-        Promise.all = function (values) {
-            if (!values.length) {
+        Promise.all = function (resolvables) {
+            if (!resolvables.length) {
                 return Promise.resolve([]);
             }
             var resultsPromise = new Promise();
             var results = [];
-            var remaining = values.length;
+            var remaining = resolvables.length;
             var reasons = [];
-            values.forEach(function (value, index) {
+            resolvables.forEach(function (resolvable, index) {
                 Promise
-                    .resolve(value)
+                    .resolve(resolvable)
                     .then(function (result) {
                     results[index] = result;
                     checkCompletion();
@@ -809,6 +815,22 @@ var __extends = (this && this.__extends) || function (d, b) {
             return resultsPromise;
         };
         /**
+         * Create a promise that is settled the same way as the first passed promise to settle.
+         * It resolves or rejects, whichever happens first.
+         * @param resolvables Promises or values to race.
+         * @return Created promise.
+         */
+        Promise.race = function (resolvables) {
+            var promise = new Promise();
+            for (var _i = 0, resolvables_1 = resolvables; _i < resolvables_1.length; _i++) {
+                var resolvable = resolvables_1[_i];
+                Promise
+                    .resolve(resolvable)
+                    .handle(promise);
+            }
+            return promise;
+        };
+        /**
          * A promise version of `Array.prototype.map`.
          * @param values Values to map.
          * @param callback Map callback.
@@ -819,7 +841,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         };
         /**
          * (breakable) Iterate elements in an array one by one.
-         * Return `false` or a promise that will eventually be fulfilled with
+         * TResult `false` or a promise that will eventually be fulfilled with
          * `false` to interrupt iteration.
          * @param values Values to iterate.
          * @param callback Each callback.

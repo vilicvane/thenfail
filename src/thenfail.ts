@@ -122,13 +122,16 @@ export let options = {
 export class Promise<T> implements PromiseLike<T> {
     /** Current state of this promise. */
     private _state = State.pending;
+    
     /**
      * Indicates whether `onfulfilled` or `onrejected` handler has been called
      * but the resolved value has not become fulfilled yet.
      */
     private _running = false;
+    
     /** The fulfilled value or rejected reason associated with this promise. */
     private _valueOrReason: any;
+    
     /** Context of this promise. */
     private _context: Context;
 
@@ -140,6 +143,7 @@ export class Promise<T> implements PromiseLike<T> {
      * Vice versa.
      */
     private _chainedPromise: Promise<any>;
+    
     /** Next promises in the chain. */
     private _chainedPromises: Promise<any>[];
 
@@ -219,17 +223,17 @@ export class Promise<T> implements PromiseLike<T> {
         this._running = true;
         
         asap(() => {
-            let ret: Resolvable<T>;
+            let resolvable: Resolvable<T>;
 
             try {
-                ret = handler(previousTOrReason);
+                resolvable = handler(previousTOrReason);
             } catch (error) {
                 this._relay(State.rejected, error);
                 this._running = false;
                 return;
             }
 
-            this._unpack(ret, (state, valueOrReason) => {
+            this._unpack(resolvable, (state, valueOrReason) => {
                 this._relay(state, valueOrReason);
                 this._running = false;
             });
@@ -438,6 +442,7 @@ export class Promise<T> implements PromiseLike<T> {
      * @return Created promise.
      */
     then<TResult>(onfulfilled: OnFulfilledHandler<T, TResult>, onrejected?: OnRejectedHandler<TResult>): Promise<TResult>;
+    // https://github.com/Microsoft/TypeScript/issues/5667
     // then(onfulfilled: void, onrejected?: OnRejectedHandler<T>): Promise<T>;
     then(onfulfilled?: any, onrejected?: any): Promise<any> {
         let promise = new Promise<any>(this._context);
@@ -468,10 +473,10 @@ export class Promise<T> implements PromiseLike<T> {
     
     /**
      * Resolve the promise with a value or thenable.
-     * @param value The value to fulfill or thenable to resolve.
+     * @param resolvable The value to fulfill or thenable to resolve.
      */
-    resolve(value?: Resolvable<T>): void {
-        this._unpack(value, (state, valueOrReason) => this._grab(state, valueOrReason));
+    resolve(resolvable?: Resolvable<T>): void {
+        this._unpack(resolvable, (state, valueOrReason) => this._grab(state, valueOrReason));
     }
     
     /**
@@ -819,12 +824,12 @@ export class Promise<T> implements PromiseLike<T> {
      * @return The value itself if it's a ThenFail Promise,
      *     otherwise the created promise.
      */
-    static resolve<T>(value: Resolvable<T>): Promise<T> {
-        if (value instanceof Promise) {
-            return value;
+    static resolve<T>(resolvable: Resolvable<T>): Promise<T> {
+        if (resolvable instanceof Promise) {
+            return resolvable;
         } else {
             let promise = new Promise<T>();
-            promise.resolve(value);
+            promise.resolve(resolvable);
             return promise;
         }
     }
@@ -878,30 +883,34 @@ export class Promise<T> implements PromiseLike<T> {
     
     /**
      * Create a promise that will be fulfilled:
+     * 
      *   1. when all values are fulfilled.
      *   2. with the value of an array of fulfilled values.
+     * 
      * And will be rejected:
+     * 
      *   1. if any of the values is rejected.
      *   2. with the reason of the first rejection as its reason.
      *   3. after all values are either fulfilled or rejected.
-     * @param values Ts or thenables.
+     * 
+     * @param resolvables Resolvables involved.
      * @return Created promise.
      */
-    static all<T>(values: (Resolvable<T>)[]): Promise<T[]> {
-        if (!values.length) {
+    static all<T>(resolvables: Resolvable<T>[]): Promise<T[]> {
+        if (!resolvables.length) {
             return Promise.resolve([]);
         }
         
         let resultsPromise = new Promise<T[]>();
         
         let results: T[] = [];
-        let remaining = values.length;
+        let remaining = resolvables.length;
         
         let reasons: any[] = [];
         
-        values.forEach((value, index) => {
+        resolvables.forEach((resolvable, index) => {
             Promise
-                .resolve(value)
+                .resolve(resolvable)
                 .then(result => {
                     results[index] = result;
                     checkCompletion();
@@ -927,8 +936,26 @@ export class Promise<T> implements PromiseLike<T> {
     }
     
     /**
+     * Create a promise that is settled the same way as the first passed promise to settle.
+     * It resolves or rejects, whichever happens first.
+     * @param resolvables Promises or values to race.
+     * @return Created promise. 
+     */
+    static race<T>(resolvables: Resolvable<T>[]): Promise<T> {
+        let promise = new Promise<T>();
+        
+        for (let resolvable of resolvables) {
+            Promise
+                .resolve(resolvable)
+                .handle(promise);
+        }
+        
+        return promise;
+    }
+    
+    /**
      * A promise version of `Array.prototype.map`.
-     * @param values Ts to map.
+     * @param values Values to map.
      * @param callback Map callback.
      * @return Created promise.
      */
@@ -940,7 +967,7 @@ export class Promise<T> implements PromiseLike<T> {
      * (breakable) Iterate elements in an array one by one.
      * TResult `false` or a promise that will eventually be fulfilled with
      * `false` to interrupt iteration.
-     * @param values Ts to iterate.
+     * @param values Values to iterate.
      * @param callback Each callback.
      * @return A promise that will be fulfiled with a boolean which
      *     indicates whether the iteration completed without interruption.

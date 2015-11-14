@@ -11,9 +11,9 @@ Core features and changes in v0.3:
 + Optimized for better performance.
 + Control flow tools like context and `Promise.break`.
 
-## API references
+## Documentation
 
-[ThenFail v0.3 API references](./docs/api-references.md)
+https://vilic.github.io/thenfail/doc
 
 ## What is promise
 
@@ -243,6 +243,32 @@ page.on('unload', () => {
 As what you might guess, The `enclose` method we mentioned before can mark current context as enclosed,
 and no longer accept new promises being under the same context.
 Which means a new context will be created when the `then` method is called.
+
+## Notable basics
+
+### States
+
+Promises/A+ defines 3 states of a promise: _pending_, _fulfilled_ and _rejected_. And only the _pending_ state may transform to other states.
+
+In the implementation of ThenFail, one more state _interrupted_ is added to specify the state of promises interrupted by (fake) `break` or a canceled context (However, the promise of which `onfulfilled` or `onrejected` has been called will not be _interrupted_).
+
+### Resolve
+
+_Resolve_ is a process that may change the state of promise from _pending_ to either _fulfilled_ or _rejected_ (not just the former state).
+
+## Terms
+
+### Promise
+
+A _promise_ in the documentation means the implementation of Promises/A+ in ThenFail.
+
+### Thenable/PromiseLike
+
+A _thenable_ or _promise-like_ in the documentation means any other implementation that might act somewhat or exactly as we may expect a Promises/A or Promises/A+ implementation will.
+
+### Resolvable
+
+A _resolvable_ in the documentation means a _thenable_/_promise-like_ or a normal value.
 
 ## License
 

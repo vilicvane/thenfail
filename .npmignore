@@ -1,0 +1,10 @@
+/.vscode/
+/gh-pages/
+/src/
+/test/
+/typings/
+
+.*
+
+jsconfig.json
+tsconfig.json
