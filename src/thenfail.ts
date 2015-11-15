@@ -151,14 +151,16 @@ export class Promise<T> implements PromiseLike<T> {
      * Promise that will share the same state (and value/reason).
      * 
      * Example:
-     *  
-     *  let promiseA = Promise.then(() => {
-     *      let promiseB = Promise.then(() => ...);
-     *      return promiseB;
-     *  });
      * 
-     *  The state of `promiseB` will determine the state of `promiseA`.
-     *  And `promiseA` will then be in here.
+     * ```ts
+     * let promiseA = Promise.then(() => {
+     *     let promiseB = Promise.then(() => ...);
+     *     return promiseB;
+     * });
+     * ```
+     * 
+     * The state of `promiseB` will determine the state of `promiseA`.
+     * And `promiseA` will then be in here.
      */
     private _handledPromise: Promise<T>;
     /** Promises that will share the same state (and value/reason). */
@@ -1132,19 +1134,21 @@ export class Promise<T> implements PromiseLike<T> {
      * 
      * Example:
      * 
-     *  promise
-     *      .then(() => {
-     *          if (toBreak) {
-     *              Promise.break;
-     *          }
-     * 
-     *          // Or not to break.
-     *      })
-     *      .then(() => {
-     *          // If `toBreak` is true, it will never enter this handler.
-     *      }, () => {
-     *          // Nor this handler.
-     *      });
+     * ```ts
+     * promise
+     *     .then(() => {
+     *         if (toBreak) {
+     *             Promise.break;
+     *         }
+     *
+     *         // Or not to break.
+     *     })
+     *     .then(() => {
+     *         // If `toBreak` is true, it will never enter this handler.
+     *     }, () => {
+     *         // Nor this handler.
+     *     });
+     * ```
      */
     static get break(): void {
         throw BREAK_SIGNAL;

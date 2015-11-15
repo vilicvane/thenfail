@@ -980,19 +980,21 @@ var __extends = (this && this.__extends) || function (d, b) {
              *
              * Example:
              *
-             *  promise
-             *      .then(() => {
-             *          if (toBreak) {
-             *              Promise.break;
-             *          }
+             * ```ts
+             * promise
+             *     .then(() => {
+             *         if (toBreak) {
+             *             Promise.break;
+             *         }
              *
-             *          // Or not to break.
-             *      })
-             *      .then(() => {
-             *          // If `toBreak` is true, it will never enter this handler.
-             *      }, () => {
-             *          // Nor this handler.
-             *      });
+             *         // Or not to break.
+             *     })
+             *     .then(() => {
+             *         // If `toBreak` is true, it will never enter this handler.
+             *     }, () => {
+             *         // Nor this handler.
+             *     });
+             * ```
              */
             get: function () {
                 throw BREAK_SIGNAL;
