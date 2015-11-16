@@ -421,12 +421,13 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in thenfail.ts:751</li>
+									<li>Defined in thenfail.ts:750</li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
 								<div class="lead">
-									<p>(get) A promise that will be rejected with a pre-break signal.</p>
+									<p>(get) A promise that will be rejected with a pre-break signal if previous
+									promise is fulfilled with a non-<code>false</code> value.</p>
 								</div>
 							</div>
 							<h4 class="tsd-returns-title">Returns <a href="promise.html" class="tsd-signature-type">Promise</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">&gt;</span></h4>
@@ -443,7 +444,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in thenfail.ts:781</li>
+									<li>Defined in thenfail.ts:782</li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -465,7 +466,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in thenfail.ts:774</li>
+									<li>Defined in thenfail.ts:775</li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -487,7 +488,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in thenfail.ts:795</li>
+									<li>Defined in thenfail.ts:796</li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -509,7 +510,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in thenfail.ts:809</li>
+									<li>Defined in thenfail.ts:810</li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -531,7 +532,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in thenfail.ts:788</li>
+									<li>Defined in thenfail.ts:789</li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -553,7 +554,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in thenfail.ts:802</li>
+									<li>Defined in thenfail.ts:803</li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -575,7 +576,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in thenfail.ts:767</li>
+									<li>Defined in thenfail.ts:768</li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -597,7 +598,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in thenfail.ts:760</li>
+									<li>Defined in thenfail.ts:761</li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -619,7 +620,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in thenfail.ts:1153</li>
+									<li>Defined in thenfail.ts:1160</li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -656,7 +657,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in thenfail.ts:1158</li>
+									<li>Defined in thenfail.ts:1165</li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -678,7 +679,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in thenfail.ts:1188</li>
+									<li>Defined in thenfail.ts:1195</li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -700,7 +701,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in thenfail.ts:1163</li>
+									<li>Defined in thenfail.ts:1170</li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -722,7 +723,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in thenfail.ts:1179</li>
+									<li>Defined in thenfail.ts:1186</li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -744,7 +745,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in thenfail.ts:1170</li>
+									<li>Defined in thenfail.ts:1177</li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -1036,7 +1037,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in thenfail.ts:740</li>
+									<li>Defined in thenfail.ts:738</li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -1241,8 +1242,8 @@
 							</aside>
 							<div class="tsd-comment tsd-typography">
 								<div class="lead">
-									<p>Log the value specified or if not, the fulfilled value or rejection
-									reason of current promise after the previous promise becomes settled.</p>
+									<p>Log the value specified on fulfillment, or if not, the fulfilled value or
+									rejection reason of current promise after the previous promise becomes settled.</p>
 								</div>
 							</div>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -1573,7 +1574,7 @@
 					<a name="waterfall" class="tsd-anchor"></a>
 					<h3>waterfall</h3>
 					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-has-type-parameter">
-						<li class="tsd-signature tsd-kind-icon">waterfall&lt;ViaT&gt;<span class="tsd-signature-symbol">(</span>values<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">ViaT</span><span class="tsd-signature-symbol">[]</span>, callback<span class="tsd-signature-symbol">: </span><a href="../globals.html#waterfallcallback" class="tsd-signature-type">WaterfallCallback</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="promise.html" class="tsd-signature-type">Promise</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">T</span><span class="tsd-signature-symbol">&gt;</span></li>
+						<li class="tsd-signature tsd-kind-icon">waterfall&lt;TValue&gt;<span class="tsd-signature-symbol">(</span>values<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">TValue</span><span class="tsd-signature-symbol">[]</span>, callback<span class="tsd-signature-symbol">: </span><a href="../globals.html#waterfallcallback" class="tsd-signature-type">WaterfallCallback</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="promise.html" class="tsd-signature-type">Promise</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">T</span><span class="tsd-signature-symbol">&gt;</span></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
@@ -1591,13 +1592,13 @@
 							<h4 class="tsd-type-parameters-title">Type parameters</h4>
 							<ul class="tsd-type-parameters">
 								<li>
-									<h4>ViaT</h4>
+									<h4>TValue</h4>
 								</li>
 							</ul>
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
-									<h5>values: <span class="tsd-signature-type">ViaT</span><span class="tsd-signature-symbol">[]</span></h5>
+									<h5>values: <span class="tsd-signature-type">TValue</span><span class="tsd-signature-symbol">[]</span></h5>
 								</li>
 								<li>
 									<h5>callback: <a href="../globals.html#waterfallcallback" class="tsd-signature-type">WaterfallCallback</a></h5>
@@ -1617,7 +1618,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in thenfail.ts:901</li>
+									<li>Defined in thenfail.ts:908</li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -1665,7 +1666,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in thenfail.ts:868</li>
+									<li>Defined in thenfail.ts:875</li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -1697,7 +1698,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in thenfail.ts:880</li>
+									<li>Defined in thenfail.ts:887</li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -1730,7 +1731,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in thenfail.ts:977</li>
+									<li>Defined in thenfail.ts:984</li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -1777,7 +1778,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in thenfail.ts:1118</li>
+									<li>Defined in thenfail.ts:1125</li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -1822,7 +1823,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in thenfail.ts:964</li>
+									<li>Defined in thenfail.ts:971</li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -1863,13 +1864,13 @@
 					<a name="race" class="tsd-anchor"></a>
 					<h3><span class="tsd-flag ts-flagStatic">Static</span> race</h3>
 					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-has-type-parameter tsd-is-static">
-						<li class="tsd-signature tsd-kind-icon">race&lt;T&gt;<span class="tsd-signature-symbol">(</span>resolvables<span class="tsd-signature-symbol">: </span><a href="../globals.html#resolvable" class="tsd-signature-type">Resolvable</a><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="promise.html" class="tsd-signature-type">Promise</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">T</span><span class="tsd-signature-symbol">&gt;</span></li>
+						<li class="tsd-signature tsd-kind-icon">race&lt;TResult&gt;<span class="tsd-signature-symbol">(</span>resolvables<span class="tsd-signature-symbol">: </span><a href="../globals.html#resolvable" class="tsd-signature-type">Resolvable</a><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="promise.html" class="tsd-signature-type">Promise</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">TResult</span><span class="tsd-signature-symbol">&gt;</span></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in thenfail.ts:946</li>
+									<li>Defined in thenfail.ts:953</li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -1881,7 +1882,7 @@
 							<h4 class="tsd-type-parameters-title">Type parameters</h4>
 							<ul class="tsd-type-parameters">
 								<li>
-									<h4>T</h4>
+									<h4>TResult</h4>
 								</li>
 							</ul>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -1893,7 +1894,7 @@
 									</div>
 								</li>
 							</ul>
-							<h4 class="tsd-returns-title">Returns <a href="promise.html" class="tsd-signature-type">Promise</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">T</span><span class="tsd-signature-symbol">&gt;</span></h4>
+							<h4 class="tsd-returns-title">Returns <a href="promise.html" class="tsd-signature-type">Promise</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">TResult</span><span class="tsd-signature-symbol">&gt;</span></h4>
 							<p>Created promise.</p>
 						</li>
 					</ul>
@@ -1909,7 +1910,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in thenfail.ts:844</li>
+									<li>Defined in thenfail.ts:851</li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -1932,7 +1933,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in thenfail.ts:849</li>
+									<li>Defined in thenfail.ts:856</li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -1961,19 +1962,32 @@
 					<a name="resolve-1" class="tsd-anchor"></a>
 					<h3><span class="tsd-flag ts-flagStatic">Static</span> resolve</h3>
 					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-has-type-parameter tsd-is-static">
+						<li class="tsd-signature tsd-kind-icon">resolve<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="promise.html" class="tsd-signature-type">Promise</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">&gt;</span></li>
 						<li class="tsd-signature tsd-kind-icon">resolve&lt;T&gt;<span class="tsd-signature-symbol">(</span>resolvable<span class="tsd-signature-symbol">: </span><a href="../globals.html#resolvable" class="tsd-signature-type">Resolvable</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="promise.html" class="tsd-signature-type">Promise</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">T</span><span class="tsd-signature-symbol">&gt;</span></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in thenfail.ts:829</li>
+									<li>Defined in thenfail.ts:830</li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
 								<div class="lead">
 									<p>Resolve a value or thenable as a promise.</p>
 								</div>
+							</div>
+							<h4 class="tsd-returns-title">Returns <a href="promise.html" class="tsd-signature-type">Promise</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">&gt;</span></h4>
+							<p>The value itself if it&#39;s a ThenFail Promise,
+							otherwise the created promise.</p>
+						</li>
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in thenfail.ts:835</li>
+								</ul>
+							</aside>
+							<div class="tsd-comment tsd-typography">
 							</div>
 							<h4 class="tsd-type-parameters-title">Type parameters</h4>
 							<ul class="tsd-type-parameters">
@@ -2004,7 +2018,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in thenfail.ts:1027</li>
+									<li>Defined in thenfail.ts:1034</li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -2033,7 +2047,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in thenfail.ts:1033</li>
+									<li>Defined in thenfail.ts:1040</li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -2068,13 +2082,13 @@
 					<a name="then-1" class="tsd-anchor"></a>
 					<h3><span class="tsd-flag ts-flagStatic">Static</span> then</h3>
 					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-has-type-parameter tsd-is-static">
-						<li class="tsd-signature tsd-kind-icon">then&lt;T&gt;<span class="tsd-signature-symbol">(</span>onfulfilled<span class="tsd-signature-symbol">: </span><a href="../globals.html#onfulfilledhandler" class="tsd-signature-type">OnFulfilledHandler</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="promise.html" class="tsd-signature-type">Promise</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">T</span><span class="tsd-signature-symbol">&gt;</span></li>
+						<li class="tsd-signature tsd-kind-icon">then&lt;TResult&gt;<span class="tsd-signature-symbol">(</span>onfulfilled<span class="tsd-signature-symbol">: </span><a href="../globals.html#onfulfilledhandler" class="tsd-signature-type">OnFulfilledHandler</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="promise.html" class="tsd-signature-type">Promise</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">TResult</span><span class="tsd-signature-symbol">&gt;</span></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in thenfail.ts:820</li>
+									<li>Defined in thenfail.ts:821</li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -2085,7 +2099,7 @@
 							<h4 class="tsd-type-parameters-title">Type parameters</h4>
 							<ul class="tsd-type-parameters">
 								<li>
-									<h4>T</h4>
+									<h4>TResult</h4>
 								</li>
 							</ul>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -2097,7 +2111,7 @@
 									</div>
 								</li>
 							</ul>
-							<h4 class="tsd-returns-title">Returns <a href="promise.html" class="tsd-signature-type">Promise</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">T</span><span class="tsd-signature-symbol">&gt;</span></h4>
+							<h4 class="tsd-returns-title">Returns <a href="promise.html" class="tsd-signature-type">Promise</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">TResult</span><span class="tsd-signature-symbol">&gt;</span></h4>
 							<p>Created promise.</p>
 						</li>
 					</ul>
@@ -2106,13 +2120,13 @@
 					<a name="using" class="tsd-anchor"></a>
 					<h3><span class="tsd-flag ts-flagStatic">Static</span> using</h3>
 					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-has-type-parameter tsd-is-static">
-						<li class="tsd-signature tsd-kind-icon">using&lt;Resource, TResult&gt;<span class="tsd-signature-symbol">(</span>disposable<span class="tsd-signature-symbol">: </span><a href="../globals.html#resolvable" class="tsd-signature-type">Resolvable</a>, handler<span class="tsd-signature-symbol">: </span><a href="../globals.html#onfulfilledhandler" class="tsd-signature-type">OnFulfilledHandler</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="promise.html" class="tsd-signature-type">Promise</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">TResult</span><span class="tsd-signature-symbol">&gt;</span></li>
+						<li class="tsd-signature tsd-kind-icon">using&lt;T, TResult&gt;<span class="tsd-signature-symbol">(</span>disposable<span class="tsd-signature-symbol">: </span><a href="../globals.html#resolvable" class="tsd-signature-type">Resolvable</a>, handler<span class="tsd-signature-symbol">: </span><a href="../globals.html#onfulfilledhandler" class="tsd-signature-type">OnFulfilledHandler</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="promise.html" class="tsd-signature-type">Promise</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">TResult</span><span class="tsd-signature-symbol">&gt;</span></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in thenfail.ts:1082</li>
+									<li>Defined in thenfail.ts:1089</li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -2123,7 +2137,7 @@
 							<h4 class="tsd-type-parameters-title">Type parameters</h4>
 							<ul class="tsd-type-parameters">
 								<li>
-									<h4>Resource</h4>
+									<h4>T</h4>
 								</li>
 								<li>
 									<h4>TResult</h4>
@@ -2154,13 +2168,13 @@
 					<a name="waterfall-1" class="tsd-anchor"></a>
 					<h3><span class="tsd-flag ts-flagStatic">Static</span> waterfall</h3>
 					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-has-type-parameter tsd-is-static">
-						<li class="tsd-signature tsd-kind-icon">waterfall&lt;T, Result&gt;<span class="tsd-signature-symbol">(</span>values<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">T</span><span class="tsd-signature-symbol">[]</span>, initialResult<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Result</span>, callback<span class="tsd-signature-symbol">: </span><a href="../globals.html#waterfallcallback" class="tsd-signature-type">WaterfallCallback</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="promise.html" class="tsd-signature-type">Promise</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Result</span><span class="tsd-signature-symbol">&gt;</span></li>
+						<li class="tsd-signature tsd-kind-icon">waterfall&lt;T, TResult&gt;<span class="tsd-signature-symbol">(</span>values<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">T</span><span class="tsd-signature-symbol">[]</span>, initialResult<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">TResult</span>, callback<span class="tsd-signature-symbol">: </span><a href="../globals.html#waterfallcallback" class="tsd-signature-type">WaterfallCallback</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="promise.html" class="tsd-signature-type">Promise</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">TResult</span><span class="tsd-signature-symbol">&gt;</span></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in thenfail.ts:1000</li>
+									<li>Defined in thenfail.ts:1007</li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -2174,7 +2188,7 @@
 									<h4>T</h4>
 								</li>
 								<li>
-									<h4>Result</h4>
+									<h4>TResult</h4>
 								</li>
 							</ul>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -2187,7 +2201,7 @@
 									</div>
 								</li>
 								<li>
-									<h5>initialResult: <span class="tsd-signature-type">Result</span></h5>
+									<h5>initialResult: <span class="tsd-signature-type">TResult</span></h5>
 									<div class="tsd-comment tsd-typography">
 										<p>The initial result for the very first call.</p>
 									</div>
@@ -2199,7 +2213,7 @@
 									</div>
 								</li>
 							</ul>
-							<h4 class="tsd-returns-title">Returns <a href="promise.html" class="tsd-signature-type">Promise</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Result</span><span class="tsd-signature-symbol">&gt;</span></h4>
+							<h4 class="tsd-returns-title">Returns <a href="promise.html" class="tsd-signature-type">Promise</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">TResult</span><span class="tsd-signature-symbol">&gt;</span></h4>
 						</li>
 					</ul>
 				</section>
@@ -2213,7 +2227,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in thenfail.ts:859</li>
+									<li>Defined in thenfail.ts:866</li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
