@@ -696,7 +696,7 @@ export class Promise<T> implements PromiseLike<T> {
      * A shortcut of `Promise.waterfall`, take the fulfilled value of
      * previous promise as initial result.
      */
-    waterfall<ViaT>(values: ViaT[], callback: WaterfallCallback<ViaT, T>): Promise<T> {
+    waterfall<TValue>(values: TValue[], callback: WaterfallCallback<TValue, T>): Promise<T> {
         return this.then(initialResult => Promise.waterfall(values, initialResult, callback));
     }
     
@@ -710,25 +710,23 @@ export class Promise<T> implements PromiseLike<T> {
     }
     
     /**
-     * Log the value specified or if not, the fulfilled value or rejection
-     * reason of current promise after the previous promise becomes settled.
+     * Log the value specified on fulfillment, or if not, the fulfilled value or
+     * rejection reason of current promise after the previous promise becomes settled.
      * @param object Specified value to log.
      * @return Current promise.
      */
     log(object?: any): Promise<T> {
-        let promise = new Promise<T>();
-        
-        this.handle(promise);
-        
-        promise.then(value => {
-            if (object !== undefined) {
-                console.log(object);
-            } else if (value !== undefined) {
+        if (object === undefined) {
+            this.then(value => {
                 console.log(value);
-            }
-        }, reason => {
-            console.error(reason && (reason.stack || reason.message) || reason);
-        });
+            }, reason => {
+                console.error(reason && (reason.stack || reason.message) || reason);
+            });
+        } else {
+            this.then(() => {
+                console.log(object);
+            });
+        }
         
         return this;
     }
@@ -746,11 +744,14 @@ export class Promise<T> implements PromiseLike<T> {
     }
     
     /**
-     * (get) A promise that will be rejected with a pre-break signal.
+     * (get) A promise that will be rejected with a pre-break signal if previous
+     * promise is fulfilled with a non-`false` value.
      */
     get break(): Promise<any> {
-        return this.then(() => {
-            throw PRE_BREAK_SIGNAL;
+        return this.then(value => {
+            if ((value as any) !== false) {
+                throw PRE_BREAK_SIGNAL;
+            }
         });
     }
     
@@ -817,7 +818,7 @@ export class Promise<T> implements PromiseLike<T> {
      * @param onfulfilled Fulfillment handler.
      * @return Created promise.
      */
-    static then<T>(onfulfilled: OnFulfilledHandler<void, T>): Promise<T> {
+    static then<TResult>(onfulfilled: OnFulfilledHandler<void, TResult>): Promise<TResult> {
         return Promise.void.then(onfulfilled);
     }
     
@@ -826,7 +827,13 @@ export class Promise<T> implements PromiseLike<T> {
      * @return The value itself if it's a ThenFail Promise,
      *     otherwise the created promise.
      */
-    static resolve<T>(resolvable: Resolvable<T>): Promise<T> {
+    static resolve(): Promise<void>;
+    /**
+     * @return The value itself if it's a ThenFail Promise,
+     *     otherwise the created promise.
+     */
+    static resolve<T>(resolvable: Resolvable<T>): Promise<T>;
+    static resolve<T>(resolvable?: Resolvable<T>): Promise<T> {
         if (resolvable instanceof Promise) {
             return resolvable;
         } else {
@@ -943,8 +950,8 @@ export class Promise<T> implements PromiseLike<T> {
      * @param resolvables Promises or values to race.
      * @return Created promise. 
      */
-    static race<T>(resolvables: Resolvable<T>[]): Promise<T> {
-        let promise = new Promise<T>();
+    static race<TResult>(resolvables: Resolvable<TResult>[]): Promise<TResult> {
+        let promise = new Promise<TResult>();
         
         for (let resolvable of resolvables) {
             Promise
@@ -997,7 +1004,7 @@ export class Promise<T> implements PromiseLike<T> {
      * @param initialResult The initial result for the very first call.
      * @param callback Waterfall callback.
      */
-    static waterfall<T, Result>(values: T[], initialResult: Result, callback: WaterfallCallback<T, Result>): Promise<Result> {
+    static waterfall<T, TResult>(values: T[], initialResult: TResult, callback: WaterfallCallback<T, TResult>): Promise<TResult> {
         let lastResult = initialResult;
         
         return Promise
@@ -1079,8 +1086,8 @@ export class Promise<T> implements PromiseLike<T> {
      * @param handler Using handler.
      * @return Created promise.
      */
-    static using<Resource, TResult>(disposable: Resolvable<Disposable<Resource>>, handler: OnFulfilledHandler<Resource, TResult>): Promise<TResult> {
-        let resolvedDisposable: Disposable<Resource>;
+    static using<T, TResult>(disposable: Resolvable<Disposable<T>>, handler: OnFulfilledHandler<T, TResult>): Promise<TResult> {
+        let resolvedDisposable: Disposable<T>;
         
         let promise = Promise
             .when(disposable)

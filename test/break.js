@@ -23,7 +23,7 @@ describe('Feature: break promises chain', function () {
         setTimeout(done, 10);
     });
     
-    it('Return promise.break should break the chain', function (done) {
+    it('Return promise.break should break the chain if previous promise is fulfilled with non-`false` value', function (done) {
         Promise
             .then(function () {
                 return Promise
@@ -35,6 +35,20 @@ describe('Feature: break promises chain', function () {
             });
         
         setTimeout(done, 10);
+    });
+    
+    it('Return promise.break should not break the chain if previous promise is fulfilled with `false`', function (done) {
+        Promise
+            .then(function () {
+                return Promise
+                    .then(function () {
+                        return false;
+                    })
+                    .break;
+            })
+            .then(function () {
+                done();
+            });
     });
     
     it('Interrupted chain should not continue', function (done) {

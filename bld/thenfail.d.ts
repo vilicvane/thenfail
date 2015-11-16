@@ -225,15 +225,15 @@ export declare class Promise<T> implements PromiseLike<T> {
      * A shortcut of `Promise.waterfall`, take the fulfilled value of
      * previous promise as initial result.
      */
-    waterfall<ViaT>(values: ViaT[], callback: WaterfallCallback<ViaT, T>): Promise<T>;
+    waterfall<TValue>(values: TValue[], callback: WaterfallCallback<TValue, T>): Promise<T>;
     /**
      * A shortcut of `Promise.retry`.
      */
     retry<TResult>(callback: RetryCallback<TResult>): Promise<TResult>;
     retry<TResult>(options: RetryOptions, callback: RetryCallback<TResult>): Promise<TResult>;
     /**
-     * Log the value specified or if not, the fulfilled value or rejection
-     * reason of current promise after the previous promise becomes settled.
+     * Log the value specified on fulfillment, or if not, the fulfilled value or
+     * rejection reason of current promise after the previous promise becomes settled.
      * @param object Specified value to log.
      * @return Current promise.
      */
@@ -244,7 +244,8 @@ export declare class Promise<T> implements PromiseLike<T> {
      */
     done(): void;
     /**
-     * (get) A promise that will be rejected with a pre-break signal.
+     * (get) A promise that will be rejected with a pre-break signal if previous
+     * promise is fulfilled with a non-`false` value.
      */
     break: Promise<any>;
     /**
@@ -284,9 +285,14 @@ export declare class Promise<T> implements PromiseLike<T> {
      * @param onfulfilled Fulfillment handler.
      * @return Created promise.
      */
-    static then<T>(onfulfilled: OnFulfilledHandler<void, T>): Promise<T>;
+    static then<TResult>(onfulfilled: OnFulfilledHandler<void, TResult>): Promise<TResult>;
     /**
      * Resolve a value or thenable as a promise.
+     * @return The value itself if it's a ThenFail Promise,
+     *     otherwise the created promise.
+     */
+    static resolve(): Promise<void>;
+    /**
      * @return The value itself if it's a ThenFail Promise,
      *     otherwise the created promise.
      */
@@ -341,7 +347,7 @@ export declare class Promise<T> implements PromiseLike<T> {
      * @param resolvables Promises or values to race.
      * @return Created promise.
      */
-    static race<T>(resolvables: Resolvable<T>[]): Promise<T>;
+    static race<TResult>(resolvables: Resolvable<TResult>[]): Promise<TResult>;
     /**
      * A promise version of `Array.prototype.map`.
      * @param values Values to map.
@@ -366,7 +372,7 @@ export declare class Promise<T> implements PromiseLike<T> {
      * @param initialResult The initial result for the very first call.
      * @param callback Waterfall callback.
      */
-    static waterfall<T, Result>(values: T[], initialResult: Result, callback: WaterfallCallback<T, Result>): Promise<Result>;
+    static waterfall<T, TResult>(values: T[], initialResult: TResult, callback: WaterfallCallback<T, TResult>): Promise<TResult>;
     /**
      * Retry the process in the callback for several times.
      * @param callback Retry callback.
@@ -386,7 +392,7 @@ export declare class Promise<T> implements PromiseLike<T> {
      * @param handler Using handler.
      * @return Created promise.
      */
-    static using<Resource, TResult>(disposable: Resolvable<Disposable<Resource>>, handler: OnFulfilledHandler<Resource, TResult>): Promise<TResult>;
+    static using<T, TResult>(disposable: Resolvable<Disposable<T>>, handler: OnFulfilledHandler<T, TResult>): Promise<TResult>;
     /**
      * Invoke a Node style asynchronous function that accepts the last
      * argument as callback.

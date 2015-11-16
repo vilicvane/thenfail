@@ -588,24 +588,24 @@ var __extends = (this && this.__extends) || function (d, b) {
             return this.then(function () { return Promise.retry(options, callback); });
         };
         /**
-         * Log the value specified or if not, the fulfilled value or rejection
-         * reason of current promise after the previous promise becomes settled.
+         * Log the value specified on fulfillment, or if not, the fulfilled value or
+         * rejection reason of current promise after the previous promise becomes settled.
          * @param object Specified value to log.
          * @return Current promise.
          */
         Promise.prototype.log = function (object) {
-            var promise = new Promise();
-            this.handle(promise);
-            promise.then(function (value) {
-                if (object !== undefined) {
-                    console.log(object);
-                }
-                else if (value !== undefined) {
+            if (object === undefined) {
+                this.then(function (value) {
                     console.log(value);
-                }
-            }, function (reason) {
-                console.error(reason && (reason.stack || reason.message) || reason);
-            });
+                }, function (reason) {
+                    console.error(reason && (reason.stack || reason.message) || reason);
+                });
+            }
+            else {
+                this.then(function () {
+                    console.log(object);
+                });
+            }
             return this;
         };
         /**
@@ -621,11 +621,14 @@ var __extends = (this && this.__extends) || function (d, b) {
         };
         Object.defineProperty(Promise.prototype, "break", {
             /**
-             * (get) A promise that will be rejected with a pre-break signal.
+             * (get) A promise that will be rejected with a pre-break signal if previous
+             * promise is fulfilled with a non-`false` value.
              */
             get: function () {
-                return this.then(function () {
-                    throw PRE_BREAK_SIGNAL;
+                return this.then(function (value) {
+                    if (value !== false) {
+                        throw PRE_BREAK_SIGNAL;
+                    }
                 });
             },
             enumerable: true,
@@ -720,11 +723,6 @@ var __extends = (this && this.__extends) || function (d, b) {
         Promise.then = function (onfulfilled) {
             return Promise.void.then(onfulfilled);
         };
-        /**
-         * Resolve a value or thenable as a promise.
-         * @return The value itself if it's a ThenFail Promise,
-         *     otherwise the created promise.
-         */
         Promise.resolve = function (resolvable) {
             if (resolvable instanceof Promise) {
                 return resolvable;
