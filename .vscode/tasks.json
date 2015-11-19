@@ -1,10 +1,10 @@
 {
-	"version": "0.1.0",
-	"command": "tsc",
-	"isShellCommand": true,
+    "version": "0.1.0",
+    "command": "tsc",
+    "isShellCommand": true,
     "isWatching": true,
     "isBuildCommand": true,
-	"showOutput": "silent",
+    "showOutput": "silent",
     "args": ["-w"],
     "problemMatcher": "$tsc-watch"
 }
