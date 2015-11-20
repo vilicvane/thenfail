@@ -593,6 +593,8 @@ export class Promise<T> implements PromiseLike<T> {
                     (<NodeStyleCallback<T>>promiseOrCallback)(reason, undefined)
                 }
             );
+        } else {
+            throw new TypeError('Unsupported type to handle');
         }
         
         return this;

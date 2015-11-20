@@ -43,7 +43,7 @@ describe('Feature: handle', function () {
                 } else {
                     done('Unexpected value');
                 }
-            })
+            });
         });
     });
     
@@ -55,7 +55,14 @@ describe('Feature: handle', function () {
                 } else {
                     done('Expecting error');
                 }
-            })
+            });
         });
+    });
+    
+    context('Should report error on unsupported promise type', function () {
+        Assert.throws(function () {
+            var promise = new Promise();
+            promise.handle({});
+        }, TypeError);
     });
 });

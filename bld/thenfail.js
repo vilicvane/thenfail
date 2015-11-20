@@ -498,6 +498,9 @@ var __extends = (this && this.__extends) || function (d, b) {
                     promiseOrCallback(reason, undefined);
                 });
             }
+            else {
+                throw new TypeError('Unsupported type to handle');
+            }
             return this;
         };
         /**
