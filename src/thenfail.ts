@@ -720,7 +720,9 @@ export class Promise<T> implements PromiseLike<T> {
     log(object?: any): Promise<T> {
         if (object === undefined) {
             this.then(value => {
-                console.log(value);
+                if (value !== undefined) {
+                    console.log(value);
+                }
             }, reason => {
                 console.error(reason && (reason.stack || reason.message) || reason);
             });

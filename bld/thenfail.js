@@ -599,7 +599,9 @@ var __extends = (this && this.__extends) || function (d, b) {
         Promise.prototype.log = function (object) {
             if (object === undefined) {
                 this.then(function (value) {
-                    console.log(value);
+                    if (value !== undefined) {
+                        console.log(value);
+                    }
                 }, function (reason) {
                     console.error(reason && (reason.stack || reason.message) || reason);
                 });
