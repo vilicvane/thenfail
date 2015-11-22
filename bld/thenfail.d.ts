@@ -1,3 +1,13 @@
+export interface PromiseLike<T> {
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult>(onfulfilled?: (value: T) => TResult | PromiseLike<TResult>, onrejected?: (reason: any) => TResult | PromiseLike<TResult>): PromiseLike<TResult>;
+    then<TResult>(onfulfilled?: (value: T) => TResult | PromiseLike<TResult>, onrejected?: (reason: any) => void): PromiseLike<TResult>;
+}
 export declare type Resolvable<T> = PromiseLike<T> | T;
 export declare type Resolver<T> = (resolve: (value?: Resolvable<T>) => void, reject: (reason: any) => void) => void;
 export declare type OnFulfilledHandler<T, TResult> = (value: T) => Resolvable<TResult>;
@@ -115,7 +125,7 @@ export declare class Promise<T> implements PromiseLike<T> {
      * [Promises/A+ specifications](https://promisesaplus.com).
      * @param onfulfilled Fulfillment handler.
      * @param onrejected Rejection handler.
-     * @return Created promise.
+     * @returns Created promise.
      */
     then<TResult>(onfulfilled: OnFulfilledHandler<T, TResult>, onrejected?: OnRejectedHandler<TResult>): Promise<TResult>;
     /**
@@ -135,12 +145,12 @@ export declare class Promise<T> implements PromiseLike<T> {
      * interrupted for some reason
      * (by break signal or the canceling of the context).
      * @param oninerrupted Interruption handler.
-     * @return Current promise.
+     * @returns Current promise.
      */
     interruption(oninterrupted: OnInterruptedHandler): Promise<T>;
     /**
      * Enclose current promise context.
-     * @return Current promise.
+     * @returns Current promise.
      */
     enclose(): Promise<T>;
     /**
@@ -148,7 +158,7 @@ export declare class Promise<T> implements PromiseLike<T> {
      * its previous promise becomes fulfilled.
      * The fulfilled value will be relayed.
      * @param timeout Timeout in milliseconds.
-     * @return Current promise.
+     * @returns Current promise.
      */
     delay(timeout: number): Promise<T>;
     /**
@@ -156,25 +166,25 @@ export declare class Promise<T> implements PromiseLike<T> {
      * timeout. The timer starts once this method is called
      * (usually before the fulfillment of previous promise).
      * @param timeout Tiemout in milliseconds.
-     * @return Current promise.
+     * @returns Current promise.
      */
     timeout(timeout: number): Promise<T>;
     /**
      * Handle another promise or node style callback with the value or
      * reason of current promise.
      * @param promise A promise with the same type as current promise.
-     * @return Current promise.
+     * @returns Current promise.
      */
     handle(promise: Promise<T>): Promise<T>;
     /**
      * @param callback Node style callback.
-     * @return Current promise.
+     * @returns Current promise.
      */
     handle(callback: NodeStyleCallback<T>): Promise<T>;
     /**
      * Create a disposable resource promise.
      * @param disposor A synchronous function to handle resource disposing.
-     * @return Created disposable resource promise.
+     * @returns Created disposable resource promise.
      */
     disposable(disposer: Disposer<T>): Promise<Disposable<T>>;
     /**
@@ -182,13 +192,13 @@ export declare class Promise<T> implements PromiseLike<T> {
      * previous fulfilled value instead of value returned by its own
      * `onfulfilled` handler.
      * @param onfulfilled Fulfillment handler.
-     * @return Created promise.
+     * @returns Created promise.
      */
     tap(onfulfilled: OnFulfilledHandler<T, void>): Promise<T>;
     /**
      * Spread a fulfilled array-like value as arguments of the given handler.
      * @param onfulfilled Handler that takes the spread arguments.
-     * @return Created promise.
+     * @returns Created promise.
      */
     spread<TResult>(onfulfilled: OnFulfilledSpreadHandler<TResult>): Promise<TResult>;
     /**
@@ -198,27 +208,27 @@ export declare class Promise<T> implements PromiseLike<T> {
     /**
      * Like `fail` but can specify type of reason to catch.
      * @param onrejected Rejection handler.
-     * @return Created promise.
+     * @returns Created promise.
      */
     catch(onrejected: OnRejectedHandler<T>): Promise<T>;
     /**
      * @param ReasonType Type of reasons to catch.
      * @param onrejected Rejection handler.
-     * @return Created promise.
+     * @returns Created promise.
      */
     catch(ReasonType: Function, onrejected: OnRejectedHandler<T>): Promise<T>;
     /**
      * A shortcut of `Promise.map`, assuming the fulfilled value of
      * previous promise is a array.
      * @param callback Map callback.
-     * @return Created promise.
+     * @returns Created promise.
      */
     map<T>(callback: MapCallback<any, T>): Promise<T[]>;
     /**
      * A shortcut of `Promise.each`, assuming the fulfilled value of
      * previous promise is a array.
      * @param callback Each callback.
-     * @return Created promise.
+     * @returns Created promise.
      */
     each<T>(callback: EachCallback<T>): Promise<boolean>;
     /**
@@ -235,7 +245,7 @@ export declare class Promise<T> implements PromiseLike<T> {
      * Log the value specified on fulfillment, or if not, the fulfilled value or
      * rejection reason of current promise after the previous promise becomes settled.
      * @param object Specified value to log.
-     * @return Current promise.
+     * @returns Current promise.
      */
     log(object?: any): Promise<T>;
     /**
@@ -283,29 +293,29 @@ export declare class Promise<T> implements PromiseLike<T> {
     /**
      * A shortcut of `Promise.void.then(onfulfilled)`.
      * @param onfulfilled Fulfillment handler.
-     * @return Created promise.
+     * @returns Created promise.
      */
     static then<TResult>(onfulfilled: OnFulfilledHandler<void, TResult>): Promise<TResult>;
     /**
      * Resolve a value or thenable as a promise.
-     * @return The value itself if it's a ThenFail Promise,
+     * @returns The value itself if it's a ThenFail Promise,
      *     otherwise the created promise.
      */
     static resolve(): Promise<void>;
     /**
-     * @return The value itself if it's a ThenFail Promise,
+     * @returns The value itself if it's a ThenFail Promise,
      *     otherwise the created promise.
      */
     static resolve<T>(resolvable: Resolvable<T>): Promise<T>;
     /**
      * Create a promise rejected by specified reason.
      * @param reason Rejection reason.
-     * @return Created promise.
+     * @returns Created promise.
      */
     static reject(reason: any): Promise<void>;
     /**
      * @param reason Rejection reason.
-     * @return Created promise.
+     * @returns Created promise.
      */
     static reject<T>(reason: any): Promise<T>;
     /**
@@ -315,14 +325,14 @@ export declare class Promise<T> implements PromiseLike<T> {
     /**
      * Create a promise with given context.
      * @param context Promise context.
-     * @return Created promise.
+     * @returns Created promise.
      */
     static context(context: Context): Promise<void>;
     /**
      * Create a promise that will be fulfilled with `undefined` in given
      * time.
      * @param timeout Timeout in milliseconds.
-     * @return Created promise.
+     * @returns Created promise.
      */
     static delay(timeout: number): Promise<void>;
     /**
@@ -338,21 +348,21 @@ export declare class Promise<T> implements PromiseLike<T> {
      *   3. after all values are either fulfilled or rejected.
      *
      * @param resolvables Resolvables involved.
-     * @return Created promise.
+     * @returns Created promise.
      */
     static all<T>(resolvables: Resolvable<T>[]): Promise<T[]>;
     /**
      * Create a promise that is settled the same way as the first passed promise to settle.
      * It resolves or rejects, whichever happens first.
      * @param resolvables Promises or values to race.
-     * @return Created promise.
+     * @returns Created promise.
      */
     static race<TResult>(resolvables: Resolvable<TResult>[]): Promise<TResult>;
     /**
      * A promise version of `Array.prototype.map`.
      * @param values Values to map.
      * @param callback Map callback.
-     * @return Created promise.
+     * @returns Created promise.
      */
     static map<T, TResult>(values: T[], callback: MapCallback<T, TResult>): Promise<TResult[]>;
     /**
@@ -361,7 +371,7 @@ export declare class Promise<T> implements PromiseLike<T> {
      * `false` to interrupt iteration.
      * @param values Values to iterate.
      * @param callback Each callback.
-     * @return A promise that will be fulfiled with a boolean which
+     * @returns A promise that will be fulfiled with a boolean which
      *     indicates whether the iteration completed without interruption.
      */
     static each<T>(values: T[], callback: EachCallback<T>): Promise<boolean>;
@@ -376,13 +386,13 @@ export declare class Promise<T> implements PromiseLike<T> {
     /**
      * Retry the process in the callback for several times.
      * @param callback Retry callback.
-     * @return Created promise.
+     * @returns Created promise.
      */
     static retry<TResult>(callback: RetryCallback<TResult>): Promise<TResult>;
     /**
      * @param options Retry options.
      * @param callback Retry callback.
-     * @return Created promise.
+     * @returns Created promise.
      */
     static retry<TResult>(options: RetryOptions, callback: RetryCallback<TResult>): Promise<TResult>;
     /**
@@ -390,7 +400,7 @@ export declare class Promise<T> implements PromiseLike<T> {
      * @param disposable The disposable resource or a thenable of
      *     disposable resource.
      * @param handler Using handler.
-     * @return Created promise.
+     * @returns Created promise.
      */
     static using<T, TResult>(disposable: Resolvable<Disposable<T>>, handler: OnFulfilledHandler<T, TResult>): Promise<TResult>;
     /**
@@ -398,7 +408,7 @@ export declare class Promise<T> implements PromiseLike<T> {
      * argument as callback.
      * @param fn Node style asynchronous function.
      * @param args Arguments.
-     * @return Created promise.
+     * @returns Created promise.
      */
     static invoke<TResult>(fn: Function, ...args: any[]): Promise<TResult>;
     /**
@@ -452,7 +462,7 @@ export declare class PromiseLock {
      * will be locked again until the value returned by handler is
      * fulfilled.
      * @param handler Promise lock handler.
-     * @return Created promise, will be fulfilled once the return value of
+     * @returns Created promise, will be fulfilled once the return value of
      *     lock handler gets fulfilled.
      */
     lock<TResult>(handler: PromiseLockHandler<TResult>): Promise<TResult>;

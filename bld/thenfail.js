@@ -417,7 +417,7 @@ var __extends = (this && this.__extends) || function (d, b) {
          * interrupted for some reason
          * (by break signal or the canceling of the context).
          * @param oninerrupted Interruption handler.
-         * @return Current promise.
+         * @returns Current promise.
          */
         Promise.prototype.interruption = function (oninterrupted) {
             if (this._state === 0 /* pending */) {
@@ -435,7 +435,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         };
         /**
          * Enclose current promise context.
-         * @return Current promise.
+         * @returns Current promise.
          */
         Promise.prototype.enclose = function () {
             this._context._enclosed = true;
@@ -446,7 +446,7 @@ var __extends = (this && this.__extends) || function (d, b) {
          * its previous promise becomes fulfilled.
          * The fulfilled value will be relayed.
          * @param timeout Timeout in milliseconds.
-         * @return Current promise.
+         * @returns Current promise.
          */
         Promise.prototype.delay = function (timeout) {
             return this.then(function (value) {
@@ -460,7 +460,7 @@ var __extends = (this && this.__extends) || function (d, b) {
          * timeout. The timer starts once this method is called
          * (usually before the fulfillment of previous promise).
          * @param timeout Tiemout in milliseconds.
-         * @return Current promise.
+         * @returns Current promise.
          */
         Promise.prototype.timeout = function (timeout) {
             var _this = this;
@@ -506,7 +506,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         /**
          * Create a disposable resource promise.
          * @param disposor A synchronous function to handle resource disposing.
-         * @return Created disposable resource promise.
+         * @returns Created disposable resource promise.
          */
         Promise.prototype.disposable = function (disposer) {
             return this.then(function (resource) {
@@ -521,7 +521,7 @@ var __extends = (this && this.__extends) || function (d, b) {
          * previous fulfilled value instead of value returned by its own
          * `onfulfilled` handler.
          * @param onfulfilled Fulfillment handler.
-         * @return Created promise.
+         * @returns Created promise.
          */
         Promise.prototype.tap = function (onfulfilled) {
             var relayT;
@@ -535,7 +535,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         /**
          * Spread a fulfilled array-like value as arguments of the given handler.
          * @param onfulfilled Handler that takes the spread arguments.
-         * @return Created promise.
+         * @returns Created promise.
          */
         Promise.prototype.spread = function (onfulfilled) {
             return this.then(function (value) { return onfulfilled.apply(undefined, value); });
@@ -566,7 +566,7 @@ var __extends = (this && this.__extends) || function (d, b) {
          * A shortcut of `Promise.map`, assuming the fulfilled value of
          * previous promise is a array.
          * @param callback Map callback.
-         * @return Created promise.
+         * @returns Created promise.
          */
         Promise.prototype.map = function (callback) {
             return this.then(function (values) { return Promise.map(values, callback); });
@@ -575,7 +575,7 @@ var __extends = (this && this.__extends) || function (d, b) {
          * A shortcut of `Promise.each`, assuming the fulfilled value of
          * previous promise is a array.
          * @param callback Each callback.
-         * @return Created promise.
+         * @returns Created promise.
          */
         Promise.prototype.each = function (callback) {
             return this.then(function (values) { return Promise.each(values, callback); });
@@ -594,7 +594,7 @@ var __extends = (this && this.__extends) || function (d, b) {
          * Log the value specified on fulfillment, or if not, the fulfilled value or
          * rejection reason of current promise after the previous promise becomes settled.
          * @param object Specified value to log.
-         * @return Current promise.
+         * @returns Current promise.
          */
         Promise.prototype.log = function (object) {
             if (object === undefined) {
@@ -723,7 +723,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         /**
          * A shortcut of `Promise.void.then(onfulfilled)`.
          * @param onfulfilled Fulfillment handler.
-         * @return Created promise.
+         * @returns Created promise.
          */
         Promise.then = function (onfulfilled) {
             return Promise.void.then(onfulfilled);
@@ -752,7 +752,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         /**
          * Create a promise with given context.
          * @param context Promise context.
-         * @return Created promise.
+         * @returns Created promise.
          */
         Promise.context = function (context) {
             var promise = new Promise(context);
@@ -763,7 +763,7 @@ var __extends = (this && this.__extends) || function (d, b) {
          * Create a promise that will be fulfilled with `undefined` in given
          * time.
          * @param timeout Timeout in milliseconds.
-         * @return Created promise.
+         * @returns Created promise.
          */
         Promise.delay = function (timeout) {
             return new Promise(function (resolve) {
@@ -783,7 +783,7 @@ var __extends = (this && this.__extends) || function (d, b) {
          *   3. after all values are either fulfilled or rejected.
          *
          * @param resolvables Resolvables involved.
-         * @return Created promise.
+         * @returns Created promise.
          */
         Promise.all = function (resolvables) {
             if (!resolvables.length) {
@@ -821,7 +821,7 @@ var __extends = (this && this.__extends) || function (d, b) {
          * Create a promise that is settled the same way as the first passed promise to settle.
          * It resolves or rejects, whichever happens first.
          * @param resolvables Promises or values to race.
-         * @return Created promise.
+         * @returns Created promise.
          */
         Promise.race = function (resolvables) {
             var promise = new Promise();
@@ -837,7 +837,7 @@ var __extends = (this && this.__extends) || function (d, b) {
          * A promise version of `Array.prototype.map`.
          * @param values Values to map.
          * @param callback Map callback.
-         * @return Created promise.
+         * @returns Created promise.
          */
         Promise.map = function (values, callback) {
             return Promise.all(values.map(callback));
@@ -848,7 +848,7 @@ var __extends = (this && this.__extends) || function (d, b) {
          * `false` to interrupt iteration.
          * @param values Values to iterate.
          * @param callback Each callback.
-         * @return A promise that will be fulfiled with a boolean which
+         * @returns A promise that will be fulfiled with a boolean which
          *     indicates whether the iteration completed without interruption.
          */
         Promise.each = function (values, callback) {
@@ -928,7 +928,7 @@ var __extends = (this && this.__extends) || function (d, b) {
          * @param disposable The disposable resource or a thenable of
          *     disposable resource.
          * @param handler Using handler.
-         * @return Created promise.
+         * @returns Created promise.
          */
         Promise.using = function (disposable, handler) {
             var resolvedDisposable;
@@ -958,7 +958,7 @@ var __extends = (this && this.__extends) || function (d, b) {
          * argument as callback.
          * @param fn Node style asynchronous function.
          * @param args Arguments.
-         * @return Created promise.
+         * @returns Created promise.
          */
         Promise.invoke = function (fn) {
             var args = [];
@@ -1074,7 +1074,7 @@ var __extends = (this && this.__extends) || function (d, b) {
          * will be locked again until the value returned by handler is
          * fulfilled.
          * @param handler Promise lock handler.
-         * @return Created promise, will be fulfilled once the return value of
+         * @returns Created promise, will be fulfilled once the return value of
          *     lock handler gets fulfilled.
          */
         PromiseLock.prototype.lock = function (handler) {
