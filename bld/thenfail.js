@@ -594,7 +594,7 @@ var __extends = (this && this.__extends) || function (d, b) {
          * Log the value specified on fulfillment, or if not, the fulfilled value or
          * rejection reason of current promise after the previous promise becomes settled.
          * @param object Specified value to log.
-         * @returns Current promise.
+         * @returns Created promise.
          */
         Promise.prototype.log = function (object) {
             if (object === undefined) {

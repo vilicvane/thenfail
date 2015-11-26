@@ -245,7 +245,7 @@ export declare class Promise<T> implements PromiseLike<T> {
      * Log the value specified on fulfillment, or if not, the fulfilled value or
      * rejection reason of current promise after the previous promise becomes settled.
      * @param object Specified value to log.
-     * @returns Current promise.
+     * @returns Created promise.
      */
     log(object?: any): Promise<T>;
     /**
