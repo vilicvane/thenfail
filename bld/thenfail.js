@@ -598,20 +598,21 @@ var __extends = (this && this.__extends) || function (d, b) {
          */
         Promise.prototype.log = function (object) {
             if (object === undefined) {
-                this.then(function (value) {
+                return this.then(function (value) {
                     if (value !== undefined) {
                         console.log(value);
                     }
+                    return value;
                 }, function (reason) {
                     console.error(reason && (reason.stack || reason.message) || reason);
+                    return undefined;
                 });
             }
             else {
-                this.then(function () {
+                return this.tap(function () {
                     console.log(object);
                 });
             }
-            return this;
         };
         /**
          * Call `this.then` with `onrejected` handler only, and throw the
@@ -825,8 +826,8 @@ var __extends = (this && this.__extends) || function (d, b) {
          */
         Promise.race = function (resolvables) {
             var promise = new Promise();
-            for (var _i = 0, resolvables_1 = resolvables; _i < resolvables_1.length; _i++) {
-                var resolvable = resolvables_1[_i];
+            for (var _i = 0; _i < resolvables.length; _i++) {
+                var resolvable = resolvables[_i];
                 Promise
                     .resolve(resolvable)
                     .handle(promise);
