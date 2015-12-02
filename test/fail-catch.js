@@ -48,14 +48,21 @@ describe('Feature: fail and catch', function () {
     });
     
     context('promise.fail should be triggerred when error', function () {
-        ThreeCases.testRejected(new Error(), function(promise, done) {
+        var error = new Error();
+        
+        ThreeCases.testRejected(error, function(promise, done) {
             var str = '';
             
             promise
                 .then(function () {
                     str += 'a';
                 })
-                .fail(function () {
+                .fail(function (reason) {
+                    if (reason !== error) {
+                        done('fail reason should be the rejection error');
+                        return;
+                    }
+                    
                     str += 'b';
                 });
                 
