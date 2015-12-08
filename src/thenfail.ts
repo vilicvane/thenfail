@@ -109,6 +109,10 @@ const enum State {
  */
 export class TimeoutError extends Error {
     name = 'TimeoutError';
+    
+    toString(): string {
+        return this.name;
+    }
 }
 
 /**

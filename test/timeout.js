@@ -43,7 +43,7 @@ describe('Feature: timeout', function () {
             })
             .timeout(30)
             .then(undefined, function (reason) {
-                if (reason && reason.name === 'TimeoutError') {
+                if (reason && reason.name === 'TimeoutError' && reason.toString() === 'TimeoutError') {
                     setTimeout(function () {
                         if (str === 'ab') {
                             done();

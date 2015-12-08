@@ -89,6 +89,9 @@ var __extends = (this && this.__extends) || function (d, b) {
             _super.apply(this, arguments);
             this.name = 'TimeoutError';
         }
+        TimeoutError.prototype.toString = function () {
+            return this.name;
+        };
         return TimeoutError;
     })(Error);
     exports.TimeoutError = TimeoutError;

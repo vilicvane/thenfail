@@ -48,6 +48,7 @@ export declare class Context {
  */
 export declare class TimeoutError extends Error {
     name: string;
+    toString(): string;
 }
 /**
  * ThenFail promise options.
