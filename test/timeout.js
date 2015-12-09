@@ -57,6 +57,21 @@ describe('Feature: timeout', function () {
             });
     });
     
+    it('Should timeout with message', function (done) {
+        Promise
+            .then(function () {
+                return new Promise();
+            })
+            .timeout(30, 'i timed out')
+            .then(undefined, function (reason) {
+                if (reason && reason.name === 'TimeoutError' && reason.message === 'i timed out') {
+                    done();
+                } else {
+                    done('Unexpected error');
+                }
+            });
+    });
+    
     it('Should timeout and dispose nested context', function (done) {
         var str = '';
         

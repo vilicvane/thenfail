@@ -81,19 +81,29 @@ var __extends = (this && this.__extends) || function (d, b) {
         State[State["interrupted"] = 3] = "interrupted";
     })(State || (State = {}));
     /**
+     * ThenFailError class.
+     */
+    var ThenFailError = (function (_super) {
+        __extends(ThenFailError, _super);
+        function ThenFailError(message) {
+            _super.call(this, message);
+            this.message = message;
+            this.name = this.constructor.name;
+            this.stack = (new Error()).stack.replace(/\s+at new ThenFailError .+/, '');
+        }
+        return ThenFailError;
+    })(Error);
+    exports.ThenFailError = ThenFailError;
+    /**
      * TimeoutError class.
      */
     var TimeoutError = (function (_super) {
         __extends(TimeoutError, _super);
         function TimeoutError() {
             _super.apply(this, arguments);
-            this.name = 'TimeoutError';
         }
-        TimeoutError.prototype.toString = function () {
-            return this.name;
-        };
         return TimeoutError;
-    })(Error);
+    })(ThenFailError);
     exports.TimeoutError = TimeoutError;
     /**
      * The signal objects for interrupting promises context.
@@ -465,12 +475,12 @@ var __extends = (this && this.__extends) || function (d, b) {
          * @param timeout Tiemout in milliseconds.
          * @returns Current promise.
          */
-        Promise.prototype.timeout = function (timeout) {
+        Promise.prototype.timeout = function (timeout, message) {
             var _this = this;
             this._context._enclosed = true;
             setTimeout(function () {
                 if (_this._state === 0 /* pending */) {
-                    _this._relay(2 /* rejected */, new TimeoutError());
+                    _this._relay(2 /* rejected */, new TimeoutError(message));
                     _this._context.disposeSubContexts();
                 }
             }, Math.floor(timeout) || 0);

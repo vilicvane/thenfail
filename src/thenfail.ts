@@ -105,15 +105,24 @@ const enum State {
 }
 
 /**
- * TimeoutError class.
+ * ThenFailError class.
  */
-export class TimeoutError extends Error {
-    name = 'TimeoutError';
+export class ThenFailError extends Error {
+    name = (this.constructor as any).name;
+    stack: string;
     
-    toString(): string {
-        return this.name;
+    constructor(
+        public message: string
+    ) {
+        super(message);
+        this.stack = (new Error() as any).stack.replace(/\s+at new ThenFailError .+/, '');
     }
 }
+
+/**
+ * TimeoutError class.
+ */
+export class TimeoutError extends ThenFailError { }
 
 /**
  * The signal objects for interrupting promises context.
@@ -560,12 +569,12 @@ export class Promise<T> implements PromiseLike<T> {
      * @param timeout Tiemout in milliseconds.
      * @returns Current promise.
      */
-    timeout(timeout: number): Promise<T> {
+    timeout(timeout: number, message?: string): Promise<T> {
         this._context._enclosed = true;
         
         setTimeout(() => {
             if (this._state === State.pending) {
-                this._relay(State.rejected, new TimeoutError());
+                this._relay(State.rejected, new TimeoutError(message));
                 this._context.disposeSubContexts();
             }
         }, Math.floor(timeout) || 0);

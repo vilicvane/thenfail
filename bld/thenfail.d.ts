@@ -44,11 +44,18 @@ export declare class Context {
     disposeSubContexts(): void;
 }
 /**
+ * ThenFailError class.
+ */
+export declare class ThenFailError extends Error {
+    message: string;
+    name: any;
+    stack: string;
+    constructor(message: string);
+}
+/**
  * TimeoutError class.
  */
-export declare class TimeoutError extends Error {
-    name: string;
-    toString(): string;
+export declare class TimeoutError extends ThenFailError {
 }
 /**
  * ThenFail promise options.
@@ -169,7 +176,7 @@ export declare class Promise<T> implements PromiseLike<T> {
      * @param timeout Tiemout in milliseconds.
      * @returns Current promise.
      */
-    timeout(timeout: number): Promise<T>;
+    timeout(timeout: number, message?: string): Promise<T>;
     /**
      * Handle another promise or node style callback with the value or
      * reason of current promise.
