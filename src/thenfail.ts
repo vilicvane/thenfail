@@ -153,6 +153,9 @@ export class Promise<T> implements PromiseLike<T> {
      */
     private _running = false;
     
+    /** Indicates whether this promise has been relayed or notified as unrelayed. */
+    private _handled = false;
+    
     /** The fulfilled value or rejected reason associated with this promise. */
     private _valueOrReason: any;
     
@@ -222,7 +225,7 @@ export class Promise<T> implements PromiseLike<T> {
     /**
      * Get the state from previous promise in chain.
      */
-    private _grab(previousState: State, previousTOrReason?: any): void {
+    private _grab(previousState: State, previousValueOrReason?: any): void {
         if (this._state !== State.pending) {
             return;
         }
@@ -236,23 +239,23 @@ export class Promise<T> implements PromiseLike<T> {
         }
         
         if (handler) {
-            this._run(handler, previousTOrReason);
+            this._run(handler, previousValueOrReason);
         } else {
-            this._relay(previousState, previousTOrReason);
+            this._relay(previousState, previousValueOrReason);
         }
     }
 
     /**
      * Invoke `onfulfilled` or `onrejected` handlers.
      */
-    private _run(handler: OnAnyHandler<any>, previousTOrReason: any): void {
+    private _run(handler: OnAnyHandler<any>, previousValueOrReason: any): void {
         this._running = true;
         
         asap(() => {
             let resolvable: Resolvable<T>;
 
             try {
-                resolvable = handler(previousTOrReason);
+                resolvable = handler(previousValueOrReason);
             } catch (error) {
                 this._relay(State.rejected, error);
                 this._running = false;
@@ -425,10 +428,12 @@ export class Promise<T> implements PromiseLike<T> {
         }
         
         asap(() => {
-            if (state === State.rejected) {
+            if (state === State.rejected && !this._handled) {
+                this._handled = true;
+                
                 let relayed = !!(this._chainedPromise || this._chainedPromises || this._handledPromise || this._handledPromises);
                 
-                if (!options.disableUnrelayedRejectionWarning && !relayed) {
+                if (!relayed && !options.disableUnrelayedRejectionWarning) {
                     let error = valueOrReason && (valueOrReason.stack || valueOrReason.message) || valueOrReason;
                     console.warn(`An unrelayed rejection happens:\n${error}`);
                 }
@@ -491,6 +496,10 @@ export class Promise<T> implements PromiseLike<T> {
                 this._chainedPromise = promise;
             }
         } else {
+            if (!this._handled) {
+                this._handled = true;
+            }
+            
             promise._grab(this._state, this._valueOrReason);
         }
         
@@ -566,7 +575,7 @@ export class Promise<T> implements PromiseLike<T> {
      * Reject the promise with `TimeoutError` if it's still pending after
      * timeout. The timer starts once this method is called
      * (usually before the fulfillment of previous promise).
-     * @param timeout Tiemout in milliseconds.
+     * @param timeout Timeout in milliseconds.
      * @returns Current promise.
      */
     timeout(timeout: number, message?: string): Promise<T> {
@@ -606,6 +615,10 @@ export class Promise<T> implements PromiseLike<T> {
                     this._handledPromise = promiseOrCallback;
                 }
             } else {
+                if (!this._handled) {
+                    this._handled = true;
+                }
+            
                 promiseOrCallback._relay(this._state, this._valueOrReason);
             }
         } else if (typeof promiseOrCallback === 'function') {
@@ -646,13 +659,14 @@ export class Promise<T> implements PromiseLike<T> {
      * @returns Created promise.
      */
     tap(onfulfilled: OnFulfilledHandler<T, void>): Promise<T> {
-        let relayT: T;
+        let relayValue: T;
+        
         return this
             .then(value => {
-                relayT = value;
+                relayValue = value;
                 return onfulfilled(value);
             })
-            .then(() => relayT);
+            .then(() => relayValue);
     }
     
     /**

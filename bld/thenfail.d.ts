@@ -71,6 +71,8 @@ export declare class Promise<T> implements PromiseLike<T> {
      * but the resolved value has not become fulfilled yet.
      */
     private _running;
+    /** Indicates whether this promise has been relayed or notified as unrelayed. */
+    private _handled;
     /** The fulfilled value or rejected reason associated with this promise. */
     private _valueOrReason;
     /** Context of this promise. */
@@ -115,11 +117,11 @@ export declare class Promise<T> implements PromiseLike<T> {
     /**
      * Get the state from previous promise in chain.
      */
-    private _grab(previousState, previousTOrReason?);
+    private _grab(previousState, previousValueOrReason?);
     /**
      * Invoke `onfulfilled` or `onrejected` handlers.
      */
-    private _run(handler, previousTOrReason);
+    private _run(handler, previousValueOrReason);
     /**
      * The resolve process defined in Promises/A+ specifications.
      */
@@ -173,7 +175,7 @@ export declare class Promise<T> implements PromiseLike<T> {
      * Reject the promise with `TimeoutError` if it's still pending after
      * timeout. The timer starts once this method is called
      * (usually before the fulfillment of previous promise).
-     * @param timeout Tiemout in milliseconds.
+     * @param timeout Timeout in milliseconds.
      * @returns Current promise.
      */
     timeout(timeout: number, message?: string): Promise<T>;

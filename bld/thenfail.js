@@ -131,6 +131,8 @@ var __extends = (this && this.__extends) || function (d, b) {
              * but the resolved value has not become fulfilled yet.
              */
             this._running = false;
+            /** Indicates whether this promise has been relayed or notified as unrelayed. */
+            this._handled = false;
             if (resolverOrContext instanceof Context && !resolverOrContext._enclosed) {
                 this._context = resolverOrContext;
             }
@@ -149,7 +151,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         /**
          * Get the state from previous promise in chain.
          */
-        Promise.prototype._grab = function (previousState, previousTOrReason) {
+        Promise.prototype._grab = function (previousState, previousValueOrReason) {
             if (this._state !== 0 /* pending */) {
                 return;
             }
@@ -161,22 +163,22 @@ var __extends = (this && this.__extends) || function (d, b) {
                 handler = this._onPreviousRejected;
             }
             if (handler) {
-                this._run(handler, previousTOrReason);
+                this._run(handler, previousValueOrReason);
             }
             else {
-                this._relay(previousState, previousTOrReason);
+                this._relay(previousState, previousValueOrReason);
             }
         };
         /**
          * Invoke `onfulfilled` or `onrejected` handlers.
          */
-        Promise.prototype._run = function (handler, previousTOrReason) {
+        Promise.prototype._run = function (handler, previousValueOrReason) {
             var _this = this;
             this._running = true;
             utils_1.asap(function () {
                 var resolvable;
                 try {
-                    resolvable = handler(previousTOrReason);
+                    resolvable = handler(previousValueOrReason);
                 }
                 catch (error) {
                     _this._relay(2 /* rejected */, error);
@@ -351,9 +353,10 @@ var __extends = (this && this.__extends) || function (d, b) {
                 }
             }
             utils_1.asap(function () {
-                if (state === 2 /* rejected */) {
+                if (state === 2 /* rejected */ && !_this._handled) {
+                    _this._handled = true;
                     var relayed = !!(_this._chainedPromise || _this._chainedPromises || _this._handledPromise || _this._handledPromises);
-                    if (!exports.options.disableUnrelayedRejectionWarning && !relayed) {
+                    if (!relayed && !exports.options.disableUnrelayedRejectionWarning) {
                         var error = valueOrReason && (valueOrReason.stack || valueOrReason.message) || valueOrReason;
                         console.warn("An unrelayed rejection happens:\n" + error);
                     }
@@ -404,6 +407,9 @@ var __extends = (this && this.__extends) || function (d, b) {
                 }
             }
             else {
+                if (!this._handled) {
+                    this._handled = true;
+                }
                 promise._grab(this._state, this._valueOrReason);
             }
             return promise;
@@ -472,7 +478,7 @@ var __extends = (this && this.__extends) || function (d, b) {
          * Reject the promise with `TimeoutError` if it's still pending after
          * timeout. The timer starts once this method is called
          * (usually before the fulfillment of previous promise).
-         * @param timeout Tiemout in milliseconds.
+         * @param timeout Timeout in milliseconds.
          * @returns Current promise.
          */
         Promise.prototype.timeout = function (timeout, message) {
@@ -501,6 +507,9 @@ var __extends = (this && this.__extends) || function (d, b) {
                     }
                 }
                 else {
+                    if (!this._handled) {
+                        this._handled = true;
+                    }
                     promiseOrCallback._relay(this._state, this._valueOrReason);
                 }
             }
@@ -537,13 +546,13 @@ var __extends = (this && this.__extends) || function (d, b) {
          * @returns Created promise.
          */
         Promise.prototype.tap = function (onfulfilled) {
-            var relayT;
+            var relayValue;
             return this
                 .then(function (value) {
-                relayT = value;
+                relayValue = value;
                 return onfulfilled(value);
             })
-                .then(function () { return relayT; });
+                .then(function () { return relayValue; });
         };
         /**
          * Spread a fulfilled array-like value as arguments of the given handler.
@@ -839,8 +848,8 @@ var __extends = (this && this.__extends) || function (d, b) {
          */
         Promise.race = function (resolvables) {
             var promise = new Promise();
-            for (var _i = 0; _i < resolvables.length; _i++) {
-                var resolvable = resolvables[_i];
+            for (var _i = 0, resolvables_1 = resolvables; _i < resolvables_1.length; _i++) {
+                var resolvable = resolvables_1[_i];
                 Promise
                     .resolve(resolvable)
                     .handle(promise);
