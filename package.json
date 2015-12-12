@@ -22,7 +22,7 @@
   "typings": "bld/index.d.ts",
   "scripts": {
     "build": "tsc",
-    "doc": "typedoc src/index.ts src/context.ts src/errors.ts src/promise.ts typings --out gh-pages/doc --mode file --target ES5 --module commonjs --excludeExternals --name \"ThenFail v0.3\"",
+    "doc": "typedoc src/index.ts src/context.ts src/errors.ts src/promise.ts src/utils/lock.ts typings --out gh-pages/doc --mode file --target ES5 --module commonjs --excludeExternals --name \"ThenFail v0.3\"",
     "aplus": "promises-aplus-tests test/aplus/adapter.js",
     "test": "mocha && npm run aplus"
   },
