@@ -468,7 +468,7 @@ export declare type PromiseLockHandler<TResult> = () => Resolvable<TResult>;
 export declare class PromiseLock {
     private _promise;
     /**
-     * handler will be called once this promise lock is unlocked, and it
+     * Handler will be called once this promise lock is unlocked, and it
      * will be locked again until the value returned by handler is
      * fulfilled.
      * @param handler Promise lock handler.
@@ -476,6 +476,10 @@ export declare class PromiseLock {
      *     lock handler gets fulfilled.
      */
     lock<TResult>(handler: PromiseLockHandler<TResult>): Promise<TResult>;
+    /**
+     * (get) A function that binds `lock` method with current instance.
+     */
+    locker: <TResult>(handler: PromiseLockHandler<TResult>) => Promise<TResult>;
 }
 export declare type RetryCallback<TResult> = (lastReason: any, attemptIndex: number) => Resolvable<TResult>;
 export interface RetryOptions {

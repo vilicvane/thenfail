@@ -1093,7 +1093,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             this._promise = Promise.void;
         }
         /**
-         * handler will be called once this promise lock is unlocked, and it
+         * Handler will be called once this promise lock is unlocked, and it
          * will be locked again until the value returned by handler is
          * fulfilled.
          * @param handler Promise lock handler.
@@ -1107,6 +1107,16 @@ var __extends = (this && this.__extends) || function (d, b) {
                 .void;
             return promise;
         };
+        Object.defineProperty(PromiseLock.prototype, "locker", {
+            /**
+             * (get) A function that binds `lock` method with current instance.
+             */
+            get: function () {
+                return this.lock.bind(this);
+            },
+            enumerable: true,
+            configurable: true
+        });
         return PromiseLock;
     })();
     exports.PromiseLock = PromiseLock;
