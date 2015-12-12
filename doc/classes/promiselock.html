@@ -91,6 +91,12 @@
 							</ul>
 						</section>
 						<section class="tsd-index-section ">
+							<h3>Accessors</h3>
+							<ul class="tsd-index-list">
+								<li class="tsd-kind-get-signature tsd-parent-kind-class"><a href="promiselock.html#locker" class="tsd-kind-icon">locker</a></li>
+							</ul>
+						</section>
+						<section class="tsd-index-section ">
 							<h3>Methods</h3>
 							<ul class="tsd-index-list">
 								<li class="tsd-kind-method tsd-parent-kind-class tsd-has-type-parameter"><a href="promiselock.html#lock" class="tsd-kind-icon">lock</a></li>
@@ -113,6 +119,55 @@
 				</section>
 			</section>
 			<section class="tsd-panel-group tsd-member-group ">
+				<h2>Accessors</h2>
+				<section class="tsd-panel tsd-member tsd-kind-get-signature tsd-parent-kind-class">
+					<a name="locker" class="tsd-anchor"></a>
+					<h3>locker</h3>
+					<ul class="tsd-signatures tsd-kind-get-signature tsd-parent-kind-class">
+						<li class="tsd-signature tsd-kind-icon"><span class="tsd-signature-symbol">get</span> locker<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">function</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in thenfail.ts:1278</li>
+								</ul>
+							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>(get) A function that binds <code>lock</code> method with current instance.</p>
+								</div>
+							</div>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">function</span></h4>
+							<ul class="tsd-parameters">
+								<li class="tsd-parameter-siganture">
+									<ul class="tsd-signatures tsd-kind-type-literal tsd-has-type-parameter tsd-is-not-exported">
+										<li class="tsd-signature tsd-kind-icon">&lt;TResult&gt;<span class="tsd-signature-symbol">(</span>handler<span class="tsd-signature-symbol">: </span><a href="../globals.html#promiselockhandler" class="tsd-signature-type">PromiseLockHandler</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="promise.html" class="tsd-signature-type">Promise</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">TResult</span><span class="tsd-signature-symbol">&gt;</span></li>
+									</ul>
+									<ul class="tsd-descriptions">
+										<li class="tsd-description">
+											<h4 class="tsd-type-parameters-title">Type parameters</h4>
+											<ul class="tsd-type-parameters">
+												<li>
+													<h4>TResult</h4>
+												</li>
+											</ul>
+											<h4 class="tsd-parameters-title">Parameters</h4>
+											<ul class="tsd-parameters">
+												<li>
+													<h5>handler: <a href="../globals.html#promiselockhandler" class="tsd-signature-type">PromiseLockHandler</a></h5>
+												</li>
+											</ul>
+											<h4 class="tsd-returns-title">Returns <a href="promise.html" class="tsd-signature-type">Promise</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">TResult</span><span class="tsd-signature-symbol">&gt;</span></h4>
+										</li>
+									</ul>
+								</li>
+							</ul>
+						</li>
+					</ul>
+				</section>
+			</section>
+			<section class="tsd-panel-group tsd-member-group ">
 				<h2>Methods</h2>
 				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-has-type-parameter">
 					<a name="lock" class="tsd-anchor"></a>
@@ -129,7 +184,7 @@
 							</aside>
 							<div class="tsd-comment tsd-typography">
 								<div class="lead">
-									<p>handler will be called once this promise lock is unlocked, and it
+									<p>Handler will be called once this promise lock is unlocked, and it
 										will be locked again until the value returned by handler is
 									fulfilled.</p>
 								</div>
@@ -183,6 +238,9 @@
 						<ul>
 							<li class=" tsd-kind-property tsd-parent-kind-class tsd-is-private">
 								<a href="promiselock.html#_promise" class="tsd-kind-icon">_promise</a>
+							</li>
+							<li class=" tsd-kind-get-signature tsd-parent-kind-class">
+								<a href="promiselock.html#locker" class="tsd-kind-icon">locker</a>
 							</li>
 							<li class=" tsd-kind-method tsd-parent-kind-class tsd-has-type-parameter">
 								<a href="promiselock.html#lock" class="tsd-kind-icon">lock</a>
