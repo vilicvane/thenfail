@@ -1,10 +1,10 @@
 /.vscode/
 /gh-pages/
 /src/
+/bld/test/
 /test/
 /typings/
 
 .*
 
-jsconfig.json
 tsconfig.json

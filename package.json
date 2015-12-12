@@ -1,22 +1,7 @@
 {
   "name": "thenfail",
-  "version": "0.3.15",
+  "version": "0.3.16",
   "description": "Promises/A+ implementation with the ability to break or cancel the chain. Written in TypeScript.",
-  "main": "bld/thenfail.js",
-  "typings": "bld/thenfail.d.ts",
-  "directories": {
-    "test": "test"
-  },
-  "dependencies": {},
-  "devDependencies": {
-    "mocha": "latest",
-    "promises-aplus-tests": "latest",
-    "typedoc": "^0.3.12"
-  },
-  "scripts": {
-    "doc": "typedoc src/thenfail.ts typings --out gh-pages/doc --mode file --target ES5 --module commonjs --excludeExternals --name \"ThenFail v0.3\"",
-    "test": "mocha && promises-aplus-tests test/aplus/adapter.js"
-  },
   "registry": "npm",
   "repository": {
     "type": "git",
@@ -32,5 +17,22 @@
   "bugs": {
     "url": "https://github.com/vilic/thenfail/issues"
   },
-  "homepage": "https://github.com/vilic/thenfail"
+  "homepage": "https://github.com/vilic/thenfail",
+  "main": "bld/index.js",
+  "typings": "bld/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "doc": "typedoc src/index.ts src/context.ts src/errors.ts src/promise.ts typings --out gh-pages/doc --mode file --target ES5 --module commonjs --excludeExternals --name \"ThenFail v0.3\"",
+    "aplus": "promises-aplus-tests test/aplus/adapter.js",
+    "test": "mocha && npm run aplus"
+  },
+  "devDependencies": {
+    "chai": "^3.4.1",
+    "chai-as-promised": "^5.1.0",
+    "mocha": "latest",
+    "promises-aplus-tests": "latest",
+    "source-map-support": "^0.4.0",
+    "typedoc": "^0.3.12",
+    "typescript": "next"
+  }
 }
