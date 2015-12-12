@@ -75,10 +75,9 @@
 						<section class="tsd-index-section ">
 							<h3>Classes</h3>
 							<ul class="tsd-index-list">
+								<li class="tsd-kind-class"><a href="classes/baseerror.html" class="tsd-kind-icon">Base<wbr>Error</a></li>
 								<li class="tsd-kind-class"><a href="classes/context.html" class="tsd-kind-icon">Context</a></li>
 								<li class="tsd-kind-class tsd-has-type-parameter"><a href="classes/promise.html" class="tsd-kind-icon">Promise</a></li>
-								<li class="tsd-kind-class"><a href="classes/promiselock.html" class="tsd-kind-icon">Promise<wbr>Lock</a></li>
-								<li class="tsd-kind-class"><a href="classes/thenfailerror.html" class="tsd-kind-icon">Then<wbr>Fail<wbr>Error</a></li>
 								<li class="tsd-kind-class"><a href="classes/timeouterror.html" class="tsd-kind-icon">Timeout<wbr>Error</a></li>
 							</ul>
 						</section>
@@ -102,7 +101,6 @@
 								<li class="tsd-kind-type-alias"><a href="globals.html#onfulfilledspreadhandler" class="tsd-kind-icon">On<wbr>Fulfilled<wbr>Spread<wbr>Handler</a></li>
 								<li class="tsd-kind-type-alias"><a href="globals.html#oninterruptedhandler" class="tsd-kind-icon">On<wbr>Interrupted<wbr>Handler</a></li>
 								<li class="tsd-kind-type-alias"><a href="globals.html#onrejectedhandler" class="tsd-kind-icon">On<wbr>Rejected<wbr>Handler</a></li>
-								<li class="tsd-kind-type-alias"><a href="globals.html#promiselockhandler" class="tsd-kind-icon">Promise<wbr>Lock<wbr>Handler</a></li>
 								<li class="tsd-kind-type-alias"><a href="globals.html#resolvable" class="tsd-kind-icon">Resolvable</a></li>
 								<li class="tsd-kind-type-alias"><a href="globals.html#resolver" class="tsd-kind-icon">Resolver</a></li>
 								<li class="tsd-kind-type-alias"><a href="globals.html#retrycallback" class="tsd-kind-icon">Retry<wbr>Callback</a></li>
@@ -135,7 +133,7 @@
 					<div class="tsd-signature tsd-kind-icon">Disposer<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">function</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in thenfail.ts:1300</li>
+							<li>Defined in promise.ts:1199</li>
 						</ul>
 					</aside>
 					<div class="tsd-type-declaration">
@@ -166,7 +164,7 @@
 					<div class="tsd-signature tsd-kind-icon">Each<wbr>Callback<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">function</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in thenfail.ts:48</li>
+							<li>Defined in promise.ts:50</li>
 						</ul>
 					</aside>
 					<div class="tsd-type-declaration">
@@ -203,7 +201,7 @@
 					<div class="tsd-signature tsd-kind-icon">Map<wbr>Callback<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">function</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in thenfail.ts:46</li>
+							<li>Defined in promise.ts:48</li>
 						</ul>
 					</aside>
 					<div class="tsd-type-declaration">
@@ -240,7 +238,7 @@
 					<div class="tsd-signature tsd-kind-icon">Node<wbr>Style<wbr>Callback<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">function</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in thenfail.ts:44</li>
+							<li>Defined in promise.ts:46</li>
 						</ul>
 					</aside>
 					<div class="tsd-type-declaration">
@@ -248,17 +246,17 @@
 						<ul class="tsd-parameters">
 							<li class="tsd-parameter-siganture">
 								<ul class="tsd-signatures tsd-kind-type-literal tsd-parent-kind-type-alias tsd-is-not-exported">
-									<li class="tsd-signature tsd-kind-icon"><span class="tsd-signature-symbol">(</span>error<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">any</span>, value<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">T</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
+									<li class="tsd-signature tsd-kind-icon"><span class="tsd-signature-symbol">(</span>error<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">any</span>, value<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">T</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
 								</ul>
 								<ul class="tsd-descriptions">
 									<li class="tsd-description">
 										<h4 class="tsd-parameters-title">Parameters</h4>
 										<ul class="tsd-parameters">
 											<li>
-												<h5>error: <span class="tsd-signature-type">any</span></h5>
+												<h5><span class="tsd-flag ts-flagOptional">Optional</span> error: <span class="tsd-signature-type">any</span></h5>
 											</li>
 											<li>
-												<h5>value: <span class="tsd-signature-type">T</span></h5>
+												<h5><span class="tsd-flag ts-flagOptional">Optional</span> value: <span class="tsd-signature-type">T</span></h5>
 											</li>
 										</ul>
 										<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
@@ -274,7 +272,7 @@
 					<div class="tsd-signature tsd-kind-icon">On<wbr>Any<wbr>Handler<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">function</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in thenfail.ts:40</li>
+							<li>Defined in promise.ts:42</li>
 						</ul>
 					</aside>
 					<div class="tsd-type-declaration">
@@ -305,7 +303,7 @@
 					<div class="tsd-signature tsd-kind-icon">On<wbr>Fulfilled<wbr>Handler<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">function</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in thenfail.ts:34</li>
+							<li>Defined in promise.ts:36</li>
 						</ul>
 					</aside>
 					<div class="tsd-type-declaration">
@@ -336,7 +334,7 @@
 					<div class="tsd-signature tsd-kind-icon">On<wbr>Fulfilled<wbr>Spread<wbr>Handler<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">function</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in thenfail.ts:36</li>
+							<li>Defined in promise.ts:38</li>
 						</ul>
 					</aside>
 					<div class="tsd-type-declaration">
@@ -367,7 +365,7 @@
 					<div class="tsd-signature tsd-kind-icon">On<wbr>Interrupted<wbr>Handler<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">function</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in thenfail.ts:42</li>
+							<li>Defined in promise.ts:44</li>
 						</ul>
 					</aside>
 					<div class="tsd-type-declaration">
@@ -392,7 +390,7 @@
 					<div class="tsd-signature tsd-kind-icon">On<wbr>Rejected<wbr>Handler<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">function</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in thenfail.ts:38</li>
+							<li>Defined in promise.ts:40</li>
 						</ul>
 					</aside>
 					<div class="tsd-type-declaration">
@@ -418,37 +416,12 @@
 					</div>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-type-alias">
-					<a name="promiselockhandler" class="tsd-anchor"></a>
-					<h3>Promise<wbr>Lock<wbr>Handler</h3>
-					<div class="tsd-signature tsd-kind-icon">Promise<wbr>Lock<wbr>Handler<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">function</span></div>
-					<aside class="tsd-sources">
-						<ul>
-							<li>Defined in thenfail.ts:1251</li>
-						</ul>
-					</aside>
-					<div class="tsd-type-declaration">
-						<h4>Type declaration</h4>
-						<ul class="tsd-parameters">
-							<li class="tsd-parameter-siganture">
-								<ul class="tsd-signatures tsd-kind-type-literal tsd-parent-kind-type-alias tsd-is-not-exported">
-									<li class="tsd-signature tsd-kind-icon"><span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="globals.html#resolvable" class="tsd-signature-type">Resolvable</a></li>
-								</ul>
-								<ul class="tsd-descriptions">
-									<li class="tsd-description">
-										<h4 class="tsd-returns-title">Returns <a href="globals.html#resolvable" class="tsd-signature-type">Resolvable</a></h4>
-									</li>
-								</ul>
-							</li>
-						</ul>
-					</div>
-				</section>
-				<section class="tsd-panel tsd-member tsd-kind-type-alias">
 					<a name="resolvable" class="tsd-anchor"></a>
 					<h3>Resolvable</h3>
 					<div class="tsd-signature tsd-kind-icon">Resolvable<span class="tsd-signature-symbol">:</span> <a href="interfaces/promiselike.html" class="tsd-signature-type">PromiseLike</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">T</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">T</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in thenfail.ts:27</li>
+							<li>Defined in promise.ts:29</li>
 						</ul>
 					</aside>
 				</section>
@@ -458,7 +431,7 @@
 					<div class="tsd-signature tsd-kind-icon">Resolver<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">function</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in thenfail.ts:29</li>
+							<li>Defined in promise.ts:31</li>
 						</ul>
 					</aside>
 					<div class="tsd-type-declaration">
@@ -528,7 +501,7 @@
 					<div class="tsd-signature tsd-kind-icon">Retry<wbr>Callback<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">function</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in thenfail.ts:1287</li>
+							<li>Defined in promise.ts:1186</li>
 						</ul>
 					</aside>
 					<div class="tsd-type-declaration">
@@ -562,7 +535,7 @@
 					<div class="tsd-signature tsd-kind-icon">Waterfall<wbr>Callback<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">function</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in thenfail.ts:50</li>
+							<li>Defined in promise.ts:52</li>
 						</ul>
 					</aside>
 					<div class="tsd-type-declaration">
@@ -605,7 +578,7 @@
 					<div class="tsd-signature tsd-kind-icon">BREAK_<wbr>SIGNAL<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">object</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in thenfail.ts:130</li>
+							<li>Defined in promise.ts:67</li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">
@@ -625,7 +598,7 @@
 					<div class="tsd-signature tsd-kind-icon">PRE_<wbr>BREAK_<wbr>SIGNAL<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">object</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in thenfail.ts:131</li>
+							<li>Defined in promise.ts:68</li>
 						</ul>
 					</aside>
 					<div class="tsd-type-declaration">
@@ -640,7 +613,8 @@
 					<div class="tsd-signature tsd-kind-icon">invoke<span class="tsd-signature-symbol">:</span> <a href="classes/promise.html#invoke" class="tsd-signature-type">invoke</a></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in thenfail.ts:1308</li>
+							<li>Defined in promise.ts:1207</li>
+							<li>Defined in index.ts:8</li>
 						</ul>
 					</aside>
 				</section>
@@ -650,7 +624,8 @@
 					<div class="tsd-signature tsd-kind-icon">using<span class="tsd-signature-symbol">:</span> <a href="classes/promise.html#using" class="tsd-signature-type">using</a></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in thenfail.ts:1307</li>
+							<li>Defined in promise.ts:1206</li>
+							<li>Defined in index.ts:8</li>
 						</ul>
 					</aside>
 				</section>
@@ -663,7 +638,7 @@
 					<div class="tsd-signature tsd-kind-icon">options<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">object</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in thenfail.ts:136</li>
+							<li>Defined in promise.ts:73</li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">
@@ -677,7 +652,7 @@
 						<div class="tsd-signature tsd-kind-icon">disable<wbr>Unrelayed<wbr>Rejection<wbr>Warning<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">boolean</span></div>
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in thenfail.ts:137</li>
+								<li>Defined in promise.ts:74</li>
 							</ul>
 						</aside>
 					</section>
@@ -698,16 +673,13 @@
 						<a href="enums/state.html" class="tsd-kind-icon">State</a>
 					</li>
 					<li class=" tsd-kind-class">
+						<a href="classes/baseerror.html" class="tsd-kind-icon">Base<wbr>Error</a>
+					</li>
+					<li class=" tsd-kind-class">
 						<a href="classes/context.html" class="tsd-kind-icon">Context</a>
 					</li>
 					<li class=" tsd-kind-class tsd-has-type-parameter">
 						<a href="classes/promise.html" class="tsd-kind-icon">Promise</a>
-					</li>
-					<li class=" tsd-kind-class">
-						<a href="classes/promiselock.html" class="tsd-kind-icon">Promise<wbr>Lock</a>
-					</li>
-					<li class=" tsd-kind-class">
-						<a href="classes/thenfailerror.html" class="tsd-kind-icon">Then<wbr>Fail<wbr>Error</a>
 					</li>
 					<li class=" tsd-kind-class">
 						<a href="classes/timeouterror.html" class="tsd-kind-icon">Timeout<wbr>Error</a>
@@ -747,9 +719,6 @@
 					</li>
 					<li class=" tsd-kind-type-alias">
 						<a href="globals.html#onrejectedhandler" class="tsd-kind-icon">On<wbr>Rejected<wbr>Handler</a>
-					</li>
-					<li class=" tsd-kind-type-alias">
-						<a href="globals.html#promiselockhandler" class="tsd-kind-icon">Promise<wbr>Lock<wbr>Handler</a>
 					</li>
 					<li class=" tsd-kind-type-alias">
 						<a href="globals.html#resolvable" class="tsd-kind-icon">Resolvable</a>
