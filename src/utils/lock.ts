@@ -36,14 +36,14 @@ export class Lock {
     }
     
     /**
-     * (get) A function that binds `lock` method with current instance.
+     * (get) A function that binds `queue` method with current instance.
      */
     get queuer(): <TResult>(handler: LockHandler<TResult>) => Promise<TResult> {
         return this.queue.bind(this);
     }
     
     /**
-     * (get) A function that binds `lock` method with current instance.
+     * (get) A function that binds `try` method with current instance.
      */
     get trier(): <TResult>(handler: LockHandler<TResult>) => Promise<TResult> {
         return this.try.bind(this);
