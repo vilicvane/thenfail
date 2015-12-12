@@ -49,5 +49,3 @@ export class Lock {
         return this.try.bind(this);
     }
 }
-
-
