@@ -1,5 +1,6 @@
 /.vscode/
 /gh-pages/
+/coverage/
 /src/
 /bld/test/
 /test/
