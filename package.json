@@ -1,6 +1,6 @@
 {
   "name": "thenfail",
-  "version": "0.3.17",
+  "version": "0.3.18",
   "description": "Promises/A+ implementation with the ability to break or cancel the chain. Written in TypeScript.",
   "registry": "npm",
   "repository": {

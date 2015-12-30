@@ -1,3 +1,6 @@
+/.vscode/launch.json
+
+/src/dev/
 /node_modules/
 /coverage/
 /bld/

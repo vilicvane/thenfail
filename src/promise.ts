@@ -232,6 +232,7 @@ export class Promise<T> implements PromiseLike<T> {
                 }
             } else {
                 callback(value._state, value._valueOrReason);
+                value._handled = true;
             }
         } else if (value) {
             switch (typeof value) {
@@ -561,10 +562,10 @@ export class Promise<T> implements PromiseLike<T> {
         } else if (typeof promiseOrCallback === 'function') {
             this.then(
                 value => {
-                    (<NodeStyleCallback<T>>promiseOrCallback)(undefined, value);
+                    promiseOrCallback(undefined, value);
                 },
                 reason => {
-                    (<NodeStyleCallback<T>>promiseOrCallback)(reason, undefined)
+                    promiseOrCallback(reason, undefined)
                 }
             );
         } else {
