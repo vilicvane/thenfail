@@ -562,10 +562,10 @@ export class Promise<T> implements PromiseLike<T> {
         } else if (typeof promiseOrCallback === 'function') {
             this.then(
                 value => {
-                    promiseOrCallback(undefined, value);
+                    (promiseOrCallback as NodeStyleCallback<T>)(undefined, value);
                 },
                 reason => {
-                    promiseOrCallback(reason, undefined)
+                    (promiseOrCallback as NodeStyleCallback<T>)(reason, undefined)
                 }
             );
         } else {

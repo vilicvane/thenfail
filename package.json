@@ -33,7 +33,7 @@
     "promises-aplus-tests": "latest",
     "source-map-support": "^0.4.0",
     "typedoc": "^0.3.12",
-    "typescript": "next"
+    "typescript": "latest"
   },
   "dependencies": {
     "asap": "^2.0.3",
