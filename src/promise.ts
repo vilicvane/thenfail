@@ -7,7 +7,7 @@
  * MIT License
  */
 
-import { asap } from './libs/asap';
+import * as asap from 'asap';
 import { Context } from './context';
 import { TimeoutError } from './errors';
 
