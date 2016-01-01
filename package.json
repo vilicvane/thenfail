@@ -1,6 +1,6 @@
 {
   "name": "thenfail",
-  "version": "0.3.19",
+  "version": "0.4.0",
   "description": "Promises/A+ implementation with the ability to break or cancel the chain. Written in TypeScript.",
   "registry": "npm",
   "repository": {
@@ -22,17 +22,19 @@
   "typings": "bld/index.d.ts",
   "scripts": {
     "build": "tsc",
+    "incremental-build": "tsc -w",
     "doc": "typedoc src/index.ts src/context.ts src/errors.ts src/promise.ts src/utils/lock.ts typings --out gh-pages/doc --mode file --target ES5 --module commonjs --excludeExternals --name \"ThenFail v0.3\"",
     "aplus": "promises-aplus-tests test/aplus/adapter.js",
-    "test": "mocha && npm run aplus"
+    "test": "mocha && npm run aplus",
+    "quick-test": "mocha"
   },
   "devDependencies": {
-    "chai": "^3.4.1",
-    "chai-as-promised": "^5.1.0",
+    "chai": "latest",
+    "chai-as-promised": "latest",
     "mocha": "latest",
     "promises-aplus-tests": "latest",
-    "source-map-support": "^0.4.0",
-    "typedoc": "^0.3.12",
+    "source-map-support": "latest",
+    "typedoc": "latest",
     "typescript": "latest"
   },
   "dependencies": {

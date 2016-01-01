@@ -8,6 +8,8 @@
  */
 
 import * as asap from 'asap';
+
+import { BreakSignal, GoToSignal } from './signals';
 import { Context } from './context';
 import { TimeoutError } from './errors';
 
@@ -58,14 +60,8 @@ const enum State {
     pending,
     fulfilled,
     rejected,
-    interrupted
+    skipped
 }
-
-/**
- * The signal objects for interrupting promises context.
- */
-const BREAK_SIGNAL = {};
-const PRE_BREAK_SIGNAL = {};
 
 /**
  * ThenFail promise options.
@@ -98,6 +94,9 @@ export class Promise<T> implements PromiseLike<T> {
     
     /** Context of this promise. */
     private _context: Context;
+    
+    /** Label of this promise. */
+    private _label: string;
 
     /** 
      * Next promise in the chain.
@@ -194,13 +193,13 @@ export class Promise<T> implements PromiseLike<T> {
             try {
                 resolvable = handler(previousValueOrReason);
             } catch (error) {
-                this._relay(State.rejected, error);
+                this._decide(State.rejected, error);
                 this._running = false;
                 return;
             }
 
             this._unpack(resolvable, (state, valueOrReason) => {
-                this._relay(state, valueOrReason);
+                this._decide(state, valueOrReason);
                 this._running = false;
             });
         });
@@ -276,7 +275,15 @@ export class Promise<T> implements PromiseLike<T> {
             callback(State.fulfilled, value);
         }
     }
-
+    
+    private _decide(state: State, valueOrReason?: any): void {
+        if (valueOrReason instanceof BreakSignal) {
+            this._skip(valueOrReason);
+        } else {
+            this._relay(state, valueOrReason);
+        }
+    }
+    
     /**
      * Set the state of current promise and relay it to next promises.
      */
@@ -285,83 +292,27 @@ export class Promise<T> implements PromiseLike<T> {
             return;
         }
         
-        let relayState: State;
-        
-        if (
-            valueOrReason === BREAK_SIGNAL ||
-            valueOrReason === PRE_BREAK_SIGNAL ||
-            this._context._disposed
-        ) {
-            relayState = State.interrupted;
-            
-            if (this._running) {
-                this._state = State.fulfilled;
-                
-                if (this._onPreviousInterrupted) {
-                    try {
-                        let handler = this._onPreviousInterrupted;
-                        handler();
-                    } catch (error) {
-                        relayState = State.rejected;
-                        valueOrReason = error;
-                    }
-                }
-            } else {
-                this._state = State.interrupted;
-            }
-        } else {
-            relayState = state;
-            this._state = state;
-            this._valueOrReason = valueOrReason;
+        if (this._context._disposed) {
+            this._skip();
+            return;
         }
         
-        if (relayState === State.interrupted) {
-            if (this._chainedPromise) {
-                if (this._chainedPromise._context === this._context) {
-                    this._chainedPromise._relay(State.interrupted);
-                } else {
-                    this._chainedPromise._grab(State.fulfilled);
-                }
-            } else if (this._chainedPromises) {
-                for (let promise of this._chainedPromises) {
-                    if (promise._context === this._context) {
-                        promise._relay(State.interrupted);
-                    } else {
-                        promise._grab(State.fulfilled);
-                    }
-                }
+        this._state = state;
+        this._valueOrReason = valueOrReason;
+        
+        if (this._chainedPromise) {
+            this._chainedPromise._grab(state, valueOrReason);
+        } else if (this._chainedPromises) {
+            for (let promise of this._chainedPromises) {
+                promise._grab(state, valueOrReason);
             }
-            
-            relayState = State.fulfilled;
-            
-            if (valueOrReason === PRE_BREAK_SIGNAL) {
-                valueOrReason = BREAK_SIGNAL;
-            } else {
-                valueOrReason = undefined;
-            }
-            
-            if (this._handledPromise) {
-                this._handledPromise._relay(relayState, valueOrReason);
-            } else if (this._handledPromises) {
-                for (let promise of this._handledPromises) {
-                    promise._relay(relayState, valueOrReason);
-                }
-            }
-        } else {
-            if (this._chainedPromise) {
-                this._chainedPromise._grab(relayState, valueOrReason);
-            } else if (this._chainedPromises) {
-                for (let promise of this._chainedPromises) {
-                    promise._grab(relayState, valueOrReason);
-                }
-            }
-            
-            if (this._handledPromise) {
-                this._handledPromise._relay(relayState, valueOrReason);
-            } else if (this._handledPromises) {
-                for (let promise of this._handledPromises) {
-                    promise._relay(relayState, valueOrReason);
-                }
+        }
+        
+        if (this._handledPromise) {
+            this._handledPromise._relay(state, valueOrReason);
+        } else if (this._handledPromises) {
+            for (let promise of this._handledPromises) {
+                promise._relay(state, valueOrReason);
             }
         }
         
@@ -376,31 +327,99 @@ export class Promise<T> implements PromiseLike<T> {
                     console.warn(`An unrelayed rejection happens:\n${error}`);
                 }
             }
+            
+            this._relax();
+        });
+    }
     
-            if (this._onPreviousFulfilled) {
-                this._onPreviousFulfilled = undefined;
-            }
-            
-            if (this._onPreviousRejected) {
-                this._onPreviousRejected = undefined;
-            }
-            
+    /**
+     * Set the state of current promise and relay it to next promises.
+     */
+    private _skip(signal?: BreakSignal): void {
+        if (this._state !== State.pending) {
+            return;
+        }
+        
+        if (this._running) {
             if (this._onPreviousInterrupted) {
-                this._onPreviousInterrupted = undefined;
+                try {
+                    this._onPreviousInterrupted.call(undefined);
+                } catch (error) {
+                    this._relay(State.rejected, error);
+                    return;
+                }
             }
             
-            if (this._chainedPromise) {
-                this._chainedPromise = undefined;
+            this._state = State.fulfilled;
+        } else {
+            this._state = State.skipped;
+        }
+        
+        if (this._chainedPromise) {
+            let promise = this._chainedPromise;
+            
+            if (promise._context === this._context) {
+                promise._skip(signal);
             } else {
-                this._chainedPromises = undefined;
+                promise._grab(State.fulfilled);
             }
+        } else if (this._chainedPromises) {
+            for (let promise of this._chainedPromises) {
+                if (promise._context === this._context) {
+                    promise._skip(signal);
+                } else {
+                    promise._grab(State.fulfilled);
+                }
+            }
+        }
+        
+        if (signal && signal.preliminary) {
+            signal.preliminary = false;
             
             if (this._handledPromise) {
-                this._handledPromise = undefined;
-            } else {
-                this._handledPromises = undefined;
+                this._handledPromise._skip(signal);
+            } else if (this._handledPromises) {
+                for (let promise of this._handledPromises) {
+                    promise._skip(signal);
+                }
             }
-        });
+        } else {
+            if (this._handledPromise) {
+                this._handledPromise._relay(State.fulfilled);
+            } else if (this._handledPromises) {
+                for (let promise of this._handledPromises) {
+                    promise._relay(State.fulfilled);
+                }
+            }
+        }
+        
+        this._relax();
+    }
+    
+    private _relax(): void {
+        if (this._onPreviousFulfilled) {
+            this._onPreviousFulfilled = undefined;
+        }
+        
+        if (this._onPreviousRejected) {
+            this._onPreviousRejected = undefined;
+        }
+        
+        if (this._onPreviousInterrupted) {
+            this._onPreviousInterrupted = undefined;
+        }
+        
+        if (this._chainedPromise) {
+            this._chainedPromise = undefined;
+        } else {
+            this._chainedPromises = undefined;
+        }
+        
+        if (this._handledPromise) {
+            this._handledPromise = undefined;
+        } else {
+            this._handledPromises = undefined;
+        }
     }
     
     /**
@@ -731,7 +750,7 @@ export class Promise<T> implements PromiseLike<T> {
     get break(): Promise<any> {
         return this.then(value => {
             if ((value as any) !== false) {
-                throw PRE_BREAK_SIGNAL;
+                throw new BreakSignal(true);
             }
         });
     }
@@ -788,8 +807,16 @@ export class Promise<T> implements PromiseLike<T> {
     /**
      * (get) A boolean that indicates whether the promise is interrupted.
      */
+    get skipped(): boolean {
+        return this._state === State.skipped;
+    }
+    
+    /**
+     * @deperacated
+     * (get) A boolean that indicates whether the promise is interrupted.
+     */
     get interrupted(): boolean {
-        return this._state === State.interrupted;
+        return this._state === State.skipped;
     }
     
     // Static helpers
@@ -967,7 +994,7 @@ export class Promise<T> implements PromiseLike<T> {
             .reduce((promise, value, index, values) => {
                 return promise.then((result) => {
                     if (result === false) {
-                        throw BREAK_SIGNAL;
+                        throw new BreakSignal();
                     }
                     
                     return callback(value, index, values);
@@ -1139,17 +1166,22 @@ export class Promise<T> implements PromiseLike<T> {
      * ```
      */
     static get break(): void {
-        throw BREAK_SIGNAL;
+        throw new BreakSignal();
     }
     
     /** (get) The break signal. */
     static get breakSignal(): any {
-        return BREAK_SIGNAL;
+        return new BreakSignal();
     }
     
     /** (get) The pre-break signal. */
     static get preBreakSignal(): any {
-        return PRE_BREAK_SIGNAL;
+        return new BreakSignal(true);
+    }
+    
+    /** (fake statement) This method will throw an `GoToSignal` with specified `label`. */
+    static goto(label: string): void {
+        throw new GoToSignal(label);
     }
     
     /**
