@@ -43,7 +43,7 @@ export type OnRejectedHandler<TResult> = (reason: any) => Resolvable<TResult>;
 
 export type OnAnyHandler<TResult> = (valueOrReason: any) => Resolvable<TResult>;
 
-export type OnInterruptedHandler = () => void;
+export type OnContextDisposedHandler = () => void;
 
 export type NodeStyleCallback<T> = (error?: any, value?: T) => void;
 
@@ -67,7 +67,12 @@ const enum State {
  * ThenFail promise options.
  */
 export let options = {
-    disableUnrelayedRejectionWarning: false
+    disableUnrelayedRejectionWarning: false,
+    logger: {
+        log: console.log.bind(console),
+        warn: console.warn.bind(console),
+        error: console.error.bind(console)
+    }
 };
 
 // The core abstraction of this implementation is to imagine the behavior of promises
@@ -131,7 +136,7 @@ export class Promise<T> implements PromiseLike<T> {
     
     private _onPreviousFulfilled: OnFulfilledHandler<any, T>;
     private _onPreviousRejected: OnRejectedHandler<T>;
-    private _onPreviousInterrupted: OnInterruptedHandler;
+    private _onContextDisposed: OnContextDisposedHandler;
 
     /**
      * Promise constructor.
@@ -238,7 +243,7 @@ export class Promise<T> implements PromiseLike<T> {
                 case 'object':
                 case 'function':
                     try {
-                        let then = (<PromiseLike<any>>value).then;
+                        let then = (value as PromiseLike<any>).then;
 
                         if (typeof then === 'function') {
                             then.call(
@@ -276,9 +281,14 @@ export class Promise<T> implements PromiseLike<T> {
         }
     }
     
+    /**
+     * Decide whether to call `_relay`, `_skip` or `_goto`.
+     */
     private _decide(state: State, valueOrReason?: any): void {
         if (valueOrReason instanceof BreakSignal) {
             this._skip(valueOrReason);
+        } else if (valueOrReason instanceof GoToSignal) {
+            this._goto(valueOrReason);
         } else {
             this._relay(state, valueOrReason);
         }
@@ -324,7 +334,7 @@ export class Promise<T> implements PromiseLike<T> {
                 
                 if (!relayed && !options.disableUnrelayedRejectionWarning) {
                     let error = valueOrReason && (valueOrReason.stack || valueOrReason.message) || valueOrReason;
-                    console.warn(`An unrelayed rejection happens:\n${error}`);
+                    options.logger.warn(`An unrelayed rejection happens:\n${error}`);
                 }
             }
             
@@ -333,7 +343,7 @@ export class Promise<T> implements PromiseLike<T> {
     }
     
     /**
-     * Set the state of current promise and relay it to next promises.
+     * Skip some promises.
      */
     private _skip(signal?: BreakSignal): void {
         if (this._state !== State.pending) {
@@ -341,12 +351,16 @@ export class Promise<T> implements PromiseLike<T> {
         }
         
         if (this._running) {
-            if (this._onPreviousInterrupted) {
-                try {
-                    this._onPreviousInterrupted.call(undefined);
-                } catch (error) {
-                    this._relay(State.rejected, error);
-                    return;
+            // if it's disposed.
+            if (!signal) {
+                if (this._onContextDisposed) {
+                    try {
+                        this._onContextDisposed.call(undefined);
+                    } catch (error) {
+                        asap(() => {
+                            throw error;
+                        });
+                    }
                 }
             }
             
@@ -396,6 +410,60 @@ export class Promise<T> implements PromiseLike<T> {
         this._relax();
     }
     
+    /**
+     * Go to a specific promise that matches given label.
+     */
+    private _goto(signal: GoToSignal): void {
+        if (this._state !== State.pending) {
+            return;
+        }
+        
+        this._state = State.skipped;
+        
+        if (this._chainedPromise) {
+            let promise = this._chainedPromise;
+            
+            if (promise._label === signal.label) {
+                promise._grab(State.fulfilled, signal.value);
+            } else {
+                promise._goto(signal);
+            }
+        } else if (this._chainedPromises) {
+            for (let promise of this._chainedPromises) {
+                if (promise._label === signal.label) {
+                    promise._grab(State.fulfilled, signal.value);
+                } else {
+                    promise._goto(signal);
+                }
+            }
+        }
+        
+        if (signal && signal.preliminary) {
+            signal.preliminary = false;
+            
+            if (this._handledPromise) {
+                this._handledPromise._goto(signal);
+            } else if (this._handledPromises) {
+                for (let promise of this._handledPromises) {
+                    promise._goto(signal);
+                }
+            }
+        } else {
+            if (this._handledPromise) {
+                this._handledPromise._relay(State.fulfilled);
+            } else if (this._handledPromises) {
+                for (let promise of this._handledPromises) {
+                    promise._relay(State.fulfilled);
+                }
+            }
+        }
+        
+        this._relax();
+    }
+    
+    /**
+     * Set handlers to undefined.
+     */
     private _relax(): void {
         if (this._onPreviousFulfilled) {
             this._onPreviousFulfilled = undefined;
@@ -405,8 +473,8 @@ export class Promise<T> implements PromiseLike<T> {
             this._onPreviousRejected = undefined;
         }
         
-        if (this._onPreviousInterrupted) {
-            this._onPreviousInterrupted = undefined;
+        if (this._onContextDisposed) {
+            this._onContextDisposed = undefined;
         }
         
         if (this._chainedPromise) {
@@ -429,10 +497,7 @@ export class Promise<T> implements PromiseLike<T> {
      * @param onrejected Rejection handler.
      * @return Created promise.
      */
-    then<TResult>(onfulfilled: OnFulfilledHandler<T, TResult>, onrejected?: OnRejectedHandler<TResult>): Promise<TResult>;
-    // https://github.com/Microsoft/TypeScript/issues/5667
-    // then(onfulfilled: void, onrejected?: OnRejectedHandler<T>): Promise<T>;
-    then(onfulfilled?: any, onrejected?: any): Promise<any> {
+    then<TResult>(onfulfilled: OnFulfilledHandler<T, TResult>, onrejected?: OnRejectedHandler<TResult>): Promise<TResult> {
         let promise = new Promise<any>(this._context);
         
         if (typeof onfulfilled === 'function') {
@@ -480,25 +545,39 @@ export class Promise<T> implements PromiseLike<T> {
     }
     
     /**
+     * Like `then` but accepts the first extra parameter as the label of
+     * current part.
+     * @param label Part label.
+     * @param onfulfilled Fulfillment handler.
+     * @param onrejected Rejection handler.
+     * @return Created promise.
+     */
+    label<TResult>(label: string, onfulfilled: OnFulfilledHandler<T, TResult>, onrejected?: OnRejectedHandler<TResult>): Promise<TResult> {
+        let promise = this.then(onfulfilled, onrejected);
+        promise._label = label;
+        return promise;
+    }
+    
+    /**
      * Set up the interruption handler of the promise.
      * An interruption handler will be called if either the `onfulfilled`
      * or `onrejected` handler of the promise has been called but
-     * interrupted for some reason
+     * interrupted due to context disposal.
      * (by break signal or the canceling of the context).
      * @param oninerrupted Interruption handler.
      * @return Current promise.
      */
-    interruption(oninterrupted: OnInterruptedHandler): Promise<T> {
+    interruption(oncontextdisposed: OnContextDisposedHandler): Promise<T> {
         if (this._state === State.pending) {
-            if (this._onPreviousInterrupted) {
+            if (this._onContextDisposed) {
                 throw new Error('Interruption handler has already been set');
             }
             
-            this._onPreviousInterrupted = oninterrupted;
+            this._onContextDisposed = oncontextdisposed;
         } else {
             // To unify error handling behavior, handler would not be invoked
             // if it's added after promise state being no longer pending.
-            console.warn('Handler added after promise state no longer being pending');
+            options.logger.warn('Handler added after promise state no longer being pending');
         }
         
         return this;
@@ -664,7 +743,7 @@ export class Promise<T> implements PromiseLike<T> {
                 }
             });
         } else {
-            onrejected = <OnRejectedHandler<T>>ReasonType;
+            onrejected = ReasonType as OnRejectedHandler<T>;
             return this.then<T>(undefined, onrejected);
         }
     }
@@ -716,17 +795,17 @@ export class Promise<T> implements PromiseLike<T> {
         if (object === undefined) {
             return this.then(value => {
                 if (value !== undefined) {
-                    console.log(value);
+                    options.logger.log(value);
                 }
                 
                 return value;
             }, reason => {
-                console.error(reason && (reason.stack || reason.message) || reason);
+                options.logger.error(reason && (reason.stack || reason.message) || reason);
                 return undefined;
             });
         } else {
             return this.tap(() => {
-                console.log(object);
+                options.logger.log(object);
             });
         }
     }
@@ -749,8 +828,20 @@ export class Promise<T> implements PromiseLike<T> {
      */
     get break(): Promise<any> {
         return this.then(value => {
-            if ((value as any) !== false) {
+            if (<any>value !== false) {
                 throw new BreakSignal(true);
+            }
+        });
+    }
+    
+    /**
+     * Create a promise that will be rejected with a goto signal if previous
+     * promise is fulfilled with a non-`false` value.
+     */
+    goto(label: string, value?: any): Promise<any> {
+        return this.then(value => {
+            if (<any>value !== false) {
+                throw new GoToSignal(label, value, true);
             }
         });
     }
@@ -1098,7 +1189,7 @@ export class Promise<T> implements PromiseLike<T> {
         let resolvedDisposable: Disposable<T>;
         
         let promise = Promise
-            .when(disposable)
+            .resolve(disposable)
             .then(disposable => {
                 resolvedDisposable = disposable;
                 return handler(disposable.resource);
@@ -1180,8 +1271,8 @@ export class Promise<T> implements PromiseLike<T> {
     }
     
     /** (fake statement) This method will throw an `GoToSignal` with specified `label`. */
-    static goto(label: string): void {
-        throw new GoToSignal(label);
+    static goto(label: string, value?: any): void {
+        throw new GoToSignal(label, value);
     }
     
     /**

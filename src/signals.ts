@@ -6,6 +6,8 @@ export class BreakSignal {
 
 export class GoToSignal {
     constructor(
-        public label: string
+        public label: string,
+        public value: any,
+        public preliminary = false
     ) { }
 }

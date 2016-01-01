@@ -3,64 +3,33 @@ import Promise from '../index';
 import { testFulfilled, testRejected } from './helpers/three-cases';
 
 describe('Feature: interruption', () => {
-    context('Should invoke interruption handler if the current promise has run', () => {
-        testFulfilled(undefined, (promise, done) => {
-            let str = '';
-            
-            promise
-                .break
-                .interruption(() => {
-                    str += 'a';
-                });
-            
-            promise.then(() => {
-                setTimeout(() => {
-                    str.should.equal('a');
-                    done();
-                }, 10);
+    it('Should not invoke interruption handler if interrupted by break', done => {
+        let str = '';
+        
+        Promise
+            .void
+            .break
+            .interruption(() => {
+                str += 'a';
             });
-        });
+        
+        setTimeout(() => {
+            str.should.equal('');
+            done();
+        }, 10);
     });
     
-    context('Should not invoke interruption handler if the current promise had never run', () => {
-        testFulfilled(undefined, (promise, done) => {
-            let str = '';
-            
-            promise
-                .break
+    it('Should invoke interruption handler if interrupted by context disposal', done => {
+        let promise = Promise.then(() => {
+            return Promise
                 .then(() => {
-                    str += 'x';
-                    // never run
+                    return Promise.delay(20);
                 })
                 .interruption(() => {
-                    str += 'a';
-                });
-            
-            promise.then(() => {
-                setTimeout(() => {
-                    str.should.equal('');
                     done();
-                }, 10);
-            });
-        });
-    });
-    
-    context('Should handle interruption handler exception', () => {
-        testFulfilled(undefined, (promise, done) => {
-            let error = new Error();
-            
-            promise
-                .break
-                .interruption(() => {
-                    throw error;
-                })
-                .then(undefined, reason => {
-                    if (error === reason) {
-                        done();
-                    } else {
-                        done('Reason does not match');
-                    }
                 });
         });
+        
+        setTimeout(() => promise.context.dispose(), 10);
     });
 });

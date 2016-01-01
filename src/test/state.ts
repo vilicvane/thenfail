@@ -25,7 +25,7 @@ describe('Feature: state', () => {
         });
     });
     
-    context('Interrupted promises', () => {
+    context('Skipped promises', () => {
         it('Synchronously break', done => {
             let promiseA = Promise
                 .void
@@ -39,7 +39,7 @@ describe('Feature: state', () => {
             
             setTimeout(() => {
                 promiseA.fulfilled.should.be.true;
-                promiseB.interrupted.should.be.true;
+                promiseB.skipped.should.be.true;
                 done();
             }, 0);
         });
@@ -64,7 +64,7 @@ describe('Feature: state', () => {
             let promiseB: Promise<void>;
             
             promiseA = Promise.then(() => {
-                promiseB = Promise
+                return promiseB = Promise
                     .then(() => {
                         Promise.break;
                     })
@@ -73,7 +73,7 @@ describe('Feature: state', () => {
             
             setTimeout(() => {
                 promiseA.fulfilled.should.be.true;
-                promiseB.interrupted.should.be.true;
+                promiseB.skipped.should.be.true;
                 done();
             }, 0);
         });
@@ -89,7 +89,7 @@ describe('Feature: state', () => {
             
             setTimeout(() => {
                 promiseA.fulfilled.should.be.true;
-                promiseB.interrupted.should.be.true;
+                promiseB.skipped.should.be.true;
                 done();
             }, 0);
         });
@@ -112,7 +112,7 @@ describe('Feature: state', () => {
             let promiseB: Promise<void>;
             
             promiseA = Promise.then(() => {
-                promiseB = Promise
+                return promiseB = Promise
                     .then(() => {
                         return Promise.void.break;
                     })
@@ -121,9 +121,51 @@ describe('Feature: state', () => {
             
             setTimeout(() => {
                 promiseA.fulfilled.should.be.true;
-                promiseB.interrupted.should.be.true;
+                promiseB.skipped.should.be.true;
                 done();
             }, 0);
+        });
+        
+        it('Under a disposed context', done => {
+            let promiseA: Promise<void>;
+            
+            promiseA = Promise
+                .delay(20)
+                .then(() => {
+                    done('Should not be called');
+                });
+            
+            setTimeout(() => {
+                promiseA.context.dispose();
+                
+                setTimeout(() => {
+                    promiseA.skipped.should.be.true;
+                    done();
+                }, 20);
+            }, 10);
+        });
+        
+        it('Under a nested disposed context', done => {
+            let promiseA: Promise<void>;
+            let promiseB: Promise<void>;
+            
+            promiseA = Promise.then(() => {
+                return promiseB = Promise
+                    .delay(20)
+                    .then(() => {
+                        done('Should not be called');
+                    });
+            });
+            
+            setTimeout(() => {
+                promiseA.context.dispose();
+                
+                setTimeout(() => {
+                    promiseA.fulfilled.should.be.true;
+                    promiseB.skipped.should.be.true;
+                    done();
+                }, 20);
+            }, 10);
         });
     });
 });
