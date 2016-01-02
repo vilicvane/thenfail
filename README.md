@@ -1,8 +1,11 @@
+[![NPM Package](https://badge.fury.io/js/thenfail.svg)](https://www.npmjs.com/package/thenfail)
+[![Build Status](https://travis-ci.org/vilic/thenfail.svg)](https://travis-ci.org/vilic/thenfail)
+
 <a href="http://promises-aplus.github.com/promises-spec">
     <img src="http://promises-aplus.github.com/promises-spec/assets/logo-small.png" alt="Promises/A+ logo" align="right" />
 </a>
 
-# ThenFail v0.3 [![Build Status](https://travis-ci.org/vilic/thenfail.svg)](https://travis-ci.org/vilic/thenfail)
+# ThenFail v0.3
 
 Just another Promises/A+ implementation written in TypeScript.
 
