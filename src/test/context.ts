@@ -1,7 +1,7 @@
 import Promise, { Context } from '../index';
 
 describe('Feature: promise context', () => {
-    it('Should not be interrupted if context persists', () => {
+    it('Should not be skipped if context persists', () => {
         let context = new Context();
         
         let count = 0;
@@ -19,7 +19,7 @@ describe('Feature: promise context', () => {
             });
     });
     
-    it('Should be interrupted if context disposed', done => {
+    it('Should be skipped if context disposed', done => {
         let context = new Context();
         
         let str = '';
@@ -42,13 +42,13 @@ describe('Feature: promise context', () => {
         }, 10);
         
         setTimeout(() => {
-            promise.interrupted.should.be.true;
+            promise.skipped.should.be.true;
             str.should.equal('a');
             done();
         }, 30);
     });
     
-    it('Should not be interrupted if nested context disposed', done => {
+    it('Should not be skipped if nested context disposed', done => {
         let context = new Context();
         
         let str = '';
@@ -79,7 +79,7 @@ describe('Feature: promise context', () => {
         }, 30);
     });
     
-    it('Should interrupt nested context', done => {
+    it('Should skip nested context', done => {
         let str = '';
         
         let promise = Promise
@@ -105,7 +105,7 @@ describe('Feature: promise context', () => {
         }, 10);
         
         setTimeout(() => {
-            promise.interrupted.should.be.true;
+            promise.skipped.should.be.true;
             str.should.equal('a');
             done();
         }, 30);

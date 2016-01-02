@@ -44,7 +44,7 @@ describe('Feature: break promises chain', () => {
             });
     });
     
-    it('Interrupted chain should not continue', done => {
+    it('Skipped chain should not continue', done => {
         let promise = Promise
             .then(() => {
                 Promise.break;

@@ -3,7 +3,7 @@ import Promise from '../index';
 import { testFulfilled, testRejected } from './helpers/three-cases';
 
 describe('Feature: interruption', () => {
-    it('Should not invoke interruption handler if interrupted by break', done => {
+    it('Should not invoke context disposed handler if interrupted by break', done => {
         let str = '';
         
         Promise
@@ -19,7 +19,7 @@ describe('Feature: interruption', () => {
         }, 10);
     });
     
-    it('Should invoke interruption handler if interrupted by context disposal', done => {
+    it('Should invoke context disposed handler if interrupted by context disposal', done => {
         let promise = Promise.then(() => {
             return Promise
                 .then(() => {

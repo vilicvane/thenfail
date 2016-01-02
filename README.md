@@ -5,14 +5,9 @@
     <img src="http://promises-aplus.github.com/promises-spec/assets/logo-small.png" alt="Promises/A+ logo" align="right" />
 </a>
 
-# ThenFail v0.3
+# ThenFail v0.4
 
-Just another Promises/A+ implementation written in TypeScript.
-
-Core features and changes in v0.3:
-
-+ Optimized for better performance.
-+ Control flow tools like context and `Promise.break`.
+Just another Promises/A+ implementation written in TypeScript that provides control flow tools like `Promise.break`, `Promise.goto` and disposable context.
 
 ## Documentation
 
@@ -144,21 +139,21 @@ Sometimes chaining promises could be annoying. For example:
 ```ts
 Promise
     .then(() => {
-        // Step 1
+        // step 1
     })
     .then(() => {
-        // Step 2
+        // step 2
         if (noNeedToContinue) {
             // How to break here?
         }
     })
     .then(() => {
-        // Step 3.1
+        // step 3.1
     }, reason => {
-        // Step 3.2
+        // step 3.2
     })
     .then(() => {
-        // Step 4
+        // step 4
     });
 ```
 
@@ -167,26 +162,51 @@ Now it's easy with ThenFail:
 ```ts
 Promise
     .then(() => {
-        // Step 1
+        // step 1
     })
     .then(() => {
-        // Step 2
+        // step 2
         if (noNeedToContinue) {
             Promise.break;
         }
     })
     .then(() => {
-        // Step 3.1
+        // step 3.1
     }, reason => {
-        // Step 3.2
+        // step 3.2
     })
     .then(() => {
-        // Step 4
+        // step 4
     })
-    // Enclose current context so it won't break too many.
-    // It should be required if this could be directly chained somewhere else.
-    // E.g. Returned as your method result.
+    // enclose current context so it won't break too many.
+    // it should be required if this could be directly chained somewhere else.
+    // e.g. Returned as your method result.
     .enclose();
+```
+
+### Promise.goto
+
+```ts
+Promise
+    .then(() => {
+        if (someCondition) {
+            Promise.goto('label-a');
+        } else {
+            Promise.goto('label-b');
+        }
+    })
+    .then(() => {
+        // will not be called.
+    })
+    .label('label-a', () => {
+        // step 3.1
+    }, reason => {
+        // step 3.2
+    })
+    .label('label-b', () => {
+        // step 4
+        // be aware that `goto` `"label-a"` won't prevent the execution of `"label-b"`.
+    });
 ```
 
 ### Promise context
@@ -197,10 +217,10 @@ There's situations we may want to cancel a promise chain, not only from inside (
 page.on('load', () => {
     Promise
         .then(() => {
-            // Do some works...
+            // do some works...
         })
         .then(() => {
-            // More works...
+            // more works...
         })
         .then(() => {
             // ...
@@ -208,7 +228,7 @@ page.on('load', () => {
 });
 
 page.on('unload', () => {
-    // How can we cancel the promise chain?
+    // how can we cancel the promise chain?
 });
 ```
 
@@ -222,10 +242,10 @@ let context: Context;
 page.on('load', () => {
     let promise = Promise
         .then(() => {
-            // Do some works...
+            // do some works...
         })
         .then(() => {
-            // More works...
+            // more works...
         })
         .then(() => {
             // ...
@@ -235,7 +255,7 @@ page.on('load', () => {
 });
 
 page.on('unload', () => {
-    // Dispose the context.
+    // dispose the context.
     if (context) {
         context.dispose();
         context = undefined;
@@ -253,7 +273,7 @@ Which means a new context will be created when the `then` method is called.
 
 Promises/A+ defines 3 states of a promise: _pending_, _fulfilled_ and _rejected_. And only the _pending_ state may transform to other states.
 
-In the implementation of ThenFail, one more state _interrupted_ is added to specify the state of promises interrupted by (fake) `break` or a canceled context (However, the promise of which `onfulfilled` or `onrejected` has been called will not be _interrupted_).
+In the implementation of ThenFail, one more state _skipped_ is added to specify the state of promises skipped by (fake) `break`, `goto` or a disposed context (However, the promise of which `onfulfilled` or `onrejected` has been called will not be _skipped_).
 
 ### Resolve
 

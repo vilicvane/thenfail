@@ -1,5 +1,5 @@
 /**
- * ThenFail v0.3
+ * ThenFail v0.4
  * Just another Promises/A+ Library
  * 
  * https://github.com/vilic/thenfail
