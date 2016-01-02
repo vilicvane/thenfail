@@ -69,9 +69,9 @@ const enum State {
 export let options = {
     disableUnrelayedRejectionWarning: false,
     logger: {
-        log: console.log.bind(console),
-        warn: console.warn.bind(console),
-        error: console.error.bind(console)
+        log: console.log,
+        warn: console.warn,
+        error: console.error
     }
 };
 

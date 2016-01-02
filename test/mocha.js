@@ -5,4 +5,10 @@ var Chai = require('chai');
 Chai.should();
 Chai.use(require('chai-as-promised'));
 
-require('../bld/index').options.disableUnrelayedRejectionWarning = true;
+var options = require('../bld/index').options;
+
+options.logger = {
+    log: function () { },
+    warn: function () { },
+    error: function () { }
+};

@@ -33,6 +33,7 @@
     "chai-as-promised": "latest",
     "mocha": "latest",
     "promises-aplus-tests": "latest",
+    "sinon": "^1.17.2",
     "source-map-support": "latest",
     "typedoc": "latest",
     "typescript": "latest"
