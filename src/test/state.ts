@@ -126,6 +126,112 @@ describe('Feature: state', () => {
             }, 0);
         });
         
+        it('Synchronously goto', done => {
+            let promiseA = Promise
+                .void
+                .then(() => {
+                    Promise.goto('test');
+                });
+            
+            let promiseB = promiseA.then(() => {
+                // never run
+            });
+            
+            let promiseC = promiseB.label('test', () => { });
+            
+            setTimeout(() => {
+                promiseA.fulfilled.should.be.true;
+                promiseB.skipped.should.be.true;
+                promiseC.fulfilled.should.be.true;
+                done();
+            }, 0);
+        });
+        
+        it('Synchronously goto in the last nested chain', done => {
+            let promise = Promise.then(() => {
+                return Promise
+                    .void
+                    .then(() => {
+                        Promise.goto('test');
+                    });
+            });
+            
+            setTimeout(() => {
+                promise.fulfilled.should.be.true;
+                done();
+            }, 0);
+        });
+        
+        it('Synchronously goto but not in the last nested chain', done => {
+            let promiseA: Promise<void>;
+            let promiseB: Promise<void>;
+            
+            promiseA = Promise.then(() => {
+                return promiseB = Promise
+                    .then(() => {
+                        Promise.goto('test');
+                    })
+                    .then(() => { });
+            });
+            
+            setTimeout(() => {
+                promiseA.fulfilled.should.be.true;
+                promiseB.skipped.should.be.true;
+                done();
+            }, 0);
+        });
+        
+        it('Asynchronously goto', done => {
+            let promiseA = Promise.then(() => {
+                return Promise.void.goto('test');
+            });
+            
+            let promiseB = promiseA.then(() => {
+                // never run
+            });
+            
+            let promiseC = promiseB.label('test', () => { });
+            
+            setTimeout(() => {
+                promiseA.fulfilled.should.be.true;
+                promiseB.skipped.should.be.true;
+                promiseC.fulfilled.should.be.true;
+                done();
+            }, 0);
+        });
+        
+        it('Asynchronously goto in the last nested chain', done => {
+            let promise = Promise.then(() => {
+                return Promise.then(() => {
+                    return Promise.void.goto('test');
+                });
+            });
+            
+            setTimeout(() => {
+                promise.fulfilled.should.be.true;
+                done();
+            }, 0);
+        });
+        
+        it('Asynchronously goto but not in the last nested chain', done => {
+            let promiseA: Promise<void>;
+            let promiseB: Promise<void>;
+            
+            promiseA = Promise.then(() => {
+                return promiseB = Promise
+                    .then(() => {
+                        return Promise.void.goto('test');
+                    })
+                    .then(() => { });
+            });
+            
+            setTimeout(() => {
+                promiseA.fulfilled.should.be.true;
+                promiseB.skipped.should.be.true;
+                done();
+            }, 0);
+        });
+        
         it('Under a disposed context', done => {
             let promiseA: Promise<void>;
             

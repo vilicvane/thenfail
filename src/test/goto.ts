@@ -15,11 +15,17 @@ describe('Feature: goto label', () => {
     it('Fake statement Promise.goto should goto given label when multiple labels set', done => {
         Promise
             .then(() => {
-                Promise.goto('test');
+                Promise.goto('test', 123);
             })
             .then(() => done('Should be skipped'))
-            .label('xxx', () => done('Should be skipped'))
-            .label('test', () => done());
+            .label('xxx', () => {
+                done('Should be skipped');
+                return 456;
+            })
+            .label('test', (value: number) => {
+                value.should.equal(123);
+                done();
+            });
     });
     
     it('Return promise.goto should goto given label if previous promise is fulfilled with non-`false` value', done => {
@@ -44,12 +50,14 @@ describe('Feature: goto label', () => {
                     .then(() => {
                         return false;
                     })
-                    .goto('test');
+                    .goto('test', 'abc');
             })
             .then(() => {
                 called = true;
+                return 'def';
             })
-            .label('test', () => {
+            .label('test', value => {
+                value.should.equal('def');
                 called.should.be.true;
                 done();
             });

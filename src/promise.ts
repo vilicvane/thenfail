@@ -418,7 +418,7 @@ export class Promise<T> implements PromiseLike<T> {
             return;
         }
         
-        this._state = State.skipped;
+        this._state = this._running ? State.fulfilled : State.skipped;
         
         if (this._chainedPromise) {
             let promise = this._chainedPromise;
