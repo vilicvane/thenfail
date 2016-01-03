@@ -1,8 +1,11 @@
+import deprecated from 'deprecated-decorator';
+
 import { Resolvable, Promise } from '../promise';
 
 export type PromiseLockHandler<TResult> = () => Resolvable<TResult>;
 
 /** @deprecated */
+@deprecated('Lock', '0.4')
 export class PromiseLock {
     private _promise = Promise.void;
 

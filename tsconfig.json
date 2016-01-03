@@ -4,9 +4,10 @@
         "module": "commonjs",
         "noEmitOnError": true,
         "noImplicitAny": true,
-        "sourceMap": true,
-        "declaration": true,
+        "experimentalDecorators": true,
         "preserveConstEnums": true,
+        "declaration": true,
+        "sourceMap": true,
         "outDir": "bld"
     },
     "exclude": [

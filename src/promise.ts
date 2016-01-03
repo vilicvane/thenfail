@@ -8,6 +8,7 @@
  */
 
 import * as asap from 'asap';
+import deprecated from 'deprecated-decorator';
 
 import { BreakSignal, GoToSignal } from './signals';
 import { Context } from './context';
@@ -906,6 +907,7 @@ export class Promise<T> implements PromiseLike<T> {
      * @deperacated
      * (get) A boolean that indicates whether the promise is interrupted.
      */
+    @deprecated('skipped', '0.4')
     get interrupted(): boolean {
         return this._state === State.skipped;
     }
