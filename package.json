@@ -40,7 +40,7 @@
   },
   "dependencies": {
     "asap": "^2.0.3",
-    "deprecated-decorator": "^0.1.1",
+    "deprecated-decorator": "^0.1.2",
     "extendable-error": "^0.1.1"
   }
 }
