@@ -3,7 +3,7 @@
 <head>
 	<meta charset="utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<title>ThenFail v0.3</title>
+	<title>ThenFail v0.4</title>
 	<meta name="description" content="">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<link rel="stylesheet" href="assets/css/main.css">
@@ -23,7 +23,7 @@
 						<li class="state loading">Preparing search index...</li>
 						<li class="state failure">The search index is not available</li>
 					</ul>
-					<a href="index.html" class="title">ThenFail v0.3</a>
+					<a href="index.html" class="title">ThenFail v0.4</a>
 				</div>
 				<div class="table-cell" id="tsd-widgets">
 					<div id="tsd-filter">
@@ -55,7 +55,7 @@
 					<a href="globals.html">Globals</a>
 				</li>
 			</ul>
-			<h1> ThenFail v0.3</h1>
+			<h1> ThenFail v0.4</h1>
 		</div>
 	</div>
 </header>
@@ -63,16 +63,13 @@
 	<div class="row">
 		<div class="col-8 col-content">
 			<div class="tsd-panel tsd-typography">
+				<p><a href="https://www.npmjs.com/package/thenfail"><img src="https://badge.fury.io/js/thenfail.svg" alt="NPM Package"></a>
+				<a href="https://travis-ci.org/vilic/thenfail"><img src="https://travis-ci.org/vilic/thenfail.svg" alt="Build Status"></a></p>
 				<p><a href="http://promises-aplus.github.com/promises-spec">
 						<img src="http://promises-aplus.github.com/promises-spec/assets/logo-small.png" alt="Promises/A+ logo" align="right" />
 				</a></p>
-				<h1 id="thenfail-v0-3-build-status-https-travis-ci-org-vilic-thenfail-svg-https-travis-ci-org-vilic-thenfail-">ThenFail v0.3 <a href="https://travis-ci.org/vilic/thenfail"><img src="https://travis-ci.org/vilic/thenfail.svg" alt="Build Status"></a></h1>
-				<p>Just another Promises/A+ implementation written in TypeScript.</p>
-				<p>Core features and changes in v0.3:</p>
-				<ul>
-					<li>Optimized for better performance.</li>
-					<li>Control flow tools like context and <code>Promise.break</code>.</li>
-				</ul>
+				<h1 id="thenfail-v0-4">ThenFail v0.4</h1>
+				<p>Just another Promises/A+ implementation written in TypeScript that provides control flow tools like <code>Promise.break</code>, <code>Promise.goto</code> and disposable context.</p>
 				<h2 id="documentation">Documentation</h2>
 				<p><a href="https://vilic.github.io/thenfail/doc">https://vilic.github.io/thenfail/doc</a></p>
 				<h2 id="what-is-promise">What is promise</h2>
@@ -163,56 +160,78 @@ getResource(<span class="hljs-string">'the-resouce-url'</span>).then(resource =&
 				<p>Sometimes chaining promises could be annoying. For example:</p>
 				<pre><code class="lang-ts">Promise
     .then(() =&gt; {
-        <span class="hljs-comment">// Step 1</span>
+        <span class="hljs-comment">// step 1</span>
     })
     .then(() =&gt; {
-        <span class="hljs-comment">// Step 2</span>
+        <span class="hljs-comment">// step 2</span>
         <span class="hljs-keyword">if</span> (noNeedToContinue) {
             <span class="hljs-comment">// How to break here?</span>
         }
     })
     .then(() =&gt; {
-        <span class="hljs-comment">// Step 3.1</span>
+        <span class="hljs-comment">// step 3.1</span>
     }, reason =&gt; {
-        <span class="hljs-comment">// Step 3.2</span>
+        <span class="hljs-comment">// step 3.2</span>
     })
     .then(() =&gt; {
-        <span class="hljs-comment">// Step 4</span>
+        <span class="hljs-comment">// step 4</span>
     });
 </code></pre>
 				<p>Now it&#39;s easy with ThenFail:</p>
 				<pre><code class="lang-ts">Promise
     .then(() =&gt; {
-        <span class="hljs-comment">// Step 1</span>
+        <span class="hljs-comment">// step 1</span>
     })
     .then(() =&gt; {
-        <span class="hljs-comment">// Step 2</span>
+        <span class="hljs-comment">// step 2</span>
         <span class="hljs-keyword">if</span> (noNeedToContinue) {
             Promise.break;
         }
     })
     .then(() =&gt; {
-        <span class="hljs-comment">// Step 3.1</span>
+        <span class="hljs-comment">// step 3.1</span>
     }, reason =&gt; {
-        <span class="hljs-comment">// Step 3.2</span>
+        <span class="hljs-comment">// step 3.2</span>
     })
     .then(() =&gt; {
-        <span class="hljs-comment">// Step 4</span>
+        <span class="hljs-comment">// step 4</span>
     })
-    <span class="hljs-comment">// Enclose current context so it won't break too many.</span>
-    <span class="hljs-comment">// It should be required if this could be directly chained somewhere else.</span>
-    <span class="hljs-comment">// E.g. Returned as your method result.</span>
+    <span class="hljs-comment">// enclose current context so it won't break too many.</span>
+    <span class="hljs-comment">// it should be required if this could be directly chained somewhere else.</span>
+    <span class="hljs-comment">// e.g. Returned as your method result.</span>
     .enclose();
+</code></pre>
+				<h3 id="promise-goto">Promise.goto</h3>
+				<pre><code class="lang-ts">Promise
+    .then(() =&gt; {
+        <span class="hljs-keyword">if</span> (someCondition) {
+            Promise.goto(<span class="hljs-string">'label-a'</span>);
+        } <span class="hljs-keyword">else</span> {
+            Promise.goto(<span class="hljs-string">'label-b'</span>);
+        }
+    })
+    .then(() =&gt; {
+        <span class="hljs-comment">// will not be called.</span>
+    })
+    .label(<span class="hljs-string">'label-a'</span>, () =&gt; {
+        <span class="hljs-comment">// step 3.1</span>
+    }, reason =&gt; {
+        <span class="hljs-comment">// step 3.2</span>
+    })
+    .label(<span class="hljs-string">'label-b'</span>, () =&gt; {
+        <span class="hljs-comment">// step 4</span>
+        <span class="hljs-comment">// be aware that `goto` `"label-a"` won't prevent the execution of `"label-b"`.</span>
+    });
 </code></pre>
 				<h3 id="promise-context">Promise context</h3>
 				<p>There&#39;s situations we may want to cancel a promise chain, not only from inside (like using <code>Promise.break</code>), but also from outside:</p>
 				<pre><code class="lang-ts">page.on(<span class="hljs-string">'load'</span>, () =&gt; {
     Promise
         .then(() =&gt; {
-            <span class="hljs-comment">// Do some works...</span>
+            <span class="hljs-comment">// do some works...</span>
         })
         .then(() =&gt; {
-            <span class="hljs-comment">// More works...</span>
+            <span class="hljs-comment">// more works...</span>
         })
         .then(() =&gt; {
             <span class="hljs-comment">// ...</span>
@@ -220,7 +239,7 @@ getResource(<span class="hljs-string">'the-resouce-url'</span>).then(resource =&
 });
 
 page.on(<span class="hljs-string">'unload'</span>, () =&gt; {
-    <span class="hljs-comment">// How can we cancel the promise chain?</span>
+    <span class="hljs-comment">// how can we cancel the promise chain?</span>
 });
 </code></pre>
 				<p>With ThenFail, every promise has something called <code>context</code>. And if the context is disposed, the chain gets cancelled.</p>
@@ -231,10 +250,10 @@ page.on(<span class="hljs-string">'unload'</span>, () =&gt; {
 page.on(<span class="hljs-string">'load'</span>, () =&gt; {
     <span class="hljs-keyword">let</span> promise = Promise
         .then(() =&gt; {
-            <span class="hljs-comment">// Do some works...</span>
+            <span class="hljs-comment">// do some works...</span>
         })
         .then(() =&gt; {
-            <span class="hljs-comment">// More works...</span>
+            <span class="hljs-comment">// more works...</span>
         })
         .then(() =&gt; {
             <span class="hljs-comment">// ...</span>
@@ -244,7 +263,7 @@ page.on(<span class="hljs-string">'load'</span>, () =&gt; {
 });
 
 page.on(<span class="hljs-string">'unload'</span>, () =&gt; {
-    <span class="hljs-comment">// Dispose the context.</span>
+    <span class="hljs-comment">// dispose the context.</span>
     <span class="hljs-keyword">if</span> (context) {
         context.dispose();
         context = <span class="hljs-literal">undefined</span>;
@@ -257,7 +276,7 @@ page.on(<span class="hljs-string">'unload'</span>, () =&gt; {
 				<h2 id="notable-basics">Notable basics</h2>
 				<h3 id="states">States</h3>
 				<p>Promises/A+ defines 3 states of a promise: <em>pending</em>, <em>fulfilled</em> and <em>rejected</em>. And only the <em>pending</em> state may transform to other states.</p>
-				<p>In the implementation of ThenFail, one more state <em>interrupted</em> is added to specify the state of promises interrupted by (fake) <code>break</code> or a canceled context (However, the promise of which <code>onfulfilled</code> or <code>onrejected</code> has been called will not be <em>interrupted</em>).</p>
+				<p>In the implementation of ThenFail, one more state <em>skipped</em> is added to specify the state of promises skipped by (fake) <code>break</code>, <code>goto</code> or a disposed context (However, the promise of which <code>onfulfilled</code> or <code>onrejected</code> has been called will not be <em>skipped</em>).</p>
 				<h3 id="resolve">Resolve</h3>
 				<p><em>Resolve</em> is a process that may change the state of promise from <em>pending</em> to either <em>fulfilled</em> or <em>rejected</em> (not just the former state).</p>
 				<h2 id="terms">Terms</h2>
@@ -324,13 +343,13 @@ page.on(<span class="hljs-string">'unload'</span>, () =&gt; {
 						<a href="globals.html#onanyhandler" class="tsd-kind-icon">On<wbr>Any<wbr>Handler</a>
 					</li>
 					<li class=" tsd-kind-type-alias">
+						<a href="globals.html#oncontextdisposedhandler" class="tsd-kind-icon">On<wbr>Context<wbr>Disposed<wbr>Handler</a>
+					</li>
+					<li class=" tsd-kind-type-alias">
 						<a href="globals.html#onfulfilledhandler" class="tsd-kind-icon">On<wbr>Fulfilled<wbr>Handler</a>
 					</li>
 					<li class=" tsd-kind-type-alias">
 						<a href="globals.html#onfulfilledspreadhandler" class="tsd-kind-icon">On<wbr>Fulfilled<wbr>Spread<wbr>Handler</a>
-					</li>
-					<li class=" tsd-kind-type-alias">
-						<a href="globals.html#oninterruptedhandler" class="tsd-kind-icon">On<wbr>Interrupted<wbr>Handler</a>
 					</li>
 					<li class=" tsd-kind-type-alias">
 						<a href="globals.html#onrejectedhandler" class="tsd-kind-icon">On<wbr>Rejected<wbr>Handler</a>
@@ -346,12 +365,6 @@ page.on(<span class="hljs-string">'unload'</span>, () =&gt; {
 					</li>
 					<li class=" tsd-kind-type-alias">
 						<a href="globals.html#waterfallcallback" class="tsd-kind-icon">Waterfall<wbr>Callback</a>
-					</li>
-					<li class=" tsd-kind-variable tsd-is-not-exported">
-						<a href="globals.html#break_signal" class="tsd-kind-icon">BREAK_<wbr>SIGNAL</a>
-					</li>
-					<li class=" tsd-kind-variable tsd-is-not-exported">
-						<a href="globals.html#pre_break_signal" class="tsd-kind-icon">PRE_<wbr>BREAK_<wbr>SIGNAL</a>
 					</li>
 					<li class=" tsd-kind-variable">
 						<a href="globals.html#invoke" class="tsd-kind-icon">invoke</a>

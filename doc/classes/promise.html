@@ -3,7 +3,7 @@
 <head>
 	<meta charset="utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<title>Promise | ThenFail v0.3</title>
+	<title>Promise | ThenFail v0.4</title>
 	<meta name="description" content="">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<link rel="stylesheet" href="../assets/css/main.css">
@@ -23,7 +23,7 @@
 						<li class="state loading">Preparing search index...</li>
 						<li class="state failure">The search index is not available</li>
 					</ul>
-					<a href="../index.html" class="title">ThenFail v0.3</a>
+					<a href="../index.html" class="title">ThenFail v0.4</a>
 				</div>
 				<div class="table-cell" id="tsd-widgets">
 					<div id="tsd-filter">
@@ -106,8 +106,9 @@
 								<li class="tsd-kind-property tsd-parent-kind-class tsd-is-private"><a href="promise.html#_handled" class="tsd-kind-icon">_handled</a></li>
 								<li class="tsd-kind-property tsd-parent-kind-class tsd-is-private"><a href="promise.html#_handledpromise" class="tsd-kind-icon">_handled<wbr>Promise</a></li>
 								<li class="tsd-kind-property tsd-parent-kind-class tsd-is-private"><a href="promise.html#_handledpromises" class="tsd-kind-icon">_handled<wbr>Promises</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-class tsd-is-private"><a href="promise.html#_label" class="tsd-kind-icon">_label</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-class tsd-is-private"><a href="promise.html#_oncontextdisposed" class="tsd-kind-icon">_on<wbr>Context<wbr>Disposed</a></li>
 								<li class="tsd-kind-property tsd-parent-kind-class tsd-is-private"><a href="promise.html#_onpreviousfulfilled" class="tsd-kind-icon">_on<wbr>Previous<wbr>Fulfilled</a></li>
-								<li class="tsd-kind-property tsd-parent-kind-class tsd-is-private"><a href="promise.html#_onpreviousinterrupted" class="tsd-kind-icon">_on<wbr>Previous<wbr>Interrupted</a></li>
 								<li class="tsd-kind-property tsd-parent-kind-class tsd-is-private"><a href="promise.html#_onpreviousrejected" class="tsd-kind-icon">_on<wbr>Previous<wbr>Rejected</a></li>
 								<li class="tsd-kind-property tsd-parent-kind-class tsd-is-private"><a href="promise.html#_running" class="tsd-kind-icon">_running</a></li>
 								<li class="tsd-kind-property tsd-parent-kind-class tsd-is-private"><a href="promise.html#_state" class="tsd-kind-icon">_state</a></li>
@@ -124,6 +125,7 @@
 								<li class="tsd-kind-get-signature tsd-parent-kind-class"><a href="promise.html#interrupted" class="tsd-kind-icon">interrupted</a></li>
 								<li class="tsd-kind-get-signature tsd-parent-kind-class"><a href="promise.html#pending" class="tsd-kind-icon">pending</a></li>
 								<li class="tsd-kind-get-signature tsd-parent-kind-class"><a href="promise.html#rejected" class="tsd-kind-icon">rejected</a></li>
+								<li class="tsd-kind-get-signature tsd-parent-kind-class"><a href="promise.html#skipped" class="tsd-kind-icon">skipped</a></li>
 								<li class="tsd-kind-get-signature tsd-parent-kind-class"><a href="promise.html#true" class="tsd-kind-icon">true</a></li>
 								<li class="tsd-kind-get-signature tsd-parent-kind-class"><a href="promise.html#void" class="tsd-kind-icon">void</a></li>
 								<li class="tsd-kind-get-signature tsd-parent-kind-class tsd-is-static"><a href="promise.html#break-1" class="tsd-kind-icon">break</a></li>
@@ -137,9 +139,13 @@
 						<section class="tsd-index-section ">
 							<h3>Methods</h3>
 							<ul class="tsd-index-list">
+								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-private"><a href="promise.html#_decide" class="tsd-kind-icon">_decide</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-private"><a href="promise.html#_goto" class="tsd-kind-icon">_goto</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-private"><a href="promise.html#_grab" class="tsd-kind-icon">_grab</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-private"><a href="promise.html#_relax" class="tsd-kind-icon">_relax</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-private"><a href="promise.html#_relay" class="tsd-kind-icon">_relay</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-private"><a href="promise.html#_run" class="tsd-kind-icon">_run</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-private"><a href="promise.html#_skip" class="tsd-kind-icon">_skip</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-private"><a href="promise.html#_unpack" class="tsd-kind-icon">_unpack</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class"><a href="promise.html#catch" class="tsd-kind-icon">catch</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class"><a href="promise.html#delay" class="tsd-kind-icon">delay</a></li>
@@ -148,8 +154,10 @@
 								<li class="tsd-kind-method tsd-parent-kind-class tsd-has-type-parameter"><a href="promise.html#each" class="tsd-kind-icon">each</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class"><a href="promise.html#enclose" class="tsd-kind-icon">enclose</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class"><a href="promise.html#fail" class="tsd-kind-icon">fail</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class"><a href="promise.html#goto" class="tsd-kind-icon">goto</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class"><a href="promise.html#handle" class="tsd-kind-icon">handle</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class"><a href="promise.html#interruption" class="tsd-kind-icon">interruption</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class tsd-has-type-parameter"><a href="promise.html#label" class="tsd-kind-icon">label</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class"><a href="promise.html#log" class="tsd-kind-icon">log</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class tsd-has-type-parameter"><a href="promise.html#map" class="tsd-kind-icon">map</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class"><a href="promise.html#reject" class="tsd-kind-icon">reject</a></li>
@@ -164,6 +172,7 @@
 								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-static"><a href="promise.html#context-1" class="tsd-kind-icon">context</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-static"><a href="promise.html#delay-1" class="tsd-kind-icon">delay</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class tsd-has-type-parameter tsd-is-static"><a href="promise.html#each-1" class="tsd-kind-icon">each</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-static"><a href="promise.html#goto-1" class="tsd-kind-icon">goto</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class tsd-has-type-parameter tsd-is-static"><a href="promise.html#invoke" class="tsd-kind-icon">invoke</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class tsd-has-type-parameter tsd-is-static"><a href="promise.html#map-1" class="tsd-kind-icon">map</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class tsd-has-type-parameter tsd-is-static"><a href="promise.html#race" class="tsd-kind-icon">race</a></li>
@@ -193,7 +202,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in promise.ts:135</li>
+									<li>Defined in promise.ts:140</li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -206,7 +215,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in promise.ts:140</li>
+									<li>Defined in promise.ts:145</li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -225,7 +234,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in promise.ts:141</li>
+									<li>Defined in promise.ts:146</li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -252,7 +261,7 @@
 					<div class="tsd-signature tsd-kind-icon">_chained<wbr>Promise<span class="tsd-signature-symbol">:</span> <a href="promise.html" class="tsd-signature-type">Promise</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">&gt;</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in promise.ts:109</li>
+							<li>Defined in promise.ts:114</li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">
@@ -271,7 +280,7 @@
 					<div class="tsd-signature tsd-kind-icon">_chained<wbr>Promises<span class="tsd-signature-symbol">:</span> <a href="promise.html" class="tsd-signature-type">Promise</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">[]</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in promise.ts:112</li>
+							<li>Defined in promise.ts:117</li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">
@@ -286,7 +295,7 @@
 					<div class="tsd-signature tsd-kind-icon">_context<span class="tsd-signature-symbol">:</span> <a href="context.html" class="tsd-signature-type">Context</a></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in promise.ts:100</li>
+							<li>Defined in promise.ts:102</li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">
@@ -301,7 +310,7 @@
 					<div class="tsd-signature tsd-kind-icon">_handled<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">boolean</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in promise.ts:94</li>
+							<li>Defined in promise.ts:96</li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">
@@ -316,7 +325,7 @@
 					<div class="tsd-signature tsd-kind-icon">_handled<wbr>Promise<span class="tsd-signature-symbol">:</span> <a href="promise.html" class="tsd-signature-type">Promise</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">T</span><span class="tsd-signature-symbol">&gt;</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in promise.ts:129</li>
+							<li>Defined in promise.ts:134</li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">
@@ -339,7 +348,7 @@
 					<div class="tsd-signature tsd-kind-icon">_handled<wbr>Promises<span class="tsd-signature-symbol">:</span> <a href="promise.html" class="tsd-signature-type">Promise</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">T</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">[]</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in promise.ts:131</li>
+							<li>Defined in promise.ts:136</li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">
@@ -349,22 +358,37 @@
 					</div>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-private">
+					<a name="_label" class="tsd-anchor"></a>
+					<h3><span class="tsd-flag ts-flagPrivate">Private</span> _label</h3>
+					<div class="tsd-signature tsd-kind-icon">_label<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in promise.ts:105</li>
+						</ul>
+					</aside>
+					<div class="tsd-comment tsd-typography">
+						<div class="lead">
+							<p>Label of this promise.</p>
+						</div>
+					</div>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-private">
+					<a name="_oncontextdisposed" class="tsd-anchor"></a>
+					<h3><span class="tsd-flag ts-flagPrivate">Private</span> _on<wbr>Context<wbr>Disposed</h3>
+					<div class="tsd-signature tsd-kind-icon">_on<wbr>Context<wbr>Disposed<span class="tsd-signature-symbol">:</span> <a href="../globals.html#oncontextdisposedhandler" class="tsd-signature-type">OnContextDisposedHandler</a></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in promise.ts:140</li>
+						</ul>
+					</aside>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-private">
 					<a name="_onpreviousfulfilled" class="tsd-anchor"></a>
 					<h3><span class="tsd-flag ts-flagPrivate">Private</span> _on<wbr>Previous<wbr>Fulfilled</h3>
 					<div class="tsd-signature tsd-kind-icon">_on<wbr>Previous<wbr>Fulfilled<span class="tsd-signature-symbol">:</span> <a href="../globals.html#onfulfilledhandler" class="tsd-signature-type">OnFulfilledHandler</a></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in promise.ts:133</li>
-						</ul>
-					</aside>
-				</section>
-				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-private">
-					<a name="_onpreviousinterrupted" class="tsd-anchor"></a>
-					<h3><span class="tsd-flag ts-flagPrivate">Private</span> _on<wbr>Previous<wbr>Interrupted</h3>
-					<div class="tsd-signature tsd-kind-icon">_on<wbr>Previous<wbr>Interrupted<span class="tsd-signature-symbol">:</span> <a href="../globals.html#oninterruptedhandler" class="tsd-signature-type">OnInterruptedHandler</a></div>
-					<aside class="tsd-sources">
-						<ul>
-							<li>Defined in promise.ts:135</li>
+							<li>Defined in promise.ts:138</li>
 						</ul>
 					</aside>
 				</section>
@@ -374,7 +398,7 @@
 					<div class="tsd-signature tsd-kind-icon">_on<wbr>Previous<wbr>Rejected<span class="tsd-signature-symbol">:</span> <a href="../globals.html#onrejectedhandler" class="tsd-signature-type">OnRejectedHandler</a></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in promise.ts:134</li>
+							<li>Defined in promise.ts:139</li>
 						</ul>
 					</aside>
 				</section>
@@ -384,7 +408,7 @@
 					<div class="tsd-signature tsd-kind-icon">_running<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">boolean</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in promise.ts:91</li>
+							<li>Defined in promise.ts:93</li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">
@@ -400,7 +424,7 @@
 					<div class="tsd-signature tsd-kind-icon">_state<span class="tsd-signature-symbol">:</span> <a href="../enums/state.html" class="tsd-signature-type">State</a></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in promise.ts:85</li>
+							<li>Defined in promise.ts:87</li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">
@@ -415,7 +439,7 @@
 					<div class="tsd-signature tsd-kind-icon">_value<wbr>OrReason<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">any</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in promise.ts:97</li>
+							<li>Defined in promise.ts:99</li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">
@@ -437,7 +461,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in promise.ts:731</li>
+									<li>Defined in promise.ts:830</li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -460,7 +484,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in promise.ts:763</li>
+									<li>Defined in promise.ts:874</li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -482,7 +506,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in promise.ts:756</li>
+									<li>Defined in promise.ts:867</li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -504,7 +528,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in promise.ts:777</li>
+									<li>Defined in promise.ts:888</li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -526,13 +550,15 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in promise.ts:791</li>
+									<li>Defined in promise.ts:911</li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
-								<div class="lead">
-									<p>(get) A boolean that indicates whether the promise is interrupted.</p>
-								</div>
+								<dl class="tsd-comment-tags">
+									<dt>deperacated</dt>
+									<dd><p>(get) A boolean that indicates whether the promise is interrupted.</p>
+									</dd>
+								</dl>
 							</div>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">boolean</span></h4>
 						</li>
@@ -548,7 +574,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in promise.ts:770</li>
+									<li>Defined in promise.ts:881</li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -570,12 +596,34 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in promise.ts:784</li>
+									<li>Defined in promise.ts:895</li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
 								<div class="lead">
 									<p>(get) A boolean that indicates whether the promise is rejected.</p>
+								</div>
+							</div>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">boolean</span></h4>
+						</li>
+					</ul>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-get-signature tsd-parent-kind-class">
+					<a name="skipped" class="tsd-anchor"></a>
+					<h3>skipped</h3>
+					<ul class="tsd-signatures tsd-kind-get-signature tsd-parent-kind-class">
+						<li class="tsd-signature tsd-kind-icon"><span class="tsd-signature-symbol">get</span> skipped<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">boolean</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in promise.ts:902</li>
+								</ul>
+							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>(get) A boolean that indicates whether the promise is interrupted.</p>
 								</div>
 							</div>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">boolean</span></h4>
@@ -592,7 +640,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in promise.ts:749</li>
+									<li>Defined in promise.ts:860</li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -614,7 +662,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in promise.ts:742</li>
+									<li>Defined in promise.ts:853</li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -636,7 +684,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in promise.ts:1141</li>
+									<li>Defined in promise.ts:1261</li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -673,7 +721,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in promise.ts:1146</li>
+									<li>Defined in promise.ts:1266</li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -695,7 +743,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in promise.ts:1176</li>
+									<li>Defined in promise.ts:1301</li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -717,7 +765,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in promise.ts:1151</li>
+									<li>Defined in promise.ts:1271</li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -739,7 +787,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in promise.ts:1167</li>
+									<li>Defined in promise.ts:1292</li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -761,7 +809,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in promise.ts:1158</li>
+									<li>Defined in promise.ts:1283</li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -777,6 +825,65 @@
 			<section class="tsd-panel-group tsd-member-group ">
 				<h2>Methods</h2>
 				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-private">
+					<a name="_decide" class="tsd-anchor"></a>
+					<h3><span class="tsd-flag ts-flagPrivate">Private</span> _decide</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-private">
+						<li class="tsd-signature tsd-kind-icon">_decide<span class="tsd-signature-symbol">(</span>state<span class="tsd-signature-symbol">: </span><a href="../enums/state.html" class="tsd-signature-type">State</a>, valueOrReason<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in promise.ts:288</li>
+								</ul>
+							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Decide whether to call <code>_relay</code>, <code>_skip</code> or <code>_goto</code>.</p>
+								</div>
+							</div>
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
+								<li>
+									<h5>state: <a href="../enums/state.html" class="tsd-signature-type">State</a></h5>
+								</li>
+								<li>
+									<h5><span class="tsd-flag ts-flagOptional">Optional</span> valueOrReason: <span class="tsd-signature-type">any</span></h5>
+								</li>
+							</ul>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
+						</li>
+					</ul>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-private">
+					<a name="_goto" class="tsd-anchor"></a>
+					<h3><span class="tsd-flag ts-flagPrivate">Private</span> _goto</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-private">
+						<li class="tsd-signature tsd-kind-icon">_goto<span class="tsd-signature-symbol">(</span>signal<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">GoToSignal</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in promise.ts:417</li>
+								</ul>
+							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Go to a specific promise that matches given label.</p>
+								</div>
+							</div>
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
+								<li>
+									<h5>signal: <span class="tsd-signature-type">GoToSignal</span></h5>
+								</li>
+							</ul>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
+						</li>
+					</ul>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-private">
 					<a name="_grab" class="tsd-anchor"></a>
 					<h3><span class="tsd-flag ts-flagPrivate">Private</span> _grab</h3>
 					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-private">
@@ -786,7 +893,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in promise.ts:165</li>
+									<li>Defined in promise.ts:170</li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -808,6 +915,28 @@
 					</ul>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-private">
+					<a name="_relax" class="tsd-anchor"></a>
+					<h3><span class="tsd-flag ts-flagPrivate">Private</span> _relax</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-private">
+						<li class="tsd-signature tsd-kind-icon">_relax<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in promise.ts:468</li>
+								</ul>
+							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Set handlers to undefined.</p>
+								</div>
+							</div>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
+						</li>
+					</ul>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-private">
 					<a name="_relay" class="tsd-anchor"></a>
 					<h3><span class="tsd-flag ts-flagPrivate">Private</span> _relay</h3>
 					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-private">
@@ -817,7 +946,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in promise.ts:283</li>
+									<li>Defined in promise.ts:301</li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -848,7 +977,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in promise.ts:188</li>
+									<li>Defined in promise.ts:193</li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -870,6 +999,34 @@
 					</ul>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-private">
+					<a name="_skip" class="tsd-anchor"></a>
+					<h3><span class="tsd-flag ts-flagPrivate">Private</span> _skip</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-private">
+						<li class="tsd-signature tsd-kind-icon">_skip<span class="tsd-signature-symbol">(</span>signal<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">BreakSignal</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in promise.ts:349</li>
+								</ul>
+							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Skip some promises.</p>
+								</div>
+							</div>
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
+								<li>
+									<h5><span class="tsd-flag ts-flagOptional">Optional</span> signal: <span class="tsd-signature-type">BreakSignal</span></h5>
+								</li>
+							</ul>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
+						</li>
+					</ul>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-private">
 					<a name="_unpack" class="tsd-anchor"></a>
 					<h3><span class="tsd-flag ts-flagPrivate">Private</span> _unpack</h3>
 					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-private">
@@ -879,7 +1036,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in promise.ts:212</li>
+									<li>Defined in promise.ts:217</li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -932,7 +1089,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in promise.ts:631</li>
+									<li>Defined in promise.ts:730</li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -955,7 +1112,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in promise.ts:637</li>
+									<li>Defined in promise.ts:736</li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -990,7 +1147,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in promise.ts:504</li>
+									<li>Defined in promise.ts:603</li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -1024,7 +1181,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in promise.ts:583</li>
+									<li>Defined in promise.ts:682</li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -1053,7 +1210,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in promise.ts:719</li>
+									<li>Defined in promise.ts:818</li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -1076,7 +1233,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in promise.ts:669</li>
+									<li>Defined in promise.ts:768</li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -1115,7 +1272,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in promise.ts:492</li>
+									<li>Defined in promise.ts:591</li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -1138,7 +1295,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in promise.ts:622</li>
+									<li>Defined in promise.ts:721</li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -1157,6 +1314,38 @@
 					</ul>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
+					<a name="goto" class="tsd-anchor"></a>
+					<h3>goto</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
+						<li class="tsd-signature tsd-kind-icon">goto<span class="tsd-signature-symbol">(</span>label<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span>, value<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="promise.html" class="tsd-signature-type">Promise</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">&gt;</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in promise.ts:842</li>
+								</ul>
+							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Create a promise that will be rejected with a goto signal if previous
+									promise is fulfilled with a non-<code>false</code> value.</p>
+								</div>
+							</div>
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
+								<li>
+									<h5>label: <span class="tsd-signature-type">string</span></h5>
+								</li>
+								<li>
+									<h5><span class="tsd-flag ts-flagOptional">Optional</span> value: <span class="tsd-signature-type">any</span></h5>
+								</li>
+							</ul>
+							<h4 class="tsd-returns-title">Returns <a href="promise.html" class="tsd-signature-type">Promise</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">&gt;</span></h4>
+						</li>
+					</ul>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
 					<a name="handle" class="tsd-anchor"></a>
 					<h3>handle</h3>
 					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
@@ -1167,7 +1356,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in promise.ts:538</li>
+									<li>Defined in promise.ts:637</li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -1191,7 +1380,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in promise.ts:543</li>
+									<li>Defined in promise.ts:642</li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -1214,13 +1403,13 @@
 					<a name="interruption" class="tsd-anchor"></a>
 					<h3>interruption</h3>
 					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
-						<li class="tsd-signature tsd-kind-icon">interruption<span class="tsd-signature-symbol">(</span>oninterrupted<span class="tsd-signature-symbol">: </span><a href="../globals.html#oninterruptedhandler" class="tsd-signature-type">OnInterruptedHandler</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="promise.html" class="tsd-signature-type">Promise</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">T</span><span class="tsd-signature-symbol">&gt;</span></li>
+						<li class="tsd-signature tsd-kind-icon">interruption<span class="tsd-signature-symbol">(</span>oncontextdisposed<span class="tsd-signature-symbol">: </span><a href="../globals.html#oncontextdisposedhandler" class="tsd-signature-type">OnContextDisposedHandler</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="promise.html" class="tsd-signature-type">Promise</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">T</span><span class="tsd-signature-symbol">&gt;</span></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in promise.ts:472</li>
+									<li>Defined in promise.ts:571</li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -1228,18 +1417,69 @@
 									<p>Set up the interruption handler of the promise.
 										An interruption handler will be called if either the <code>onfulfilled</code>
 										or <code>onrejected</code> handler of the promise has been called but
-										interrupted for some reason
+										interrupted due to context disposal.
 									(by break signal or the canceling of the context).</p>
 								</div>
 							</div>
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
-									<h5>oninterrupted: <a href="../globals.html#oninterruptedhandler" class="tsd-signature-type">OnInterruptedHandler</a></h5>
+									<h5>oncontextdisposed: <a href="../globals.html#oncontextdisposedhandler" class="tsd-signature-type">OnContextDisposedHandler</a></h5>
 								</li>
 							</ul>
 							<h4 class="tsd-returns-title">Returns <a href="promise.html" class="tsd-signature-type">Promise</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">T</span><span class="tsd-signature-symbol">&gt;</span></h4>
 							<p>Current promise.</p>
+						</li>
+					</ul>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-has-type-parameter">
+					<a name="label" class="tsd-anchor"></a>
+					<h3>label</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-has-type-parameter">
+						<li class="tsd-signature tsd-kind-icon">label&lt;TResult&gt;<span class="tsd-signature-symbol">(</span>label<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span>, onfulfilled<span class="tsd-signature-symbol">: </span><a href="../globals.html#onfulfilledhandler" class="tsd-signature-type">OnFulfilledHandler</a>, onrejected<span class="tsd-signature-symbol">?: </span><a href="../globals.html#onrejectedhandler" class="tsd-signature-type">OnRejectedHandler</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="promise.html" class="tsd-signature-type">Promise</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">TResult</span><span class="tsd-signature-symbol">&gt;</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in promise.ts:556</li>
+								</ul>
+							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Like <code>then</code> but accepts the first extra parameter as the label of
+									current part.</p>
+								</div>
+							</div>
+							<h4 class="tsd-type-parameters-title">Type parameters</h4>
+							<ul class="tsd-type-parameters">
+								<li>
+									<h4>TResult</h4>
+								</li>
+							</ul>
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
+								<li>
+									<h5>label: <span class="tsd-signature-type">string</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>Part label.</p>
+									</div>
+								</li>
+								<li>
+									<h5>onfulfilled: <a href="../globals.html#onfulfilledhandler" class="tsd-signature-type">OnFulfilledHandler</a></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>Fulfillment handler.</p>
+									</div>
+								</li>
+								<li>
+									<h5><span class="tsd-flag ts-flagOptional">Optional</span> onrejected: <a href="../globals.html#onrejectedhandler" class="tsd-signature-type">OnRejectedHandler</a></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>Rejection handler.</p>
+									</div>
+								</li>
+							</ul>
+							<h4 class="tsd-returns-title">Returns <a href="promise.html" class="tsd-signature-type">Promise</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">TResult</span><span class="tsd-signature-symbol">&gt;</span></h4>
+							<p>Created promise.</p>
 						</li>
 					</ul>
 				</section>
@@ -1253,7 +1493,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in promise.ts:696</li>
+									<li>Defined in promise.ts:795</li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -1286,7 +1526,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in promise.ts:659</li>
+									<li>Defined in promise.ts:758</li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -1325,7 +1565,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in promise.ts:459</li>
+									<li>Defined in promise.ts:544</li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -1356,7 +1596,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in promise.ts:451</li>
+									<li>Defined in promise.ts:536</li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -1388,7 +1628,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in promise.ts:684</li>
+									<li>Defined in promise.ts:783</li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -1413,7 +1653,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in promise.ts:685</li>
+									<li>Defined in promise.ts:784</li>
 								</ul>
 							</aside>
 							<h4 class="tsd-type-parameters-title">Type parameters</h4>
@@ -1445,7 +1685,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in promise.ts:615</li>
+									<li>Defined in promise.ts:714</li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -1483,7 +1723,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in promise.ts:599</li>
+									<li>Defined in promise.ts:698</li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -1517,7 +1757,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in promise.ts:413</li>
+									<li>Defined in promise.ts:501</li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -1562,7 +1802,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in promise.ts:519</li>
+									<li>Defined in promise.ts:618</li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -1599,7 +1839,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in promise.ts:677</li>
+									<li>Defined in promise.ts:776</li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -1637,7 +1877,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in promise.ts:889</li>
+									<li>Defined in promise.ts:1009</li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -1685,7 +1925,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in promise.ts:856</li>
+									<li>Defined in promise.ts:976</li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -1717,7 +1957,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in promise.ts:868</li>
+									<li>Defined in promise.ts:988</li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -1750,7 +1990,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in promise.ts:965</li>
+									<li>Defined in promise.ts:1085</li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -1787,6 +2027,37 @@
 						</li>
 					</ul>
 				</section>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-static">
+					<a name="goto-1" class="tsd-anchor"></a>
+					<h3><span class="tsd-flag ts-flagStatic">Static</span> goto</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-static">
+						<li class="tsd-signature tsd-kind-icon">goto<span class="tsd-signature-symbol">(</span>label<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span>, value<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in promise.ts:1276</li>
+								</ul>
+							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>(fake statement) This method will throw an <code>GoToSignal</code> with specified <code>label</code>.</p>
+								</div>
+							</div>
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
+								<li>
+									<h5>label: <span class="tsd-signature-type">string</span></h5>
+								</li>
+								<li>
+									<h5><span class="tsd-flag ts-flagOptional">Optional</span> value: <span class="tsd-signature-type">any</span></h5>
+								</li>
+							</ul>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
+						</li>
+					</ul>
+				</section>
 				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-has-type-parameter tsd-is-static">
 					<a name="invoke" class="tsd-anchor"></a>
 					<h3><span class="tsd-flag ts-flagStatic">Static</span> invoke</h3>
@@ -1797,7 +2068,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in promise.ts:1106</li>
+									<li>Defined in promise.ts:1226</li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -1842,7 +2113,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in promise.ts:952</li>
+									<li>Defined in promise.ts:1072</li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -1889,7 +2160,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in promise.ts:934</li>
+									<li>Defined in promise.ts:1054</li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -1929,7 +2200,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in promise.ts:832</li>
+									<li>Defined in promise.ts:952</li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -1952,7 +2223,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in promise.ts:837</li>
+									<li>Defined in promise.ts:957</li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -1988,7 +2259,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in promise.ts:811</li>
+									<li>Defined in promise.ts:931</li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -2003,7 +2274,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in promise.ts:816</li>
+									<li>Defined in promise.ts:936</li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -2037,7 +2308,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in promise.ts:1015</li>
+									<li>Defined in promise.ts:1135</li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -2066,7 +2337,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in promise.ts:1021</li>
+									<li>Defined in promise.ts:1141</li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -2107,7 +2378,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in promise.ts:802</li>
+									<li>Defined in promise.ts:922</li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -2145,7 +2416,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in promise.ts:1070</li>
+									<li>Defined in promise.ts:1190</li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -2193,7 +2464,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in promise.ts:988</li>
+									<li>Defined in promise.ts:1108</li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -2246,7 +2517,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in promise.ts:847</li>
+									<li>Defined in promise.ts:967</li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -2318,10 +2589,13 @@
 								<a href="promise.html#_handledpromises" class="tsd-kind-icon">_handled<wbr>Promises</a>
 							</li>
 							<li class=" tsd-kind-property tsd-parent-kind-class tsd-is-private">
-								<a href="promise.html#_onpreviousfulfilled" class="tsd-kind-icon">_on<wbr>Previous<wbr>Fulfilled</a>
+								<a href="promise.html#_label" class="tsd-kind-icon">_label</a>
 							</li>
 							<li class=" tsd-kind-property tsd-parent-kind-class tsd-is-private">
-								<a href="promise.html#_onpreviousinterrupted" class="tsd-kind-icon">_on<wbr>Previous<wbr>Interrupted</a>
+								<a href="promise.html#_oncontextdisposed" class="tsd-kind-icon">_on<wbr>Context<wbr>Disposed</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-class tsd-is-private">
+								<a href="promise.html#_onpreviousfulfilled" class="tsd-kind-icon">_on<wbr>Previous<wbr>Fulfilled</a>
 							</li>
 							<li class=" tsd-kind-property tsd-parent-kind-class tsd-is-private">
 								<a href="promise.html#_onpreviousrejected" class="tsd-kind-icon">_on<wbr>Previous<wbr>Rejected</a>
@@ -2357,6 +2631,9 @@
 								<a href="promise.html#rejected" class="tsd-kind-icon">rejected</a>
 							</li>
 							<li class=" tsd-kind-get-signature tsd-parent-kind-class">
+								<a href="promise.html#skipped" class="tsd-kind-icon">skipped</a>
+							</li>
+							<li class=" tsd-kind-get-signature tsd-parent-kind-class">
 								<a href="promise.html#true" class="tsd-kind-icon">true</a>
 							</li>
 							<li class=" tsd-kind-get-signature tsd-parent-kind-class">
@@ -2381,13 +2658,25 @@
 								<a href="promise.html#void-1" class="tsd-kind-icon">void</a>
 							</li>
 							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-private">
+								<a href="promise.html#_decide" class="tsd-kind-icon">_decide</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-private">
+								<a href="promise.html#_goto" class="tsd-kind-icon">_goto</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-private">
 								<a href="promise.html#_grab" class="tsd-kind-icon">_grab</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-private">
+								<a href="promise.html#_relax" class="tsd-kind-icon">_relax</a>
 							</li>
 							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-private">
 								<a href="promise.html#_relay" class="tsd-kind-icon">_relay</a>
 							</li>
 							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-private">
 								<a href="promise.html#_run" class="tsd-kind-icon">_run</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-private">
+								<a href="promise.html#_skip" class="tsd-kind-icon">_skip</a>
 							</li>
 							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-private">
 								<a href="promise.html#_unpack" class="tsd-kind-icon">_unpack</a>
@@ -2414,10 +2703,16 @@
 								<a href="promise.html#fail" class="tsd-kind-icon">fail</a>
 							</li>
 							<li class=" tsd-kind-method tsd-parent-kind-class">
+								<a href="promise.html#goto" class="tsd-kind-icon">goto</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class">
 								<a href="promise.html#handle" class="tsd-kind-icon">handle</a>
 							</li>
 							<li class=" tsd-kind-method tsd-parent-kind-class">
 								<a href="promise.html#interruption" class="tsd-kind-icon">interruption</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class tsd-has-type-parameter">
+								<a href="promise.html#label" class="tsd-kind-icon">label</a>
 							</li>
 							<li class=" tsd-kind-method tsd-parent-kind-class">
 								<a href="promise.html#log" class="tsd-kind-icon">log</a>
@@ -2460,6 +2755,9 @@
 							</li>
 							<li class=" tsd-kind-method tsd-parent-kind-class tsd-has-type-parameter tsd-is-static">
 								<a href="promise.html#each-1" class="tsd-kind-icon">each</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-static">
+								<a href="promise.html#goto-1" class="tsd-kind-icon">goto</a>
 							</li>
 							<li class=" tsd-kind-method tsd-parent-kind-class tsd-has-type-parameter tsd-is-static">
 								<a href="promise.html#invoke" class="tsd-kind-icon">invoke</a>
@@ -2526,13 +2824,13 @@
 						<a href="../globals.html#onanyhandler" class="tsd-kind-icon">On<wbr>Any<wbr>Handler</a>
 					</li>
 					<li class=" tsd-kind-type-alias">
+						<a href="../globals.html#oncontextdisposedhandler" class="tsd-kind-icon">On<wbr>Context<wbr>Disposed<wbr>Handler</a>
+					</li>
+					<li class=" tsd-kind-type-alias">
 						<a href="../globals.html#onfulfilledhandler" class="tsd-kind-icon">On<wbr>Fulfilled<wbr>Handler</a>
 					</li>
 					<li class=" tsd-kind-type-alias">
 						<a href="../globals.html#onfulfilledspreadhandler" class="tsd-kind-icon">On<wbr>Fulfilled<wbr>Spread<wbr>Handler</a>
-					</li>
-					<li class=" tsd-kind-type-alias">
-						<a href="../globals.html#oninterruptedhandler" class="tsd-kind-icon">On<wbr>Interrupted<wbr>Handler</a>
 					</li>
 					<li class=" tsd-kind-type-alias">
 						<a href="../globals.html#onrejectedhandler" class="tsd-kind-icon">On<wbr>Rejected<wbr>Handler</a>
@@ -2548,12 +2846,6 @@
 					</li>
 					<li class=" tsd-kind-type-alias">
 						<a href="../globals.html#waterfallcallback" class="tsd-kind-icon">Waterfall<wbr>Callback</a>
-					</li>
-					<li class=" tsd-kind-variable tsd-is-not-exported">
-						<a href="../globals.html#break_signal" class="tsd-kind-icon">BREAK_<wbr>SIGNAL</a>
-					</li>
-					<li class=" tsd-kind-variable tsd-is-not-exported">
-						<a href="../globals.html#pre_break_signal" class="tsd-kind-icon">PRE_<wbr>BREAK_<wbr>SIGNAL</a>
 					</li>
 					<li class=" tsd-kind-variable">
 						<a href="../globals.html#invoke" class="tsd-kind-icon">invoke</a>
