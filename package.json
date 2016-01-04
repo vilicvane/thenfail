@@ -23,7 +23,7 @@
   "scripts": {
     "build": "tsc",
     "incremental-build": "tsc -w",
-    "doc": "typedoc src/index.ts src/context.ts src/errors.ts src/promise.ts src/utils/lock.ts typings --out gh-pages/doc --mode file --target ES5 --module commonjs --excludeExternals --name \"ThenFail v0.4\"",
+    "doc": "typedoc src/index.ts src/context.ts src/errors.ts src/promise.ts src/utils/lock.ts typings --out gh-pages/doc --mode file --target ES5 --module commonjs --experimentalDecorators --excludeExternals --name \"ThenFail v0.4\"",
     "aplus": "promises-aplus-tests test/aplus/adapter.js",
     "test": "mocha && npm run aplus",
     "quick-test": "mocha"
@@ -33,7 +33,7 @@
     "chai-as-promised": "latest",
     "mocha": "latest",
     "promises-aplus-tests": "latest",
-    "sinon": "^1.17.2",
+    "sinon": "latest",
     "source-map-support": "latest",
     "typedoc": "latest",
     "typescript": "latest"
