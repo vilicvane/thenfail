@@ -1020,7 +1020,8 @@ export class Promise<T> implements PromiseLike<T> {
      * @return Created promise.
      */
     static all<T>(resolvables: Resolvable<T>[]): Promise<T[]>;
-    static all<T>(resolvables: Resolvable<T>[]): Promise<T[]> {
+    // TODO: change return type to Promise<T[]> after TypeScript 1.8 release.
+    static all<T>(resolvables: Resolvable<T>[]): Promise<any> {
         if (!resolvables.length) {
             return Promise.resolve([]);
         }
