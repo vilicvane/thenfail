@@ -1003,9 +1003,23 @@ export class Promise<T> implements PromiseLike<T> {
      *   2. with the reason of the first rejection as its reason.
      *   3. after all values are either fulfilled or rejected.
      * 
+     * @return Created promise.
+     */
+    static all<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(values: [Resolvable<T1>, Resolvable<T2>, Resolvable<T3>, Resolvable<T4>, Resolvable<T5>, Resolvable<T6>, Resolvable<T7>, Resolvable<T8>, Resolvable<T9>, Resolvable<T10>]): Promise<[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10]>;
+    static all<T1, T2, T3, T4, T5, T6, T7, T8, T9>(values: [Resolvable<T1>, Resolvable<T2>, Resolvable<T3>, Resolvable<T4>, Resolvable<T5>, Resolvable<T6>, Resolvable<T7>, Resolvable<T8>, Resolvable<T9>]): Promise<[T1, T2, T3, T4, T5, T6, T7, T8, T9]>;
+    static all<T1, T2, T3, T4, T5, T6, T7, T8>(values: [Resolvable<T1>, Resolvable<T2>, Resolvable<T3>, Resolvable<T4>, Resolvable<T5>, Resolvable<T6>, Resolvable<T7>, Resolvable<T8>]): Promise<[T1, T2, T3, T4, T5, T6, T7, T8]>;
+    static all<T1, T2, T3, T4, T5, T6, T7>(values: [Resolvable<T1>, Resolvable<T2>, Resolvable<T3>, Resolvable<T4>, Resolvable<T5>, Resolvable<T6>, Resolvable<T7>]): Promise<[T1, T2, T3, T4, T5, T6, T7]>;
+    static all<T1, T2, T3, T4, T5, T6>(values: [Resolvable<T1>, Resolvable<T2>, Resolvable<T3>, Resolvable<T4>, Resolvable<T5>, Resolvable<T6>]): Promise<[T1, T2, T3, T4, T5, T6]>;
+    static all<T1, T2, T3, T4, T5>(values: [Resolvable<T1>, Resolvable<T2>, Resolvable<T3>, Resolvable<T4>, Resolvable<T5>]): Promise<[T1, T2, T3, T4, T5]>;
+    static all<T1, T2, T3, T4>(values: [Resolvable<T1>, Resolvable<T2>, Resolvable<T3>, Resolvable<T4>]): Promise<[T1, T2, T3, T4]>;
+    static all<T1, T2, T3>(values: [Resolvable<T1>, Resolvable<T2>, Resolvable<T3>]): Promise<[T1, T2, T3]>;
+    static all<T1, T2>(values: [Resolvable<T1>, Resolvable<T2>]): Promise<[T1, T2]>;
+    static all<T1>(values: [Resolvable<T1>]): Promise<[T1]>;
+    /**
      * @param resolvables Resolvables involved.
      * @return Created promise.
      */
+    static all<T>(resolvables: Resolvable<T>[]): Promise<T[]>;
     static all<T>(resolvables: Resolvable<T>[]): Promise<T[]> {
         if (!resolvables.length) {
             return Promise.resolve([]);
