@@ -1,9 +1,9 @@
 /**
  * ThenFail v0.4
  * Just another Promises/A+ Library
- * 
+ *
  * https://github.com/vilic/thenfail
- * 
+ *
  * MIT License
  */
 
@@ -50,6 +50,8 @@ export type NodeStyleCallback<T> = (error?: any, value?: T) => void;
 
 export type MapCallback<T, TResult> = (value: T, index: number, array: T[]) => Resolvable<TResult>;
 
+export type ReduceCallback<T, TResult> = (previousValue: TResult, currentValue: T, index: number, array: T[]) => Resolvable<TResult>;
+
 export type EachCallback<T> = (value: T, index: number, array: T[]) => Resolvable<boolean | void>;
 
 export type WaterfallCallback<T, TResult> = (value: T, result: TResult, index: number, array: T[]) => Resolvable<TResult>;
@@ -85,26 +87,26 @@ export let options = {
 export class Promise<T> implements PromiseLike<T> {
     /** Current state of this promise. */
     private _state = State.pending;
-    
+
     /**
      * Indicates whether `onfulfilled` or `onrejected` handler has been called
      * but the resolved value has not become fulfilled yet.
      */
     private _running = false;
-    
+
     /** Indicates whether this promise has been relayed or notified as unrelayed. */
     private _handled = false;
-    
+
     /** The fulfilled value or rejected reason associated with this promise. */
     private _valueOrReason: any;
-    
+
     /** Context of this promise. */
     private _context: Context;
-    
+
     /** Label of this promise. */
     private _label: string;
 
-    /** 
+    /**
      * Next promise in the chain.
      * Avoid using an array if not necessary due to performance issue,
      * the same way applies to `_handledPromise(s)`.
@@ -112,29 +114,29 @@ export class Promise<T> implements PromiseLike<T> {
      * Vice versa.
      */
     private _chainedPromise: Promise<any>;
-    
+
     /** Next promises in the chain. */
     private _chainedPromises: Promise<any>[];
 
-    /** 
+    /**
      * Promise that will share the same state (and value/reason).
-     * 
+     *
      * Example:
-     * 
+     *
      * ```ts
      * let promiseA = Promise.then(() => {
      *     let promiseB = Promise.then(() => ...);
      *     return promiseB;
      * });
      * ```
-     * 
+     *
      * The state of `promiseB` will determine the state of `promiseA`.
      * And `promiseA` will then be in here.
      */
     private _handledPromise: Promise<T>;
     /** Promises that will share the same state (and value/reason). */
     private _handledPromises: Promise<T>[];
-    
+
     private _onPreviousFulfilled: OnFulfilledHandler<any, T>;
     private _onPreviousRejected: OnRejectedHandler<T>;
     private _onContextDisposed: OnContextDisposedHandler;
@@ -151,7 +153,7 @@ export class Promise<T> implements PromiseLike<T> {
         } else {
             this._context = new Context();
         }
-        
+
         if (typeof resolverOrContext === 'function') {
             try {
                 (<Resolver<T>>resolverOrContext)(
@@ -171,15 +173,15 @@ export class Promise<T> implements PromiseLike<T> {
         if (this._state !== State.pending) {
             return;
         }
-        
+
         let handler: OnAnyHandler<Resolvable<T>>;
-        
+
         if (previousState === State.fulfilled) {
             handler = this._onPreviousFulfilled;
         } else if (previousState === State.rejected) {
             handler = this._onPreviousRejected;
         }
-        
+
         if (handler) {
             this._run(handler, previousValueOrReason);
         } else {
@@ -192,7 +194,7 @@ export class Promise<T> implements PromiseLike<T> {
      */
     private _run(handler: OnAnyHandler<any>, previousValueOrReason: any): void {
         this._running = true;
-        
+
         asap(() => {
             let resolvable: Resolvable<T>;
 
@@ -210,7 +212,7 @@ export class Promise<T> implements PromiseLike<T> {
             });
         });
     }
-    
+
     /**
      * The resolve process defined in Promises/A+ specifications.
      */
@@ -227,9 +229,9 @@ export class Promise<T> implements PromiseLike<T> {
                 } else {
                     value._handledPromise = this;
                 }
-                
+
                 let context = this._context;
-                
+
                 if (context._subContexts) {
                     context._subContexts.push(value._context);
                 } else {
@@ -281,7 +283,7 @@ export class Promise<T> implements PromiseLike<T> {
             callback(State.fulfilled, value);
         }
     }
-    
+
     /**
      * Decide whether to call `_relay`, `_skip` or `_goto`.
      */
@@ -294,7 +296,7 @@ export class Promise<T> implements PromiseLike<T> {
             this._relay(state, valueOrReason);
         }
     }
-    
+
     /**
      * Set the state of current promise and relay it to next promises.
      */
@@ -302,15 +304,15 @@ export class Promise<T> implements PromiseLike<T> {
         if (this._state !== State.pending) {
             return;
         }
-        
+
         if (this._context._disposed) {
             this._skip();
             return;
         }
-        
+
         this._state = state;
         this._valueOrReason = valueOrReason;
-        
+
         if (this._chainedPromise) {
             this._chainedPromise._grab(state, valueOrReason);
         } else if (this._chainedPromises) {
@@ -318,7 +320,7 @@ export class Promise<T> implements PromiseLike<T> {
                 promise._grab(state, valueOrReason);
             }
         }
-        
+
         if (this._handledPromise) {
             this._handledPromise._relay(state, valueOrReason);
         } else if (this._handledPromises) {
@@ -326,23 +328,23 @@ export class Promise<T> implements PromiseLike<T> {
                 promise._relay(state, valueOrReason);
             }
         }
-        
+
         asap(() => {
             if (state === State.rejected && !this._handled) {
                 this._handled = true;
-                
+
                 let relayed = !!(this._chainedPromise || this._chainedPromises || this._handledPromise || this._handledPromises);
-                
+
                 if (!relayed && !options.disableUnrelayedRejectionWarning) {
                     let error = valueOrReason && (valueOrReason.stack || valueOrReason.message) || valueOrReason;
                     options.logger.warn(`An unrelayed rejection happens:\n${error}`);
                 }
             }
-            
+
             this._relax();
         });
     }
-    
+
     /**
      * Skip some promises.
      */
@@ -350,7 +352,7 @@ export class Promise<T> implements PromiseLike<T> {
         if (this._state !== State.pending) {
             return;
         }
-        
+
         if (this._running) {
             // if it's disposed.
             if (!signal) {
@@ -364,15 +366,15 @@ export class Promise<T> implements PromiseLike<T> {
                     }
                 }
             }
-            
+
             this._state = State.fulfilled;
         } else {
             this._state = State.skipped;
         }
-        
+
         if (this._chainedPromise) {
             let promise = this._chainedPromise;
-            
+
             if (promise._context === this._context) {
                 promise._skip(signal);
             } else {
@@ -387,10 +389,10 @@ export class Promise<T> implements PromiseLike<T> {
                 }
             }
         }
-        
+
         if (signal && signal.preliminary) {
             signal.preliminary = false;
-            
+
             if (this._handledPromise) {
                 this._handledPromise._skip(signal);
             } else if (this._handledPromises) {
@@ -407,10 +409,10 @@ export class Promise<T> implements PromiseLike<T> {
                 }
             }
         }
-        
+
         this._relax();
     }
-    
+
     /**
      * Go to a specific promise that matches given label.
      */
@@ -418,12 +420,12 @@ export class Promise<T> implements PromiseLike<T> {
         if (this._state !== State.pending) {
             return;
         }
-        
+
         this._state = this._running ? State.fulfilled : State.skipped;
-        
+
         if (this._chainedPromise) {
             let promise = this._chainedPromise;
-            
+
             if (promise._label === signal.label) {
                 promise._grab(State.fulfilled, signal.value);
             } else {
@@ -438,10 +440,10 @@ export class Promise<T> implements PromiseLike<T> {
                 }
             }
         }
-        
+
         if (signal && signal.preliminary) {
             signal.preliminary = false;
-            
+
             if (this._handledPromise) {
                 this._handledPromise._goto(signal);
             } else if (this._handledPromises) {
@@ -458,10 +460,10 @@ export class Promise<T> implements PromiseLike<T> {
                 }
             }
         }
-        
+
         this._relax();
     }
-    
+
     /**
      * Set handlers to undefined.
      */
@@ -469,28 +471,28 @@ export class Promise<T> implements PromiseLike<T> {
         if (this._onPreviousFulfilled) {
             this._onPreviousFulfilled = undefined;
         }
-        
+
         if (this._onPreviousRejected) {
             this._onPreviousRejected = undefined;
         }
-        
+
         if (this._onContextDisposed) {
             this._onContextDisposed = undefined;
         }
-        
+
         if (this._chainedPromise) {
             this._chainedPromise = undefined;
         } else {
             this._chainedPromises = undefined;
         }
-        
+
         if (this._handledPromise) {
             this._handledPromise = undefined;
         } else {
             this._handledPromises = undefined;
         }
     }
-    
+
     /**
      * The `then` method that follows
      * [Promises/A+ specifications](https://promisesaplus.com).
@@ -500,15 +502,15 @@ export class Promise<T> implements PromiseLike<T> {
      */
     then<TResult>(onfulfilled: OnFulfilledHandler<T, TResult>, onrejected?: OnRejectedHandler<TResult>): Promise<TResult> {
         let promise = new Promise<any>(this._context);
-        
+
         if (typeof onfulfilled === 'function') {
             promise._onPreviousFulfilled = onfulfilled;
         }
-        
+
         if (typeof onrejected === 'function') {
             promise._onPreviousRejected = onrejected;
         }
-        
+
         if (this._state === State.pending) {
             if (this._chainedPromise) {
                 this._chainedPromises = [this._chainedPromise, promise];
@@ -522,13 +524,13 @@ export class Promise<T> implements PromiseLike<T> {
             if (!this._handled) {
                 this._handled = true;
             }
-            
+
             promise._grab(this._state, this._valueOrReason);
         }
-        
+
         return promise;
     }
-    
+
     /**
      * Resolve the promise with a value or thenable.
      * @param resolvable The value to fulfill or thenable to resolve.
@@ -536,7 +538,7 @@ export class Promise<T> implements PromiseLike<T> {
     resolve(resolvable?: Resolvable<T>): void {
         this._unpack(resolvable, (state, valueOrReason) => this._grab(state, valueOrReason));
     }
-    
+
     /**
      * Reject this promise with a reason.
      * @param reason Rejection reason.
@@ -544,7 +546,7 @@ export class Promise<T> implements PromiseLike<T> {
     reject(reason: any): void {
         this._grab(State.rejected, reason);
     }
-    
+
     /**
      * Like `then` but accepts the first extra parameter as the label of
      * current part.
@@ -558,7 +560,7 @@ export class Promise<T> implements PromiseLike<T> {
         promise._label = label;
         return promise;
     }
-    
+
     /**
      * Set up the interruption handler of the promise.
      * An interruption handler will be called if either the `onfulfilled`
@@ -573,17 +575,17 @@ export class Promise<T> implements PromiseLike<T> {
             if (this._onContextDisposed) {
                 throw new Error('Interruption handler has already been set');
             }
-            
+
             this._onContextDisposed = oncontextdisposed;
         } else {
             // To unify error handling behavior, handler would not be invoked
             // if it's added after promise state being no longer pending.
             options.logger.warn('Handler added after promise state no longer being pending');
         }
-        
+
         return this;
     }
-    
+
     /**
      * Enclose current promise context.
      * @return Current promise.
@@ -592,7 +594,7 @@ export class Promise<T> implements PromiseLike<T> {
         this._context._enclosed = true;
         return this;
     }
-    
+
     /**
      * Create a promise that will be fulfilled in given time after
      * its previous promise becomes fulfilled.
@@ -607,7 +609,7 @@ export class Promise<T> implements PromiseLike<T> {
             });
         });
     }
-    
+
     /**
      * Reject the promise with `TimeoutError` if it's still pending after
      * timeout. The timer starts once this method is called
@@ -617,17 +619,17 @@ export class Promise<T> implements PromiseLike<T> {
      */
     timeout(timeout: number, message?: string): Promise<T> {
         this._context._enclosed = true;
-        
+
         setTimeout(() => {
             if (this._state === State.pending) {
                 this._relay(State.rejected, new TimeoutError(message));
                 this._context.disposeSubContexts();
             }
         }, Math.floor(timeout) || 0);
-        
+
         return this;
     }
-    
+
     /**
      * Handle another promise or node style callback with the value or
      * reason of current promise.
@@ -655,7 +657,7 @@ export class Promise<T> implements PromiseLike<T> {
                 if (!this._handled) {
                     this._handled = true;
                 }
-            
+
                 promiseOrCallback._relay(this._state, this._valueOrReason);
             }
         } else if (typeof promiseOrCallback === 'function') {
@@ -670,10 +672,10 @@ export class Promise<T> implements PromiseLike<T> {
         } else {
             throw new TypeError('Unsupported type to handle');
         }
-        
+
         return this;
     }
-    
+
     /**
      * Create a disposable resource promise.
      * @param disposor A synchronous function to handle resource disposing.
@@ -687,7 +689,7 @@ export class Promise<T> implements PromiseLike<T> {
             };
         });
     }
-    
+
     /**
      * Like `then` with only an `onfulfilled` handler, but will relay the
      * previous fulfilled value instead of value returned by its own
@@ -697,7 +699,7 @@ export class Promise<T> implements PromiseLike<T> {
      */
     tap(onfulfilled: OnFulfilledHandler<T, void>): Promise<T> {
         let relayValue: T;
-        
+
         return this
             .then(value => {
                 relayValue = value;
@@ -705,7 +707,7 @@ export class Promise<T> implements PromiseLike<T> {
             })
             .then(() => relayValue);
     }
-    
+
     /**
      * Spread a fulfilled array-like value as arguments of the given handler.
      * @param onfulfilled Handler that takes the spread arguments.
@@ -748,9 +750,9 @@ export class Promise<T> implements PromiseLike<T> {
             return this.then<T>(undefined, onrejected);
         }
     }
-    
+
     /**
-     * A shortcut of `Promise.map`, assuming the fulfilled value of 
+     * A shortcut of `Promise.map`, assuming the fulfilled value of
      * previous promise is a array.
      * @param callback Map callback.
      * @return Created promise.
@@ -758,7 +760,17 @@ export class Promise<T> implements PromiseLike<T> {
     map<T>(callback: MapCallback<any, T>): Promise<T[]> {
         return this.then((values: any) => Promise.map(values, callback));
     }
-    
+
+    /**
+     * A shortcut of `Promise.map`, assuming the fulfilled value of
+     * previous promise is a array.
+     * @param callback Map callback.
+     * @return Created promise.
+     */
+    reduce<TResult>(callback: ReduceCallback<any, TResult>, initialValue?: TResult): Promise<TResult> {
+        return this.then((values: any) => Promise.reduce(values, callback, initialValue));
+    }
+
     /**
      * A shortcut of `Promise.each`, assuming the fulfilled value of
      * previous promise is a array.
@@ -768,7 +780,7 @@ export class Promise<T> implements PromiseLike<T> {
     each<T>(callback: EachCallback<T>): Promise<boolean> {
         return this.then((values: any) => Promise.each(values, callback));
     }
-    
+
     /**
      * A shortcut of `Promise.waterfall`, take the fulfilled value of
      * previous promise as initial result.
@@ -776,7 +788,7 @@ export class Promise<T> implements PromiseLike<T> {
     waterfall<TValue>(values: TValue[], callback: WaterfallCallback<TValue, T>): Promise<T> {
         return this.then(initialResult => Promise.waterfall(values, initialResult, callback));
     }
-    
+
     /**
      * A shortcut of `Promise.retry`.
      */
@@ -785,7 +797,7 @@ export class Promise<T> implements PromiseLike<T> {
     retry<TResult>(options: RetryOptions, callback?: RetryCallback<TResult>): Promise<TResult> {
         return this.then(() => Promise.retry(options, callback));
     }
-    
+
     /**
      * Log the value specified on fulfillment, or if not, the fulfilled value or
      * rejection reason of current promise after the previous promise becomes settled.
@@ -798,7 +810,7 @@ export class Promise<T> implements PromiseLike<T> {
                 if (value !== undefined) {
                     options.logger.log(value);
                 }
-                
+
                 return value;
             }, reason => {
                 options.logger.error(reason && (reason.stack || reason.message) || reason);
@@ -810,7 +822,7 @@ export class Promise<T> implements PromiseLike<T> {
             });
         }
     }
-    
+
     /**
      * Call `this.then` with `onrejected` handler only, and throw the
      * rejection reason if any.
@@ -822,7 +834,7 @@ export class Promise<T> implements PromiseLike<T> {
             });
         });
     }
-    
+
     /**
      * (get) A promise that will be rejected with a pre-break signal if previous
      * promise is fulfilled with a non-`false` value.
@@ -834,7 +846,7 @@ export class Promise<T> implements PromiseLike<T> {
             }
         });
     }
-    
+
     /**
      * Create a promise that will be rejected with a goto signal if previous
      * promise is fulfilled with a non-`false` value.
@@ -846,63 +858,63 @@ export class Promise<T> implements PromiseLike<T> {
             }
         });
     }
-    
+
     /**
      * (get) A promise that will eventually be fulfilled with `undefined`.
      */
     get void(): Promise<void> {
         return this.then(() => undefined);
     }
-    
+
     /**
      * (get) A promise that will eventually been fulfilled with `true`.
      */
     get true(): Promise<boolean> {
         return this.then(() => true);
     }
-    
+
     /**
      * (get) A promise that will eventually been fulfilled with `false`.
      */
     get false(): Promise<boolean> {
         return this.then(() => false);
     }
-    
+
     /**
      * (get) Get the context of current promise.
      */
     get context(): Context {
         return this._context;
     }
-    
+
     /**
      * (get) A boolean that indicates whether the promise is pending.
      */
     get pending(): boolean {
         return this._state === State.pending;
     }
-    
+
     /**
      * (get) A boolean that indicates whether the promise is fulfilled.
      */
     get fulfilled(): boolean {
         return this._state === State.fulfilled;
     }
-    
+
     /**
      * (get) A boolean that indicates whether the promise is rejected.
      */
     get rejected(): boolean {
         return this._state === State.rejected;
     }
-    
+
     /**
      * (get) A boolean that indicates whether the promise is interrupted.
      */
     get skipped(): boolean {
         return this._state === State.skipped;
     }
-    
+
     /**
      * @deperacated
      * (get) A boolean that indicates whether the promise is interrupted.
@@ -911,9 +923,9 @@ export class Promise<T> implements PromiseLike<T> {
     get interrupted(): boolean {
         return this._state === State.skipped;
     }
-    
+
     // Static helpers
-    
+
     /**
      * A shortcut of `Promise.void.then(onfulfilled)`.
      * @param onfulfilled Fulfillment handler.
@@ -922,7 +934,7 @@ export class Promise<T> implements PromiseLike<T> {
     static then<TResult>(onfulfilled: OnFulfilledHandler<void, TResult>): Promise<TResult> {
         return Promise.void.then(onfulfilled);
     }
-    
+
     /**
      * Resolve a value or thenable as a promise.
      * @return The value itself if it's a ThenFail Promise,
@@ -943,7 +955,7 @@ export class Promise<T> implements PromiseLike<T> {
             return promise;
         }
     }
-    
+
     /**
      * Create a promise rejected by specified reason.
      * @param reason Rejection reason.
@@ -960,14 +972,14 @@ export class Promise<T> implements PromiseLike<T> {
         promise.reject(reason);
         return promise;
     }
-    
+
     /**
      * Alias of `Promise.resolve`.
      */
     static when<T>(value: Resolvable<T>): Promise<T> {
         return Promise.resolve(value);
     }
-    
+
     /**
      * Create a promise with given context.
      * @param context Promise context.
@@ -978,7 +990,7 @@ export class Promise<T> implements PromiseLike<T> {
         promise.resolve();
         return promise;
     }
-    
+
     /**
      * Create a promise that will be fulfilled with `undefined` in given
      * time.
@@ -990,19 +1002,19 @@ export class Promise<T> implements PromiseLike<T> {
             setTimeout(() => resolve(), Math.floor(timeout) || 0);
         });
     }
-    
+
     /**
      * Create a promise that will be fulfilled:
-     * 
+     *
      *   1. when all values are fulfilled.
      *   2. with the value of an array of fulfilled values.
-     * 
+     *
      * And will be rejected:
-     * 
+     *
      *   1. if any of the values is rejected.
      *   2. with the reason of the first rejection as its reason.
      *   3. after all values are either fulfilled or rejected.
-     * 
+     *
      * @return Created promise.
      */
     static all<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(values: [Resolvable<T1>, Resolvable<T2>, Resolvable<T3>, Resolvable<T4>, Resolvable<T5>, Resolvable<T6>, Resolvable<T7>, Resolvable<T8>, Resolvable<T9>, Resolvable<T10>]): Promise<[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10]>;
@@ -1025,14 +1037,14 @@ export class Promise<T> implements PromiseLike<T> {
         if (!resolvables.length) {
             return Promise.resolve([]);
         }
-        
+
         let resultsPromise = new Promise<T[]>();
-        
+
         let results: T[] = [];
         let remaining = resolvables.length;
-        
+
         let reasons: any[] = [];
-        
+
         resolvables.forEach((resolvable, index) => {
             Promise
                 .resolve(resolvable)
@@ -1044,10 +1056,10 @@ export class Promise<T> implements PromiseLike<T> {
                     checkCompletion();
                 });
         });
-        
+
         function checkCompletion(): void {
             remaining--;
-            
+
             if (!remaining) {
                 if (reasons.length) {
                     resultsPromise.reject(reasons[0]);
@@ -1056,28 +1068,28 @@ export class Promise<T> implements PromiseLike<T> {
                 }
             }
         }
-        
+
         return resultsPromise;
     }
-    
+
     /**
      * Create a promise that is settled the same way as the first passed promise to settle.
      * It resolves or rejects, whichever happens first.
      * @param resolvables Promises or values to race.
-     * @return Created promise. 
+     * @return Created promise.
      */
     static race<TResult>(resolvables: Resolvable<TResult>[]): Promise<TResult> {
         let promise = new Promise<TResult>();
-        
+
         for (let resolvable of resolvables) {
             Promise
                 .resolve(resolvable)
                 .handle(promise);
         }
-        
+
         return promise;
     }
-    
+
     /**
      * A promise version of `Array.prototype.map`.
      * @param values Values to map.
@@ -1087,7 +1099,21 @@ export class Promise<T> implements PromiseLike<T> {
     static map<T, TResult>(values: T[], callback: MapCallback<T, TResult>): Promise<TResult[]> {
         return Promise.all(values.map(callback));
     }
-    
+
+    /**
+     * A promise version of `Array.prototype.reduce`.
+     * @param values Values to reduce.
+     * @param callback Reduce callback.
+     * @return Created promise.
+     */
+    static reduce<T, TResult>(values: T[], callback: ReduceCallback<T, TResult>, initialValue?: TResult): Promise<TResult> {
+        return values.reduce((promise, value, index, values) => {
+            return promise.then(previousValue => {
+                return callback(previousValue, value, index, values);
+            });
+        }, Promise.resolve(initialValue));
+    }
+
     /**
      * (breakable) Iterate elements in an array one by one.
      * TResult `false` or a promise that will eventually be fulfilled with
@@ -1100,11 +1126,11 @@ export class Promise<T> implements PromiseLike<T> {
     static each<T>(values: T[], callback: EachCallback<T>): Promise<boolean> {
         return values
             .reduce((promise, value, index, values) => {
-                return promise.then((result) => {
+                return promise.then(result => {
                     if (result === false) {
                         throw new BreakSignal();
                     }
-                    
+
                     return callback(value, index, values);
                 });
             }, Promise.resolve<boolean | void>(undefined))
@@ -1112,7 +1138,7 @@ export class Promise<T> implements PromiseLike<T> {
             .enclose()
             .then(completed => !!completed);
     }
-    
+
     /**
      * (breakable) Pass the last result to the same callback with pre-set values.
      * @param values Pre-set values that will be passed to the callback one
@@ -1122,13 +1148,13 @@ export class Promise<T> implements PromiseLike<T> {
      */
     static waterfall<T, TResult>(values: T[], initialResult: TResult, callback: WaterfallCallback<T, TResult>): Promise<TResult> {
         let lastResult = initialResult;
-        
+
         return Promise
             .each(values, (value, index, array) => {
                 let callbackPromise = Promise
                     .then(() => callback(value, lastResult, index, array))
                     .then(result => result);
-                
+
                 return callbackPromise
                     .enclose()
                     .then(result => {
@@ -1141,7 +1167,7 @@ export class Promise<T> implements PromiseLike<T> {
             })
             .then(() => lastResult);
     }
-    
+
     /**
      * Retry the process in the callback for several times.
      * @param callback Retry callback.
@@ -1162,17 +1188,17 @@ export class Promise<T> implements PromiseLike<T> {
             callback = <any>options;
             options = {};
         }
-        
+
         let {
             limit = 3,
             interval = 0
         } = options;
-        
+
         let lastReason: any;
         let attemptIndex = 0;
-        
+
         return process();
-        
+
         function process(): Promise<TResult> {
             return Promise
                 .then(() => callback(lastReason, attemptIndex++))
@@ -1181,9 +1207,9 @@ export class Promise<T> implements PromiseLike<T> {
                     if (attemptIndex >= limit) {
                         throw reason;
                     }
-                    
+
                     lastReason = reason;
-                    
+
                     if (interval) {
                         return Promise
                             .delay(interval)
@@ -1194,7 +1220,7 @@ export class Promise<T> implements PromiseLike<T> {
                 });
         }
     }
-    
+
     /**
      * Use a disposable resource and dispose it after been used.
      * @param disposable The disposable resource or a thenable of
@@ -1204,16 +1230,16 @@ export class Promise<T> implements PromiseLike<T> {
      */
     static using<T, TResult>(disposable: Resolvable<Disposable<T>>, handler: OnFulfilledHandler<T, TResult>): Promise<TResult> {
         let resolvedDisposable: Disposable<T>;
-        
+
         let promise = Promise
             .resolve(disposable)
             .then(disposable => {
                 resolvedDisposable = disposable;
                 return handler(disposable.resource);
             });
-        
+
         let disposed = false;
-        
+
         function dispose(): void {
             if (!disposed) {
                 // Change the value of `disposed` first to avoid exception in
@@ -1223,14 +1249,14 @@ export class Promise<T> implements PromiseLike<T> {
                 resolvedDisposable.dispose(resolvedDisposable.resource);
             }
         }
-        
+
         promise
             .interruption(dispose)
             .then(dispose, dispose);
-        
+
         return promise;
     }
-    
+
     /**
      * Invoke a Node style asynchronous function that accepts the last
      * argument as callback.
@@ -1247,16 +1273,16 @@ export class Promise<T> implements PromiseLike<T> {
                     resolve(value);
                 }
             });
-            
+
             fn.apply(undefined, args);
         });
     }
-    
+
     /**
      * (fake statement) This getter will always throw a break signal that interrupts the promises chain.
-     * 
+     *
      * Example:
-     * 
+     *
      * ```ts
      * promise
      *     .then(() => {
@@ -1276,22 +1302,22 @@ export class Promise<T> implements PromiseLike<T> {
     static get break(): void {
         throw new BreakSignal();
     }
-    
+
     /** (get) The break signal. */
     static get breakSignal(): any {
         return new BreakSignal();
     }
-    
+
     /** (get) The pre-break signal. */
     static get preBreakSignal(): any {
         return new BreakSignal(true);
     }
-    
+
     /** (fake statement) This method will throw an `GoToSignal` with specified `label`. */
     static goto(label: string, value?: any): void {
         throw new GoToSignal(label, value);
     }
-    
+
     /**
      * (get) A promise that has already been fulfilled with `undefined`.
      */
@@ -1300,7 +1326,7 @@ export class Promise<T> implements PromiseLike<T> {
         promise.resolve(undefined);
         return promise;
     }
-    
+
     /**
      * (get) A promise that has already been fulfilled with `true`.
      */
@@ -1309,7 +1335,7 @@ export class Promise<T> implements PromiseLike<T> {
         promise.resolve(true);
         return promise;
     }
-    
+
     /**
      * (get) A promise that has already been fulfilled with `false`.
      */
