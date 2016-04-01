@@ -4,8 +4,4 @@ export * from './errors';
 export * from './utils/lock';
 export * from './utils/promise-lock';
 
-export {
-    Promise as default,
-    invoke,
-    using
-} from './promise';
+export { Promise as default } from './promise';
