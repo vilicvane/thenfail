@@ -15,16 +15,16 @@ describe('Feature: all', () => {
             }),
             'c'
         ];
-        
+
         return Promise
             .all(promises)
             .should.eventually.deep.equal(['a', 'b', 'c']);
     });
-    
+
     it('One rejected', () => {
         let error = new Error();
         let count = 0;
-        
+
         let promises = [
             new Promise<string>(resolve => {
                 count++;
@@ -38,20 +38,20 @@ describe('Feature: all', () => {
             }),
             Promise.reject<string>(error)
         ];
-        
+
         return Promise
             .all(promises)
             .then(undefined, reason => {
-                // Expecting wait until all promises are either fulfilled or rejected.
-                count.should.equal(2);
+                // Expecting to reject when the first one rejects.
+                count.should.equal(1);
                 reason.should.equal(error);
             });
     });
-    
+
     it('Some rejected', () => {
         let error = new Error();
         let count = 0;
-        
+
         let promises = [
             new Promise<string>(resolve => {
                 count++;
@@ -67,20 +67,24 @@ describe('Feature: all', () => {
                 setTimeout(() => {
                     count++;
                     reject({});
-                }, 10);
+                }, 50);
             }),
-            Promise.reject<string>(error)
+            new Promise<string>((resolve, reject) => {
+                setTimeout(() => {
+                    count++;
+                    reject(error);
+                }, 10);
+            })
         ];
-        
+
         return Promise
             .all(promises)
             .then(undefined, reason => {
-                // Expecting wait until all promises are either fulfilled or rejected.
                 count.should.equal(3);
                 reason.should.equal(error);
             });
     });
-    
+
     it('Empty promises array', () => {
         return Promise
             .all([])

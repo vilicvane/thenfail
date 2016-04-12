@@ -1013,7 +1013,7 @@ export class Promise<T> implements PromiseLike<T> {
      *
      *   1. if any of the values is rejected.
      *   2. with the reason of the first rejection as its reason.
-     *   3. after all values are either fulfilled or rejected.
+     *   3. once the first rejection happens.
      *
      * @return Created promise.
      */
@@ -1032,7 +1032,7 @@ export class Promise<T> implements PromiseLike<T> {
      * @return Created promise.
      */
     static all<T>(resolvables: Resolvable<T>[]): Promise<T[]>;
-    // TODO: change return type to Promise<T[]> after TypeScript 1.8 release.
+    // TODO: change return type to Promise<T[]> after TypeDoc upgrades.
     static all<T>(resolvables: Resolvable<T>[]): Promise<any> {
         if (!resolvables.length) {
             return Promise.resolve([]);
@@ -1043,31 +1043,31 @@ export class Promise<T> implements PromiseLike<T> {
         let results: T[] = [];
         let remaining = resolvables.length;
 
-        let reasons: any[] = [];
+        let rejected = false;
 
         resolvables.forEach((resolvable, index) => {
             Promise
                 .resolve(resolvable)
                 .then(result => {
+                    if (rejected) {
+                        return;
+                    }
+
                     results[index] = result;
-                    checkCompletion();
+
+                    if (--remaining === 0) {
+                        resultsPromise.resolve(results);
+                    }
                 }, reason => {
-                    reasons.push(reason);
-                    checkCompletion();
+                    if (rejected) {
+                        return;
+                    }
+
+                    rejected = true;
+                    resultsPromise.reject(reason);
+                    results = undefined;
                 });
         });
-
-        function checkCompletion(): void {
-            remaining--;
-
-            if (!remaining) {
-                if (reasons.length) {
-                    resultsPromise.reject(reasons[0]);
-                } else {
-                    resultsPromise.resolve(results);
-                }
-            }
-        }
 
         return resultsPromise;
     }
