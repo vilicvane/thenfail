@@ -7,6 +7,8 @@
  * MIT License
  */
 
+import { EventEmitter } from 'events';
+
 import * as asap from 'asap';
 import deprecated from 'deprecated-decorator';
 
@@ -1275,6 +1277,58 @@ export class Promise<T> implements PromiseLike<T> {
             });
 
             fn.apply(undefined, args);
+        });
+    }
+
+    /**
+     * Create a promise for an event emitter.
+     * @param emitter - The emitter to listen on 'error' event for rejection,
+     *     and given event types for fulfillment.
+     * @param type - A string or an array of string of event types for
+     *     fulfillment.
+     * @param errorEmitters - Other emitters to listen on 'error' event for rejection.
+     */
+    static for(emitter: EventEmitter, types: string | string[], errorEmitters?: EventEmitter[]): Promise<void>;
+    static for<T>(emitter: EventEmitter, types: string | string[], errorEmitters?: EventEmitter[]): Promise<T>;
+    static for<T>(emitter: EventEmitter, types: string | string[], errorEmitters: EventEmitter[] = []): Promise<T> {
+        if (!(emitter instanceof EventEmitter)) {
+            throw new TypeError('Unsupported object type');
+        }
+
+        errorEmitters.unshift(emitter);
+
+        if (typeof types === 'string') {
+            types = [types as string];
+        }
+
+        return new Promise<T>((resolve, reject) => {
+            let onsuccess = (value: T) => {
+                removeListeners();
+                resolve(value);
+            };
+
+            let onerror = (error: any) => {
+                removeListeners();
+                reject(error);
+            };
+
+            for (let type of types) {
+                emitter.on(type, onsuccess);
+            }
+
+            for (let emitter of errorEmitters) {
+                emitter.on('error', onerror);
+            }
+
+            function removeListeners() {
+                for (let type of types) {
+                    emitter.removeListener(type, onsuccess);
+                }
+
+                for (let emitter of errorEmitters) {
+                    emitter.removeListener('error', onerror);
+                }
+            }
         });
     }
 
