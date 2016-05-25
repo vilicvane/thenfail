@@ -1099,7 +1099,17 @@ export class Promise<T> implements PromiseLike<T> {
      * @return Created promise.
      */
     static map<T, TResult>(values: T[], callback: MapCallback<T, TResult>): Promise<TResult[]> {
-        return Promise.all(values.map(callback));
+        let results: TResult[] = new Array<TResult>(values.length);
+
+        return values
+            .reduce((promise, value, index, values) => {
+                return promise
+                    .then(() => callback(value, index, values))
+                    .then(result => {
+                        results[index] = result;
+                    });
+            }, Promise.resolve())
+            .then(() => results);
     }
 
     /**
