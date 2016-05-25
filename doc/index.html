@@ -72,91 +72,47 @@
 				<p>Just another Promises/A+ implementation written in TypeScript that provides control flow tools like <code>Promise.break</code>, <code>Promise.goto</code> and disposable context.</p>
 				<h2 id="documentation">Documentation</h2>
 				<p><a href="https://vilic.github.io/thenfail/doc">https://vilic.github.io/thenfail/doc</a></p>
-				<h2 id="what-is-promise">What is promise</h2>
-				<p>Promise is a pattern for handling asynchronous operations.</p>
-				<p>The most obvious benifit you may get from promise itself IMO is on error handling,
-				and maybe the ability to <code>await</code> an <code>async</code> operation in the future (ES7 and TypeScript 1.6/2.0).</p>
-				<h2 id="install-thenfail">Install ThenFail</h2>
+				<h2 id="install">Install</h2>
 				<pre><code class="lang-sh">npm install thenfail --save
 </code></pre>
-				<p>If you are using TypeScript, ThenFail requires version 1.6 to compile correctly.</p>
-				<h2 id="create-a-promise-from-the-scratch">Create a promise from the scratch</h2>
-				<p>My personal promise experience began with <a href="https://github.com/kriskowal/q/">Q</a> (a popular Promises/A+ implementation).
-				But believe it or not, I spent a lot of time just for fully understanding how to actually create a promise.</p>
-				<p>So let&#39;s put the beginning at the beginning (unlike where Q put it), how to create the very first promise with ThenFail?</p>
-				<p>Firstly, let&#39;s import ThenFail:</p>
+				<h2 id="usage">Usage</h2>
 				<pre><code class="lang-ts"><span class="hljs-keyword">import</span> Promise from <span class="hljs-string">'thenfail'</span>;
 </code></pre>
-				<p>Then let&#39;s follow the ES6 standard:</p>
-				<pre><code class="lang-ts"><span class="hljs-keyword">let</span> firstPromise = <span class="hljs-keyword">new</span> Promise((resolve, reject) =&gt; {
-    setTimeout(() =&gt; resolve(<span class="hljs-string">'biu'</span>), <span class="hljs-number">100</span>);
-});
+				<h3 id="first-call">First call</h3>
+				<p>ThenFail added a static <code>then</code> method for the first call, which is equivalent to <code>Promise.resolve().then</code>.
+					While method <code>Promise.resolve</code> can also handle both normal value and promise-like value,
+				using the static <code>then</code> method can make sure errors thrown are caught.</p>
+				<pre><code class="lang-ts">Promise
+    .then(() =&gt; {
+        <span class="hljs-keyword">if</span> (foo) {
+            <span class="hljs-keyword">return</span> Promise.resolve(<span class="hljs-string">'foo'</span>);
+        } <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (bar) {
+            <span class="hljs-keyword">return</span> <span class="hljs-string">'bar'</span>;
+        } <span class="hljs-keyword">else</span> {
+            <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-built_in">Error</span>();
+        }
+    })
+    .then(value =&gt; {
+        <span class="hljs-built_in">console</span>.log(value);
+    });
 </code></pre>
-				<p>And now we&#39;ve created a promise that will be <em>fulfilled</em> with string <code>&quot;biu&quot;</code> after 100 ms.</p>
-				<p>Which means if we add the <code>then</code> method (which you see everywhere) with <code>console.log</code>, you will be able to see the output after 100 ms:</p>
-				<pre><code class="lang-ts"><span class="hljs-comment">// Logs "biu" in 100 ms.</span>
-<span class="hljs-keyword">let</span> secondPromise = firstPromise.then(result =&gt; <span class="hljs-built_in">console</span>.log(result));
-</code></pre>
-				<p>And... Wait, we get the <code>secondPromise</code>? Yes, every time we call <code>then</code> with handler(s), it creates another promise.
-				The newly created promise will be <em>fulfilled</em> after the task in the handler gets done.</p>
-				<p>But how does it determine whether the task is done?</p>
-				<p>The method <code>then</code> generally accepts two parameters, an <code>onfulfilled</code> handler and an <code>onrejected</code> handler.
-					Only one of the two handlers would ever be called (if both of them exist) depending on the state of the previous promise.
-				And when been called, it returns a normal value or a promise, or otherwise, throws an error.</p>
-				<p>If the handler does not return a promise, like in the previous example (which returns <code>undefined</code>),
-				the created promise (as <code>then</code> method will create a promise any way) will be switched to state <em>fulfilled</em> (or <em>rejected</em> if the handler throws an error).</p>
-				<p>Otherwise, the state of the created promise will be determined by the promise returned in the handler (which might take some time to be settled, asynchronously).
-				And if there&#39;s a following <code>then</code>, the handlers in it will be triggered later depending on the returned promise.</p>
-				<h2 id="create-a-thenfail-promise-chain">Create a ThenFail promise chain</h2>
-				<p>We&#39;ve learned how to use the constructor to create a promise, but usually we only use that way to bridge other style of asynchronous code.
-				When we are writting our own promised API based on other promised API, we can make it simpler:</p>
-				<pre><code class="lang-ts"><span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">getResource</span>(<span class="hljs-params">url: <span class="hljs-built_in">string</span></span>): <span class="hljs-title">Promise</span>&lt;<span class="hljs-title">Resource</span>&gt; </span>{
-    <span class="hljs-keyword">if</span> (url) {
-        <span class="hljs-keyword">return</span> Promise
-            .then(() =&gt; {
-                <span class="hljs-keyword">if</span> (url <span class="hljs-keyword">in</span> cache) {
-                    <span class="hljs-keyword">return</span> cache[url];
-                } <span class="hljs-keyword">else</span> {
-                    <span class="hljs-keyword">return</span> fetchRemoteRawResource(url);
-                }
+				<h3 id="create-promise-for-event-emitters">Create promise for event emitters</h3>
+				<p>It is common to pipe a stream to another, taking piping a read stream to a write stream for example:</p>
+				<pre><code class="lang-ts"><span class="hljs-keyword">import</span> * as FS from <span class="hljs-string">'fs'</span>;
 
-                <span class="hljs-comment">// And you can certainly throw an error here.</span>
-                <span class="hljs-comment">// It will be caught by the promise chain and trigger the closest `onrejected` handler.</span>
-            })
-            .then(rawResource =&gt; processResource(rawResource));
-    } <span class="hljs-keyword">else</span> {
-        <span class="hljs-comment">// Never return `undefined` directly in an API that's meant to return a promise.</span>
-        <span class="hljs-comment">// In ThenFail, you may use something like this.</span>
-        <span class="hljs-keyword">return</span> Promise.void;
-    }
-}
+<span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">copy</span>(<span class="hljs-params">src: <span class="hljs-built_in">string</span>, dest: <span class="hljs-built_in">string</span></span>): <span class="hljs-title">Promise</span>&lt;<span class="hljs-title">void</span>&gt; </span>{
+    <span class="hljs-keyword">let</span> readStream = FS.createReadStream(src);
+    <span class="hljs-keyword">let</span> writeStream = FS.createWriteStream(dest);
 
-getResource(<span class="hljs-string">'the-resouce-url'</span>).then(resource =&gt; {
-    <span class="hljs-keyword">if</span> (resource) {
-        <span class="hljs-comment">// ...</span>
-    }
-});
-</code></pre>
-				<p>Promise works great with other promises. There are two points in this sentense:</p>
-				<ol>
-					<li>Promise works great in a promise-based architecture.</li>
-					<li>A promise implementation usually plays well with other promise implementations. (Or it will most likely fail the Promises/A+ test suite.)</li>
-				</ol>
-				<p>But there&#39;s a simple issue.
-					Different implementations of promise have different APIs, some libraries you need may use Q, and some others might use <a href="https://github.com/petkaantonov/bluebird">Bluebird</a>.
-				Even the versions could vary. So when writing your own modules, you may want to unify the promises.</p>
-				<p>Assuming you are getting a promise (or a normal value if it might be), you may use the standard <code>resolve</code> method:</p>
-				<pre><code class="lang-ts"><span class="hljs-comment">// A thenable is a promise like object (or a promise by another implementation).</span>
-<span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">foo</span>(<span class="hljs-params">bar: Thenable&lt;<span class="hljs-built_in">string</span>&gt;|<span class="hljs-built_in">string</span></span>): <span class="hljs-title">Promise</span>&lt;<span class="hljs-title">number</span>&gt; </span>{
-    <span class="hljs-keyword">return</span> Promise
-        .resolve(bar)
-        .then(str =&gt; str.length);
+    readStream.pipe(writeStream);
+
+    <span class="hljs-comment">// Listen to `close` event of `writeStream` for fulfillment,</span>
+    <span class="hljs-comment">// And listen to `error` event of `writeStream` as well as `readStream` for rejection.</span>
+    <span class="hljs-keyword">return</span> Promise.for(writeStream, <span class="hljs-string">'close'</span>, [readStream]);
 }
 </code></pre>
-				<p>After <code>resolve</code>, the promise or value will be converted to a ThenFail promise (if it&#39;s not).
-				This will help preventing some undesired behaviors or errors from happening.</p>
-				<h2 id="control-flow-with-thenfail">Control flow with ThenFail</h2>
-				<h3 id="promise-break">Promise.break</h3>
+				<h3 id="control-flow-features">Control flow features</h3>
+				<h4 id="promise-break">Promise.break</h4>
 				<p>Sometimes chaining promises could be annoying. For example:</p>
 				<pre><code class="lang-ts">Promise
     .then(() =&gt; {
@@ -201,7 +157,7 @@ getResource(<span class="hljs-string">'the-resouce-url'</span>).then(resource =&
     <span class="hljs-comment">// e.g. Returned as your method result.</span>
     .enclose();
 </code></pre>
-				<h3 id="promise-goto">Promise.goto</h3>
+				<h4 id="promise-goto">Promise.goto</h4>
 				<pre><code class="lang-ts">Promise
     .then(() =&gt; {
         <span class="hljs-keyword">if</span> (someCondition) {
@@ -223,7 +179,7 @@ getResource(<span class="hljs-string">'the-resouce-url'</span>).then(resource =&
         <span class="hljs-comment">// be aware that `goto` `"label-a"` won't prevent the execution of `"label-b"`.</span>
     });
 </code></pre>
-				<h3 id="promise-context">Promise context</h3>
+				<h4 id="promise-context">Promise context</h4>
 				<p>There&#39;s situations we may want to cancel a promise chain, not only from inside (like using <code>Promise.break</code>), but also from outside:</p>
 				<pre><code class="lang-ts">page.on(<span class="hljs-string">'load'</span>, () =&gt; {
     Promise
