@@ -87,6 +87,9 @@ export let options = {
 //  3. Relay the new state to next runners.
 
 export class Promise<T> implements PromiseLike<T> {
+    /** To make sure type checking work with value. */
+    private __generic: T;
+
     /** Current state of this promise. */
     private _state = State.pending;
 
