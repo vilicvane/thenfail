@@ -14,7 +14,7 @@ export class PromiseLock {
         this._promise = promise.void.fail(reason => undefined);
         return promise;
     }
-    
+
     get locker(): <TResult>(handler: PromiseLockHandler<TResult>) => Promise<TResult> {
         return this.lock.bind(this);
     }

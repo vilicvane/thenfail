@@ -9,14 +9,14 @@ describe('Feature: tap', () => {
             })
             .tap(value => {
                 value.should.be.true;
-                
+
                 return new Promise<void>(resolve => {
                     setTimeout(resolve, 10);
                 });
             })
             .should.eventually.be.true;
     });
-    
+
     it('Should be in the chain', () => {
         return Promise
             .true

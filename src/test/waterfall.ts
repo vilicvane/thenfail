@@ -13,10 +13,10 @@ describe('Feature: waterfall', () => {
                 callbackCalled.should.be.false;
             });
     });
-    
+
     it('All fulfilled without interruption', () => {
         let values = ['a', 'b', 'c', 'd'];
-        
+
         return Promise
             .waterfall(values, 'x', callback)
             .then(result => {
@@ -25,7 +25,7 @@ describe('Feature: waterfall', () => {
             })
             .waterfall(values, callback)
             .should.eventually.equal('d');
-        
+
         function callback(value: string, lastResult: string, index: number): Resolvable<string> {
             switch (index) {
                 case 0:
@@ -44,10 +44,12 @@ describe('Feature: waterfall', () => {
                 case 3:
                     lastResult.should.equal('c');
                     return value;
+                default:
+                    return;
             }
         }
     });
-    
+
     context('Break and fulfill lastResult', () => {
         it('Synchronously break', () => {
             return Promise
@@ -65,11 +67,13 @@ describe('Feature: waterfall', () => {
                         case 3:
                             lastResult.should.equal('c');
                             return value;
+                        default:
+                            return;
                     }
                 })
                 .should.eventually.equal('b');
         });
-        
+
         it('Asynchronously break', () => {
             return Promise
                 .waterfall(['a', 'b', 'c', 'd'], 'x', (value, lastResult, index) => {
@@ -89,6 +93,8 @@ describe('Feature: waterfall', () => {
                         case 3:
                             lastResult.should.equal('c');
                             return value;
+                        default:
+                            return;
                     }
                 })
                 .should.eventually.equal('b');

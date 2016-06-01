@@ -4,10 +4,13 @@
         "module": "commonjs",
         "noEmitOnError": true,
         "noImplicitAny": true,
+        "noImplicitReturns": true,
         "experimentalDecorators": true,
         "preserveConstEnums": true,
         "declaration": true,
         "sourceMap": true,
+        "newLine": "LF",
+        "rootDir": "src",
         "outDir": "bld"
     },
     "exclude": [

@@ -3,13 +3,13 @@ import Promise from '../index';
 describe('Feature: each', () => {
     it('All fulfilled without interruption', () => {
         let str = '';
-        
+
         let startAt = Date.now();
-        
+
         return Promise
             .each(['a', 'b', 'c', 'd'], char => {
                 str += char;
-                
+
                 switch (char) {
                     case 'a':
                         break;
@@ -30,21 +30,24 @@ describe('Feature: each', () => {
                 str.should.equal('abcd');
             });
     });
-    
+
     it('Promise.break can break', () => {
         let str = '';
-        
+
         return Promise
             .each(['a', 'b', 'c'], char => {
                 str += char;
-                
+
                 switch (char) {
                     case 'a':
-                        break;
+                        return;
                     case 'b':
                         Promise.break;
+                        return;
                     case 'c':
                         return true;
+                    default:
+                        return;
                 }
             })
             .then(completed => {
@@ -52,16 +55,18 @@ describe('Feature: each', () => {
                 str.should.equal('ab');
             });
     });
-    
+
     it('All would be fulfilled but interrupted by a returned `false`', () => {
         let str = '';
-        
+
         return Promise
             .each(['a', 'b', 'c', 'd', 'e'], char => {
                 str += char;
-                
+
                 if (char === 'd') {
                     return false;
+                } else {
+                    return;
                 }
             })
             .then(completed => {
@@ -69,15 +74,15 @@ describe('Feature: each', () => {
                 str.should.equal('abcd');
             });
     });
-    
+
     it('Interrupted by rejection', () => {
         let error = new Error();
         let str = '';
-        
+
         return Promise
             .each(['a', 'b', 'c', 'd', 'e'], char => {
                 str += char;
-                
+
                 if (char === 'd') {
                     throw error;
                 }
@@ -87,7 +92,7 @@ describe('Feature: each', () => {
                 str.should.equal('abcd');
             });
     });
-    
+
     it('Empty array', () => {
         return Promise
             .each([], () => { })

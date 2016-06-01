@@ -3,7 +3,7 @@ export class Context {
     _enclosed = false;
 
     _subContexts: Context[];
-    
+
     /**
      * (get) A boolean that indicates whether this promise context is disposed.
      * See https://github.com/vilic/thenfail# for more information.
@@ -11,7 +11,7 @@ export class Context {
     get disposed(): boolean {
         return this._disposed;
     }
-    
+
     /**
      * (get) A boolean that indicates whether this promise context is enclosed.
      * See https://github.com/vilic/thenfail# for more information.
@@ -19,7 +19,7 @@ export class Context {
     get enclosed(): boolean {
         return this._enclosed;
     }
-    
+
     /**
      * Dispose this promise context.
      * See https://github.com/vilic/thenfail# for more information.
@@ -28,7 +28,7 @@ export class Context {
         this._disposed = true;
         this.disposeSubContexts();
     }
-    
+
     /**
      * Dispose all sub contexts of this promise context.
      */
@@ -37,7 +37,7 @@ export class Context {
             for (let context of this._subContexts) {
                 context.dispose();
             }
-            
+
             this._subContexts = undefined;
         }
     }

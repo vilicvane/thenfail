@@ -12,7 +12,7 @@ describe('Feature: map', () => {
             })
             .should.eventually.deep.equal([1, 2, 3]);
     });
-    
+
     it('promise.map Should return expected array', () => {
         return Promise
             .resolve([10, 20, 30])

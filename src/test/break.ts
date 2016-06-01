@@ -12,10 +12,10 @@ describe('Feature: break promises chain', () => {
             .then(() => {
                 done('Did not break');
             });
-            
+
         setTimeout(done, 10);
     });
-    
+
     it('Return promise.break should break the chain if previous promise is fulfilled with non-`false` value', done => {
         Promise
             .then(() => {
@@ -26,10 +26,10 @@ describe('Feature: break promises chain', () => {
             .then(() => {
                 done('Did not break');
             });
-        
+
         setTimeout(done, 10);
     });
-    
+
     it('Return promise.break should not break the chain if previous promise is fulfilled with `false`', done => {
         Promise
             .then(() => {
@@ -43,7 +43,7 @@ describe('Feature: break promises chain', () => {
                 done();
             });
     });
-    
+
     it('Skipped chain should not continue', done => {
         let promise = Promise
             .then(() => {
@@ -52,16 +52,16 @@ describe('Feature: break promises chain', () => {
             .then(() => {
                 done('Did not break');
             });
-        
+
         setTimeout(() => {
             promise.then(() => {
                 done('Did not break');
             });
-            
+
             setTimeout(done, 10);
         }, 10);
     });
-    
+
     it('Should only break enclosed part', done => {
         Promise
             .resolve('abc')
@@ -80,7 +80,7 @@ describe('Feature: break promises chain', () => {
                 }
             });
     });
-    
+
     it('Should break enclosed part with onrejected handler', done => {
         Promise
             .resolve('abc')
@@ -101,11 +101,11 @@ describe('Feature: break promises chain', () => {
                 }
             });
     });
-    
+
     context('Should only break current chain', () => {
         it('Break in the last nested then', done => {
             let str = '';
-            
+
             Promise
                 .then(() => {
                     return Promise
@@ -117,16 +117,16 @@ describe('Feature: break promises chain', () => {
                 .then(() => {
                     str += 'b';
                 });
-            
+
             setTimeout(() => {
                 str.should.equal('b');
                 done();
             }, 10);
         });
-        
+
         it('Break but not in the last nested then', done => {
             let str = '';
-            
+
             Promise
                 .then(() => {
                     return Promise
@@ -140,16 +140,16 @@ describe('Feature: break promises chain', () => {
                 .then(() => {
                     str += 'b';
                 });
-            
+
             setTimeout(() => {
                 str.should.equal('b');
                 done();
             }, 10);
         });
-        
+
         it('Asynchronously break in the last nested then', done => {
             let str = '';
-            
+
             Promise
                 .then(() => {
                     return Promise
@@ -161,16 +161,16 @@ describe('Feature: break promises chain', () => {
                 .then(() => {
                     str += 'b';
                 });
-            
+
             setTimeout(() => {
                 str.should.equal('b');
                 done();
             }, 10);
         });
-        
+
         it('Asynchronously break but not in the last nested then', done => {
             let str = '';
-            
+
             Promise
                 .then(() => {
                     return Promise
@@ -184,12 +184,12 @@ describe('Feature: break promises chain', () => {
                 .then(() => {
                     str += 'b';
                 });
-            
+
             setTimeout(() => {
                 str.should.equal('b');
                 done();
             }, 10);
         });
     });
-    
+
 });

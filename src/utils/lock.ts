@@ -20,7 +20,7 @@ export class Lock {
         this._promise = promise.void.fail(reason => undefined);
         return promise;
     }
-    
+
     /**
      * Handler will be called if there's no queued ones.
      * @param handler Try handler.
@@ -34,14 +34,14 @@ export class Lock {
             return this.queue(handler);
         }
     }
-    
+
     /**
      * (get) A function that binds `queue` method with current instance.
      */
     get queuer(): <TResult>(handler: LockHandler<TResult>) => Promise<TResult> {
         return this.queue.bind(this);
     }
-    
+
     /**
      * (get) A function that binds `try` method with current instance.
      */

@@ -224,7 +224,10 @@ export class Promise<T> implements PromiseLike<T> {
     private _unpack(value: Resolvable<T>, callback: (state: State, valueOrReason: any) => void): void {
         if (this === value) {
             callback(State.rejected, new TypeError('The promise should not return itself'));
-        } else if (value instanceof Promise) {
+            return;
+        }
+
+        if (value instanceof Promise) {
             if (value._state === State.pending) {
                 if (value._handledPromise) {
                     value._handledPromises = [value._handledPromise, this];
@@ -246,47 +249,44 @@ export class Promise<T> implements PromiseLike<T> {
                 callback(value._state, value._valueOrReason);
                 value._handled = true;
             }
-        } else if (value) {
-            switch (typeof value) {
-                case 'object':
-                case 'function':
-                    try {
-                        let then = (value as PromiseLike<any>).then;
 
-                        if (typeof then === 'function') {
-                            then.call(
-                                value,
-                                (value: any) => {
-                                    if (callback) {
-                                        this._unpack(value, callback);
-                                        callback = undefined;
-                                    }
-                                },
-                                (reason: any) => {
-                                    if (callback) {
-                                        callback(State.rejected, reason);
-                                        callback = undefined;
-                                    }
-                                }
-                            );
-
-                            break;
-                        }
-                    } catch (e) {
-                        if (callback) {
-                            callback(State.rejected, e);
-                            callback = undefined;
-                        }
-
-                        break;
-                    }
-                default:
-                    callback(State.fulfilled, value);
-                    break;
-            }
-        } else {
-            callback(State.fulfilled, value);
+            return;
         }
+
+        if (value && (typeof value === 'object' || typeof value === 'function')) {
+            try {
+                let then = (value as PromiseLike<any>).then;
+
+                if (typeof then === 'function') {
+                    then.call(
+                        value,
+                        (value: any) => {
+                            if (callback) {
+                                this._unpack(value, callback);
+                                callback = undefined;
+                            }
+                        },
+                        (reason: any) => {
+                            if (callback) {
+                                callback(State.rejected, reason);
+                                callback = undefined;
+                            }
+                        }
+                    );
+
+                    return;
+                }
+            } catch (error) {
+                if (callback) {
+                    callback(State.rejected, error);
+                    callback = undefined;
+                }
+
+                return;
+            }
+        }
+
+        callback(State.fulfilled, value);
     }
 
     /**
@@ -1177,6 +1177,7 @@ export class Promise<T> implements PromiseLike<T> {
                             return false;
                         } else {
                             lastResult = result;
+                            return;
                         }
                     });
             })

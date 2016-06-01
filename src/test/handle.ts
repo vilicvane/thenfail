@@ -10,32 +10,32 @@ describe('Feature: handle', () => {
     context('Handle by fulfilled promises', () => {
         testFulfilled(testValue, (promise, done) => {
             let anotherPromise = new Promise<typeof testValue>();
-            
+
             promise
                 .handle(anotherPromise)
                 .should.equal(promise);
-            
+
             anotherPromise.then(value => {
                 value.should.equal(testValue);
                 done();
             });
         });
     });
-    
+
     context('Handle by rejected promises', () => {
         testRejected(testValue, (promise, done) => {
             let anotherPromise = new Promise<typeof testValue>();
-            
+
             promise
                 .handle(anotherPromise)
                 .should.equal(promise);
-            
+
             anotherPromise.then(undefined, () => {
                 done();
             });
         });
     });
-    
+
     context('Handle callbacks by fulfilled promises', () => {
         testFulfilled(testValue, (promise, done) => {
             promise.handle((err, value) => {
@@ -47,7 +47,7 @@ describe('Feature: handle', () => {
             });
         });
     });
-    
+
     context('Handle callbacks by rejected promises', () => {
         testRejected(testValue, (promise, done) => {
             promise.handle((err, value) => {
@@ -59,7 +59,7 @@ describe('Feature: handle', () => {
             });
         });
     });
-    
+
     context('Should report error on unsupported promise type', () => {
         (() => {
             let promise = new Promise<string>();

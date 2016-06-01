@@ -15,10 +15,10 @@ describe('Feature: timeout', () => {
                 }
             });
     });
-    
+
     it('Should timeout and cancel chained promises', done => {
         let str = '';
-        
+
         Promise
             .then(() => {
                 str += 'a';
@@ -50,7 +50,7 @@ describe('Feature: timeout', () => {
                 }
             });
     });
-    
+
     it('Should timeout with message', done => {
         Promise
             .then(() => {
@@ -65,10 +65,10 @@ describe('Feature: timeout', () => {
                 }
             });
     });
-    
+
     it('Should timeout and dispose nested context', done => {
         let str = '';
-        
+
         Promise
             .then(() => {
                 str += 'a';

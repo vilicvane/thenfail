@@ -4,7 +4,7 @@ describe('Feature: Promise Lock', () => {
     it('Should lock', done => {
         let lock = new PromiseLock();
         let str = '';
-        
+
         lock.lock(() => {
             return Promise
                 .delay(20)
@@ -12,15 +12,15 @@ describe('Feature: Promise Lock', () => {
                     str += 'a';
                 });
         });
-        
+
         lock.lock(() => {
             if (str !== 'a') {
                 done('Unexpected result');
             }
-            
+
             str += 'b';
         });
-        
+
         lock.lock(() => {
             if (str !== 'ab') {
                 done('Unexpected result');
@@ -29,31 +29,31 @@ describe('Feature: Promise Lock', () => {
             }
         });
     });
-    
+
     it('Should unlock on rejection', done => {
         let lock = new PromiseLock();
         let str = '';
-        
+
         lock.lock(() => {
             return Promise
                 .delay(20)
                 .then(() => {
                     str += 'a';
-                    
+
                     throw {};
                 });
         });
-        
+
         lock.lock(() => {
             if (str !== 'a') {
                 done('Unexpected result');
             }
-            
+
             str += 'b';
-            
+
             throw new Error();
         });
-        
+
         lock.lock(() => {
             if (str !== 'ab') {
                 done('Unexpected result');

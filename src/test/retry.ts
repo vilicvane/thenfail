@@ -8,14 +8,14 @@ describe('Feature: retry', () => {
             })
             .should.eventually.equal('abc');
     });
-    
+
     it('Rejected twice then succeed', () => {
         let count = 0;
-        
+
         return Promise
             .retry((reason, attemptIndex) => {
                 count++;
-                
+
                 switch (attemptIndex) {
                     case 0:
                         throw new Error();
@@ -30,10 +30,10 @@ describe('Feature: retry', () => {
                 value.should.equal('abc');
             });
     });
-    
+
     it('Exceeding retry limit', () => {
         let count = 0;
-        
+
         return Promise
             .retry({ limit: 6 }, (reason, attemptIndex) => {
                 count++;

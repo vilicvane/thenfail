@@ -7,7 +7,7 @@ describe('Feature: spread', () => {
             .spread((str, num) => {
                 str.should.equal('abc');
                 num.should.equal(123);
-                
+
                 return 'biu';
             })
             .should.eventually.equal('biu');
