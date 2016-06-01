@@ -1280,6 +1280,8 @@ export class Promise<T> implements PromiseLike<T> {
      * @param args Arguments.
      * @return Created promise.
      */
+    static invoke(fn: Function, ...args: any[]): Promise<void>;
+    static invoke<TResult>(fn: Function, ...args: any[]): Promise<TResult>;
     static invoke<TResult>(fn: Function, ...args: any[]): Promise<TResult> {
         return new Promise<TResult>((resolve, reject) => {
             args = args.concat((error: any, value: TResult) => {
