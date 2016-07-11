@@ -815,7 +815,7 @@ declare module "child_process" {
     import events = require("events");
     import stream = require("stream");
 
-    export interface ChildProcess extends events.EventEmitter {
+    export class ChildProcess extends events.EventEmitter {
         stdin:  stream.Writable;
         stdout: stream.Readable;
         stderr: stream.Readable;

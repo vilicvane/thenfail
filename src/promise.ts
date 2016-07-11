@@ -8,6 +8,7 @@
  */
 
 import { EventEmitter } from 'events';
+import { ChildProcess } from 'child_process';
 
 import * as asap from 'asap';
 import deprecated from 'deprecated-decorator';
@@ -1296,21 +1297,34 @@ export class Promise<T> implements PromiseLike<T> {
         });
     }
 
-    /**
-     * Create a promise for an event emitter.
-     * @param emitter - The emitter to listen on 'error' event for rejection,
-     *     and given event types for fulfillment.
-     * @param type - A string or an array of string of event types for
-     *     fulfillment.
-     * @param errorEmitters - Other emitters to listen on 'error' event for rejection.
-     */
-    static for(emitter: EventEmitter, types: string | string[], errorEmitters?: EventEmitter[]): Promise<void>;
-    static for<T>(emitter: EventEmitter, types: string | string[], errorEmitters?: EventEmitter[]): Promise<T>;
-    static for<T>(emitter: EventEmitter, types: string | string[], errorEmitters: EventEmitter[] = []): Promise<T> {
-        if (!(emitter instanceof EventEmitter)) {
-            throw new TypeError('Unsupported object type');
-        }
+    private static _forChildProcess(process: ChildProcess): Promise<void> {
+        return new Promise<void>((resolve, reject) => {
+            process.on('exit', onexit);
+            process.on('error', onerror);
 
+            function removeListeners() {
+                process.removeListener('exit', onexit);
+                process.removeListener('error', onerror);
+            }
+
+            function onexit(code: number) {
+                removeListeners();
+
+                if (code === 0) {
+                    resolve();
+                } else {
+                    reject(new Error('Invalid exit code'));
+                }
+            }
+
+            function onerror(error: any) {
+                removeListeners();
+                reject(error);
+            }
+        });
+    }
+
+    private static _forEventEmitter<T>(emitter: EventEmitter, types: string | string[], errorEmitters: EventEmitter[] = []): Promise<T> {
         errorEmitters.unshift(emitter);
 
         if (typeof types === 'string') {
@@ -1318,16 +1332,6 @@ export class Promise<T> implements PromiseLike<T> {
         }
 
         return new Promise<T>((resolve, reject) => {
-            let onsuccess = (value: T) => {
-                removeListeners();
-                resolve(value);
-            };
-
-            let onerror = (error: any) => {
-                removeListeners();
-                reject(error);
-            };
-
             for (let type of types) {
                 emitter.on(type, onsuccess);
             }
@@ -1345,7 +1349,45 @@ export class Promise<T> implements PromiseLike<T> {
                     emitter.removeListener('error', onerror);
                 }
             }
+
+            function onsuccess(value: T) {
+                removeListeners();
+                resolve(value);
+            }
+
+            function onerror(error: any) {
+                removeListeners();
+                reject(error);
+            }
         });
+    }
+
+    /**
+     * Create a promise for a `ChildProcess` object.
+     * @param process - The process to listen on 'exit' and 'error' events for fulfillment
+     *     or rejection.
+     */
+    static for(process: ChildProcess): Promise<void>;
+    /**
+     * Create a promise for an event emitter.
+     * @param emitter - The emitter to listen on 'error' event for rejection,
+     *     and given event types for fulfillment.
+     * @param type - A string or an array of string of event types for
+     *     fulfillment.
+     * @param errorEmitters - Other emitters to listen on 'error' event for rejection.
+     */
+    static for(emitter: EventEmitter, types: string | string[], errorEmitters?: EventEmitter[]): Promise<void>;
+    static for<T>(emitter: EventEmitter, types: string | string[], errorEmitters?: EventEmitter[]): Promise<T>;
+    static for<T>(emitter: EventEmitter, types?: string | string[], errorEmitters?: EventEmitter[]): Promise<T | void> {
+        if (emitter instanceof ChildProcess) {
+            return this._forChildProcess(emitter);
+        }
+
+        if (emitter instanceof EventEmitter) {
+            return this._forEventEmitter<T>(emitter, types, errorEmitters);
+        }
+
+        throw new TypeError('Unsupported object');
     }
 
     /**
