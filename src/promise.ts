@@ -1379,7 +1379,7 @@ export class Promise<T> implements PromiseLike<T> {
     static for(emitter: EventEmitter, types: string | string[], errorEmitters?: EventEmitter[]): Promise<void>;
     static for<T>(emitter: EventEmitter, types: string | string[], errorEmitters?: EventEmitter[]): Promise<T>;
     static for<T>(emitter: EventEmitter, types?: string | string[], errorEmitters?: EventEmitter[]): Promise<T | void> {
-        if (emitter instanceof ChildProcess) {
+        if (emitter instanceof ChildProcess && types === undefined) {
             return this._forChildProcess(emitter);
         }
 
