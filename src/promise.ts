@@ -17,6 +17,14 @@ import { BreakSignal, GoToSignal } from './signals';
 import { Context } from './context';
 import { TimeoutError } from './errors';
 
+let EventEmitterConstructor: any;
+let ChildProcessConstructor: any;
+
+try {
+    EventEmitterConstructor = require('events').EventEmitterConstructor;
+    ChildProcessConstructor = require('child_process').ChildProcessConstructor;
+} catch (error) { }
+
 /////////////
 // Promise //
 /////////////
@@ -1379,11 +1387,11 @@ export class Promise<T> implements PromiseLike<T> {
     static for(emitter: EventEmitter, types: string | string[], errorEmitters?: EventEmitter[]): Promise<void>;
     static for<T>(emitter: EventEmitter, types: string | string[], errorEmitters?: EventEmitter[]): Promise<T>;
     static for<T>(emitter: EventEmitter, types?: string | string[], errorEmitters?: EventEmitter[]): Promise<T | void> {
-        if (emitter instanceof ChildProcess && types === undefined) {
-            return this._forChildProcess(emitter);
+        if (emitter instanceof ChildProcessConstructor && types === undefined) {
+            return this._forChildProcess(emitter as ChildProcess);
         }
 
-        if (emitter instanceof EventEmitter) {
+        if (emitter instanceof EventEmitterConstructor) {
             return this._forEventEmitter<T>(emitter, types, errorEmitters);
         }
 
