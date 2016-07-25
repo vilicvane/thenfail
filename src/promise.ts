@@ -21,8 +21,8 @@ let EventEmitterConstructor: any;
 let ChildProcessConstructor: any;
 
 try {
-    EventEmitterConstructor = require('events').EventEmitterConstructor;
-    ChildProcessConstructor = require('child_process').ChildProcessConstructor;
+    EventEmitterConstructor = require('events').EventEmitter;
+    ChildProcessConstructor = require('child_process').ChildProcess;
 } catch (error) { }
 
 /////////////
