@@ -20,10 +20,8 @@ import { TimeoutError } from './errors';
 let EventEmitterConstructor: any;
 let ChildProcessConstructor: any;
 
-try {
-    EventEmitterConstructor = require('events').EventEmitter;
-    ChildProcessConstructor = require('child_process').ChildProcess;
-} catch (error) { }
+try { EventEmitterConstructor = require('events').EventEmitter; } catch (error) { }
+try { ChildProcessConstructor = require('child_process').ChildProcess; } catch (error) { }
 
 /////////////
 // Promise //
@@ -1326,7 +1324,7 @@ export class Promise<T> implements PromiseLike<T> {
             }
 
             function onerror(error: any) {
-                removeListeners();
+                asap(removeListeners);
                 reject(error);
             }
         });
@@ -1364,7 +1362,7 @@ export class Promise<T> implements PromiseLike<T> {
             }
 
             function onerror(error: any) {
-                removeListeners();
+                asap(removeListeners);
                 reject(error);
             }
         });
@@ -1387,11 +1385,11 @@ export class Promise<T> implements PromiseLike<T> {
     static for(emitter: EventEmitter, types: string | string[], errorEmitters?: EventEmitter[]): Promise<void>;
     static for<T>(emitter: EventEmitter, types: string | string[], errorEmitters?: EventEmitter[]): Promise<T>;
     static for<T>(emitter: EventEmitter, types?: string | string[], errorEmitters?: EventEmitter[]): Promise<T | void> {
-        if (emitter instanceof ChildProcessConstructor && types === undefined) {
+        if (ChildProcessConstructor && emitter instanceof ChildProcessConstructor && types === undefined) {
             return this._forChildProcess(emitter as ChildProcess);
         }
 
-        if (emitter instanceof EventEmitterConstructor) {
+        if (EventEmitterConstructor && emitter instanceof EventEmitterConstructor) {
             return this._forEventEmitter<T>(emitter, types, errorEmitters);
         }
 
