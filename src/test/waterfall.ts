@@ -45,7 +45,7 @@ describe('Feature: waterfall', () => {
                     lastResult.should.equal('c');
                     return value;
                 default:
-                    return;
+                    return undefined;
             }
         }
     });
@@ -68,7 +68,7 @@ describe('Feature: waterfall', () => {
                             lastResult.should.equal('c');
                             return value;
                         default:
-                            return;
+                            return undefined;
                     }
                 })
                 .should.eventually.equal('b');
@@ -94,7 +94,7 @@ describe('Feature: waterfall', () => {
                             lastResult.should.equal('c');
                             return value;
                         default:
-                            return;
+                            return undefined;
                     }
                 })
                 .should.eventually.equal('b');

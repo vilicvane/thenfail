@@ -1184,7 +1184,7 @@ export class Promise<T> implements PromiseLike<T> {
                             return false;
                         } else {
                             lastResult = result;
-                            return;
+                            return undefined;
                         }
                     });
             })

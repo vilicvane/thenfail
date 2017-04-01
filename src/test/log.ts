@@ -60,7 +60,7 @@ describe('Feature: log', () => {
         });
 
         it('should warn rejection handled by an unrelayed promise', done => {
-            let promise = new Promise<void>();
+            let promise = new Promise<never>();
 
             Promise
                 .then(() => {
@@ -93,7 +93,7 @@ describe('Feature: log', () => {
 
         it('should not warn relayed rejection', done => {
             Promise
-                .then(() => {
+                .then<void>(() => {
                     throw new Error();
                 })
                 .fail(() => { });
@@ -151,7 +151,7 @@ describe('Feature: log', () => {
             promise.fail(() => { });
 
             Promise
-                .then(() => {
+                .then<void>(() => {
                     throw new Error();
                 })
                 .handle(promise);

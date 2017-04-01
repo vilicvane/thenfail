@@ -40,14 +40,14 @@ describe('Feature: each', () => {
 
                 switch (char) {
                     case 'a':
-                        return;
+                        return undefined;
                     case 'b':
                         Promise.break;
-                        return;
+                        return undefined;
                     case 'c':
                         return true;
                     default:
-                        return;
+                        return undefined;
                 }
             })
             .then(completed => {
@@ -66,7 +66,7 @@ describe('Feature: each', () => {
                 if (char === 'd') {
                     return false;
                 } else {
-                    return;
+                    return undefined;
                 }
             })
             .then(completed => {
